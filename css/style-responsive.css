@@ -65,8 +65,47 @@
         display: none;
     }
 
+    .live-clock-pill {
+        padding: 0.25rem 0.55rem;
+        font-size: 0.65rem;
+    }
+
+    .live-clock-pill .clock-tz {
+        display: none;
+    }
+
     .status-indicator-pill {
         display: none;
+    }
+
+    .top-bar-controls {
+        gap: 0.45rem;
+    }
+
+    .top-action-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 0.78rem;
+    }
+
+    .zen-mini-dock {
+        width: calc(100% - 32px);
+        max-width: 360px;
+        padding: 0.55rem 1rem;
+        bottom: 18px;
+        gap: 0.75rem;
+    }
+
+    .zen-dock-info {
+        min-width: 90px;
+    }
+
+    .zen-hint-toast {
+        width: calc(100% - 32px);
+        max-width: 320px;
+        font-size: 0.68rem;
+        text-align: center;
+        white-space: normal;
     }
 
     .card-content-grid {
@@ -201,16 +240,16 @@
     }
 
     .audio-category-nav {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
     }
 
     .cat-tab {
-        flex: 1 1 calc(50% - 0.4rem);
+        flex: 0 0 auto;
         font-size: 0.65rem;
     }
 
     .cat-tab:first-child {
-        flex: 1 1 100%;
+        flex: 0 0 auto;
     }
 }
 

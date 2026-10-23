@@ -265,7 +265,7 @@ body.light-mode .theme-toggle-btn .icon-moon {
 ======================================================== */
 .card-content-grid {
     display: grid;
-    grid-template-columns: 365px 1fr;
+    grid-template-columns: 365px minmax(0, 1fr);
     min-height: 590px;
 }
 
@@ -310,4 +310,292 @@ body.light-mode .theme-toggle-btn .icon-moon {
 .luxury-toast i {
     color: var(--color-accent);
     font-size: 0.95rem;
+}
+
+/* ========================================================
+   LIVE VIETNAM CLOCK PILL (ICT · GMT+7)
+======================================================== */
+.live-clock-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    padding: 0.32rem 0.75rem;
+    border-radius: var(--radius-full);
+    background: var(--surface-2);
+    border: 1px solid var(--color-border);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.04em;
+    user-select: none;
+    transition: all var(--transition-fast);
+}
+
+.live-clock-pill i {
+    font-size: 0.7rem;
+    color: var(--color-accent);
+}
+
+.live-clock-pill .clock-tz {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+}
+
+/* ========================================================
+   DISCORD LIVE STATUS DYNAMIC VARIANTS
+======================================================== */
+.status-indicator-pill.online {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.28);
+}
+.status-indicator-pill.online .status-pulse-dot {
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2), 0 0 8px #10b981;
+}
+.status-indicator-pill.online .status-label {
+    color: #34d399;
+}
+
+.status-indicator-pill.idle {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.28);
+}
+.status-indicator-pill.idle .status-pulse-dot {
+    background: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2), 0 0 8px #f59e0b;
+}
+.status-indicator-pill.idle .status-label {
+    color: #fbbf24;
+}
+
+.status-indicator-pill.dnd {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.28);
+}
+.status-indicator-pill.dnd .status-pulse-dot {
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2), 0 0 8px #ef4444;
+}
+.status-indicator-pill.dnd .status-label {
+    color: #f87171;
+}
+
+.status-indicator-pill.spotify {
+    background: rgba(30, 215, 96, 0.1);
+    border-color: rgba(30, 215, 96, 0.35);
+}
+.status-indicator-pill.spotify .status-pulse-dot {
+    background: #1ed760;
+    box-shadow: 0 0 0 2px rgba(30, 215, 96, 0.2), 0 0 8px #1ed760;
+}
+.status-indicator-pill.spotify .status-label {
+    color: #1ed760;
+}
+
+.status-indicator-pill.offline {
+    background: rgba(148, 163, 184, 0.08);
+    border-color: rgba(148, 163, 184, 0.2);
+}
+.status-indicator-pill.offline .status-pulse-dot {
+    background: #64748b;
+    box-shadow: none;
+    animation: none;
+}
+.status-indicator-pill.offline .status-label {
+    color: #94a3b8;
+}
+
+/* ========================================================
+   AMBIENT ZEN SCREENSAVER MODE
+======================================================== */
+body.zen-mode {
+    cursor: default;
+}
+
+body.zen-mode .card-container {
+    opacity: 0;
+    transform: scale(0.95) translateY(24px);
+    pointer-events: none;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.zen-mode .site-brand-header {
+    opacity: 0.12;
+    transform: translateY(-8px);
+    transition: all 0.45s ease;
+}
+
+body.zen-mode .site-brand-header:hover {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Floating Zen Mini Dock */
+.zen-mini-dock {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(140px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    padding: 0.65rem 1.45rem;
+    border-radius: var(--radius-full);
+    background: var(--surface-1);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--color-border-active);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 28px var(--color-accent-glow);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+body.zen-mode .zen-mini-dock {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.zen-dock-disc {
+    font-size: 1.35rem;
+    color: var(--color-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: rotateHalo 8s linear infinite;
+}
+
+.zen-dock-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 140px;
+    max-width: 240px;
+}
+
+.zen-track-title {
+    font-size: 0.825rem;
+    font-weight: 700;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.zen-track-sub {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--color-accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.zen-dock-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.zen-ctrl-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.zen-ctrl-btn:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    background: var(--surface-hover);
+    transform: scale(1.08);
+}
+
+.zen-hint-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-40px);
+    opacity: 0;
+    pointer-events: none;
+    padding: 0.45rem 1rem;
+    background: rgba(8, 10, 20, 0.7);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+    font-family: var(--font-mono);
+    z-index: 200;
+    transition: all 0.45s ease;
+    white-space: nowrap;
+}
+
+.zen-hint-toast i {
+    color: var(--color-accent);
+    margin-right: 0.35rem;
+}
+
+body.zen-mode .zen-hint-toast {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ========================================================
+   ZEN FLOATING ENTRY POINT (mobile / tablet)
+======================================================== */
+.zen-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-1);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--color-border-active);
+    color: var(--color-accent);
+    font-size: 0.95rem;
+    cursor: pointer;
+    z-index: 90;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px var(--color-accent-glow);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.zen-fab:hover,
+.zen-fab:active {
+    transform: scale(1.06);
+    border-color: var(--color-accent);
+}
+
+@media (max-width: 900px) {
+    .zen-fab {
+        display: inline-flex;
+    }
+}
+
+body.zen-mode .zen-fab {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.9);
+}
+
+/* Mini dock dims when idle in zen mode */
+body.zen-idle .zen-mini-dock {
+    opacity: 0.18;
 }

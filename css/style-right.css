@@ -94,6 +94,60 @@
     box-shadow: var(--shadow-soft);
 }
 
+/* 8 persona tabs: scroll ngang thay vì bóp chữ */
+.audio-category-nav {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.col-right,
+.studio-audio-suite {
+    min-width: 0;
+}
+
+.audio-category-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.audio-category-nav .cat-tab {
+    flex: 0 0 auto;
+}
+
+.cat-count {
+    font-size: 0.58rem;
+    line-height: 1;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text-muted);
+}
+
+.cat-tab.active .cat-count {
+    background: var(--color-accent-glow);
+    color: var(--color-text);
+}
+
+/* Tag thể loại dưới tên bài: bấm để mở danh sách của waifu đó */
+.track-category-tag {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.track-category-tag:hover {
+    border-color: var(--color-border-active);
+    color: var(--color-text);
+}
+
+.track-category-tag.is-dim {
+    opacity: 0.5;
+}
+
 /* ========================================================
    NOW PLAYING STAGE (VINYL PLATTER & METADATA)
 ======================================================== */
@@ -192,6 +246,30 @@
     border-radius: var(--radius-full);
     margin-top: 0.25rem;
     transition: color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.track-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 0.2rem;
+}
+
+.live-visualizer-bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+    padding: 0 2px;
+}
+
+.viz-bar {
+    width: 2.5px;
+    height: 10%;
+    min-height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(to top, var(--color-accent), var(--color-accent-secondary));
+    transition: height 0.08s ease;
 }
 
 /* ========================================================

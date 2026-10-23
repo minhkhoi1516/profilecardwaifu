@@ -277,6 +277,10 @@ body.light-mode .creator-name {
     width: 100%;
 }
 
+.social-destination-grid > :last-child:nth-child(odd) {
+    grid-column: span 2;
+}
+
 .social-link-pill {
     display: inline-flex;
     align-items: center;
@@ -473,4 +477,54 @@ body.light-mode .persona-chip.active {
 body.light-mode .persona-avatar-preview {
     background: #f1f5f9;
     border-color: rgba(15, 23, 42, 0.1);
+}
+
+/* ========================================================
+   EMPTY PERSONA SLOT ("Coming Soon") & AVATAR FALLBACK
+======================================================== */
+.persona-chip.soon {
+    opacity: 0.55;
+    cursor: not-allowed;
+    border-style: dashed;
+    background: transparent;
+}
+
+.persona-chip.soon:hover {
+    transform: none;
+    border-color: var(--color-border);
+    background: transparent;
+}
+
+.soon-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    border-style: dashed;
+}
+
+.persona-chip.soon .persona-name {
+    color: var(--color-text-muted);
+    font-weight: 500;
+}
+
+/* Ảnh avatar lỗi -> hiện monogram MK thay vì alt text vỡ */
+.avatar-zone.avatar-fallback::after {
+    content: "MK";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+    z-index: 5;
+}
+
+.avatar-zone.avatar-fallback .avatar-portrait {
+    opacity: 0;
 }

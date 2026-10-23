@@ -1,7 +1,7 @@
 {
-  "name": "Mahikari · Cosmic Profile Card",
-  "short_name": "Mahikari",
-  "description": "Premium cosmic profile card with anime art, music and links.",
+  "name": "MinKoi · Waifu & Music Studio",
+  "short_name": "MinKoi",
+  "description": "Kho lưu trữ nhạc và waifu của MinKoi.",
   "lang": "vi",
   "start_url": "/",
   "scope": "/",
@@ -10,10 +10,16 @@
   "theme_color": "#070913",
   "icons": [
     {
-      "src": "/assets/avatar1.png",
-      "sizes": "547x600",
+      "src": "/assets/avatar_alya.png",
+      "sizes": "900x900",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/avatar_alya.png",
+      "sizes": "900x900",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

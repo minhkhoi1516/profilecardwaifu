@@ -23,9 +23,9 @@
     --color-border-active: rgba(255, 255, 255, 0.2);
 
     /* Dynamic Persona Accent Tokens (Updated via JS) */
-    --color-accent: #fbbf24;
-    --color-accent-secondary: #f59e0b;
-    --color-accent-glow: rgba(251, 191, 36, 0.24);
+    --color-accent: #38bdf8;
+    --color-accent-secondary: #f43f5e;
+    --color-accent-glow: rgba(56, 189, 248, 0.28);
 
     /* Elevation Radii */
     --radius-sm: 8px;

@@ -1,0 +1,16 @@
+# Local archives (never deploy / commit)
+*.zip
+profilecardwaifu.zip
+
+# Debug artifacts from headless screenshots
+tools/shot-*.png
+tools/dom*.html
+tools/chips-zoom*.png
+_preview.png
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local preview screenshots
+preview/

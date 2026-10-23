@@ -1,69 +1,132 @@
-# 🌌 MAHIKARI · BESPOKE DIGITAL IDENTITY & STUDIO SUITE
+# 🌌 MinKoi · Waifu & Music Studio
 
-Trang định danh cá nhân cao cấp, đậm chất cinematic, tối giản và thanh lịch dành cho **Mahikari** — Creative Technologist & UI/UX Architect.
-
-🌐 **Trang web chính thức**: [https://profilecard-ten-nu.vercel.app/](https://profilecard-ten-nu.vercel.app/)
-
----
-
-## ✨ Điểm nhấn Kiến trúc & Thiết kế
-
-*   **Bộ nhận diện Thương hiệu Độc bản (Brand Monogram):**
-    *   Logo Monogram `[M]` dập nổi tinh tế, phối hợp cùng typography `Outfit` & `Inter` chuẩn editorial quốc tế.
-    *   Huy hiệu xác thực (Verified Creator) và nhãn trạng thái thời gian thực (`AVAILABLE`).
-*   **Phông nền Cinematic & Banner Sắc nét 100%:**
-    *   6 Banner 16:9 Ultra HD phối hợp cùng 6 Banner dọc chuẩn mobile.
-    *   Tối ưu GPU layer rendering: Loại bỏ hoàn toàn các lớp sương mờ (fog/nebula) để hình nền đạt độ trong trẻo và chi tiết tối đa.
-    *   Hiệu ứng hạt bụi sao (Ambient Stardust) chuyển động cực kỳ êm dịu, tự động tạm dừng khi ẩn tab để tiết kiệm 100% pin.
-*   **Hệ thống Persona & Visual Themes:**
-    *   6 chủ đề nhân vật tuyển chọn (Shiina Mahiru, Kaguya, Yachiyo Runami, Elfaria Albis Serfort, Kagari Fuyukawa, Hiura Mihate).
-    *   Chuyển đổi tức thì Avatar, Banner và hệ màu điểm nhấn (`--color-accent`, `--color-accent-glow`) thông qua thanh chọn trực quan hoặc phím tắt `1` đến `6`.
-*   **Studio Audio Suite (Hi-Fi Music Player):**
-    *   Tuyển tập 33 bản nhạc phân loại theo mục (Tất cả, Thiên Sứ Nhà Bên, CPK Collection).
-    *   Đĩa than vinyl xoay tinh tế, đồng bộ cùng bìa album / avatar persona.
-    *   Thanh tua nhạc trực quan với tooltip thời gian, hỗ trợ phát ngẫu nhiên (Shuffle), lặp lại (Repeat All / 1 / Off).
-    *   Bộ lọc âm thanh **Studio Equalizer** (BiquadFilter Web Audio API: Studio Reference, Low-End Warmth, Lo-Fi Tape, Acoustic Presence).
-    *   Ngăn tìm kiếm bài hát trực tiếp (Live Instant Search) và tích hợp MediaSession API điều khiển từ bàn phím / màn hình khóa.
-*   **Thao tác Nhanh & Phím tắt Tiện ích:**
-    *   `Space`: Phát / Tạm dừng nhạc
-    *   `J` / `K`: Bài trước / Bài kế tiếp
-    *   `M`: Bật / Tắt tiếng (Mute)
-    *   `S`: Bật / Tắt phát ngẫu nhiên (Shuffle)
-    *   `R`: Chuyển chế độ lặp lại (Repeat)
-    *   `1 - 6`: Đổi nhanh chủ đề Persona 1 - 6
-*   **Hệ thống Giao diện Sáng / Tối (Light & Dark Mode):**
-    *   Đồng bộ màu sắc êm dịu, không chói mắt, lưu trạng thái tự động vào LocalStorage.
-*   **Tối ưu Hiệu năng & Khả năng Tiếp cận (Accessibility):**
-    *   100% Vanilla HTML5, CSS custom properties và JavaScript hiện đại.
-    *   Không phụ thuộc thư viện nặng hay framework cồng kềnh.
-    *   Responsive mượt mà từ màn hình 320px, 390px, 430px đến màn hình 4K siêu rộng, hoàn toàn không tràn ngang (zero horizontal overflow).
+Trang định danh cá nhân + thư viện nhạc theo từng waifu. Vanilla HTML/CSS/JS, không build step.
+Deploy tĩnh trên Vercel.
 
 ---
 
-## 🛠️ Cấu trúc Mã nguồn
+## ✨ Tính năng hiện có
+
+- **7 persona** (Alya Kujou, Shiina Mahiru, Waguri Kaoruko, Sakura Miku, Shinobu Uzuki,
+  Konohana Hinako, Asanagi Umi) + **1 slot trống "Coming Soon"**.
+- Mỗi persona: 1 avatar, 2 banner PC, 2 banner phone. Mỗi lần chuyển waifu sẽ **random** giữa
+  2 banner cùng loại (không lặp lại ảnh vừa dùng), tự đổi theo bề rộng màn hình.
+- **Playlist theo waifu**: tab `All (23)` + tab riêng từng waifu. Đổi waifu **không cắt bài đang
+  phát** — chỉ chuyển danh sách đang xem sang waifu đó; bấm vào tag dưới tên bài cũng mở được
+  danh sách của waifu đang hát.
+- **23 track**, thời lượng lấy thật từ file MP3 (đã tính sẵn trong `js/config.js`).
+- **Zen mode (màn hình chờ)**: phím `Z` / `Esc` trên PC, nút nổi góc phải dưới trên mobile/tablet.
+  Có Screen Wake Lock (giữ màn hình sáng) và mini dock tự mờ sau 5s.
+- Equalizer Web Audio, seek bar, shuffle, repeat, tìm kiếm bài, MediaSession (điều khiển từ
+  màn hình khoá).
+- Light / Dark mode, lưu trạng thái vào localStorage.
+
+### Phím tắt
+| Phím | Chức năng |
+|---|---|
+| `Space` | Phát / dừng |
+| `J` / `K` | Bài trước / bài kế |
+| `M` | Tắt / mở tiếng |
+| `S` | Shuffle |
+| `R` | Đổi chế độ lặp |
+| `Z` / `Esc` | Vào / thoát Zen mode |
+| `1` – `7` | Đổi nhanh waifu |
+
+---
+
+## 🛠️ Cấu trúc
 
 ```
-profilecard/
-├── assets/                  # Avatar độ phân giải cao, banner 16:9, banner phone
+profilecardwaifu/
+├── assets/                  # avatar_<key>.png + banner_<key>_pc.jpg / _pc2 / _phone / _phone2
 ├── css/
-│   ├── style-base.css       # Hệ thống Design Tokens, reset & typography
-│   ├── style-backgrounds.css# 6 lớp banner GPU & canvas nền
-│   ├── style-card.css       # Khung obsidian glass & thanh thương hiệu
-│   ├── style-left.css       # Cột định danh, avatar, bio & danh sách persona
-│   ├── style-right.css      # Studio Audio Suite, đĩa than & equalizer
-│   └── style-responsive.css # Breakpoint di động & tablet tối ưu
+│   ├── style-base.css       # design tokens, reset, typography
+│   ├── style-backgrounds.css# banner layers & canvas nền
+│   ├── style-card.css       # khung card, zen mode, toast
+│   ├── style-left.css       # cột trái: avatar, tên, bio, persona chips
+│   ├── style-right.css      # player, tab playlist, equalizer
+│   └── style-responsive.css # breakpoint mobile / tablet
 ├── js/
-│   ├── config.js            # Dữ liệu thương hiệu, 6 personas, 33 bài hát
-│   ├── stars.js             # Canvas bụi sao nhẹ nhàng, tiết kiệm năng lượng
-│   ├── avatar.js            # Bộ máy chuyển đổi persona & đồng bộ giao diện
-│   ├── music.js             # Trình phát nhạc Studio, Web Audio EQ & tìm kiếm
-│   └── features.js          # Chế độ Sáng/Tối, sao chép liên kết & phím tắt
-├── music/                   # 33 file nhạc MP3 tuyển chọn
-├── index.html               # File HTML chính
-├── manifest.webmanifest     # Cấu hình PWA
-└── vercel.json              # Cấu hình triển khai Vercel
+│   ├── config.js            # TOÀN BỘ dữ liệu: personas + playlist (sửa ở đây)
+│   ├── stars.js             # hạt bụi sao trên canvas
+│   ├── avatar.js            # đổi persona, random banner, fallback ảnh lỗi
+│   ├── music.js             # player, tab playlist theo waifu, EQ, tìm kiếm
+│   └── features.js          # theme, clock, zen mode, phím tắt, share
+├── music/                   # file .mp3
+├── tools/                   # script hỗ trợ (không chạy trên web)
+│   ├── optimize_assets.py   # resize + nén ảnh, tự đổi đuôi cho khớp định dạng
+│   ├── mp3_duration.py      # tính thời lượng MP3 (ghi ra tools/durations.json)
+│   └── durations.json
+├── index.html
+├── manifest.webmanifest
+└── vercel.json
 ```
 
 ---
 
-© 2026 MAHIKARI STUDIO. ALL RIGHTS RESERVED.
+## ➕ Cách thêm một waifu mới (3 bước)
+
+1. Copy ảnh vào `assets/` theo đúng quy ước:
+
+   | Loại | Tên file |
+   |---|---|
+   | Avatar | `avatar_<key>.png` (vuông, ≤ 900px, nền trong suốt nếu được) |
+   | Banner PC | `banner_<key>_pc.jpg`, `banner_<key>_pc2.jpg` (ngang 16:9, ≤ 1920px) |
+   | Banner phone | `banner_<key>_phone.jpg`, `banner_<key>_phone2.jpg` (dọc, ≤ 1200px) |
+
+2. Chạy `python tools/optimize_assets.py` để resize + nén (script tự đổi `.png` → `.jpg`
+   nếu file thực chất là JPEG).
+
+3. Mở `js/config.js`, thêm 1 object vào `personas` **trước object `coming`**:
+
+```js
+{
+    id: 7, key: "tenwaifu", name: "Tên Waifu", role: "Danh hiệu", title: "Tên tác phẩm",
+    avatar: "assets/avatar_tenwaifu.png",
+    banners: {
+        pc: ["assets/banner_tenwaifu_pc.jpg", "assets/banner_tenwaifu_pc2.jpg"],
+        phone: ["assets/banner_tenwaifu_phone.jpg", "assets/banner_tenwaifu_phone2.jpg"]
+    },
+    accent: "#38bdf8", accentSecondary: "#f43f5e", accentGlow: "rgba(56, 189, 248, 0.28)",
+    available: true
+}
+```
+
+Slot `coming` (index cuối) luôn là chip mờ "Coming Soon" — cứ thêm waifu mới ngay trước nó.
+
+## 🎵 Cách thêm nhạc
+
+1. Copy file `.mp3` vào `music/`.
+2. Thêm 1 dòng vào `CONFIG.music.playlist` (nhớ `persona` đúng `key`):
+
+```js
+{ id: 24, persona: "alya", name: "Tên bài", artist: "Alya Kujou", file: "music/ten-bai.mp3", duration: "3:45" }
+```
+
+3. (Tuỳ chọn) chạy `python tools/mp3_duration.py` để lấy thời lượng chính xác, rồi copy vào
+   `duration`. Số bài trên tab `All` tự cập nhật.
+
+> Tên file có dấu tiếng Nhật vẫn chạy bình thường, nhưng nên dùng tên không dấu để tránh lỗi
+> khi deploy qua các hệ thống cũ.
+
+---
+
+## 📐 Quy ước asset
+
+- **Đuôi file phải khớp định dạng thật**: JPEG → `.jpg`, PNG → `.png`. Trước đây nhiều file
+  `.png` thực chất là JPEG/WebP, làm hỏng preview ảnh và `og:image` khi share link.
+- Banner PC ≤ 1920px, banner phone ≤ 1200px, avatar ≤ 900px; mỗi file nên < 1 MB.
+- Tổng dung lượng `assets/` hiện tại khoảng **7 MB** (trước khi nén là 69 MB).
+
+---
+
+## 🚀 Deploy
+
+- Nếu deploy qua GitHub → Vercel: **phải commit cả thư mục `assets/` và `music/`**, nếu không
+  Vercel sẽ 404 và avatar/banner bị vỡ.
+- Không commit `profilecardwaifu.zip` (đã có trong `.gitignore`).
+- Kiểm tra nhanh trước khi deploy: mở DevTools → Network, lọc `404`, phải bằng 0.
+
+---
+
+© 2026 MinKoi Studio · All rights reserved.

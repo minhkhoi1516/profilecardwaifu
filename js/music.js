@@ -25,7 +25,8 @@
     const playlistMenu = document.getElementById('playlist-menu');
     const audioFxBtn = document.getElementById('audio-fx-btn');
     const audioFxMenu = document.getElementById('audio-fx-menu');
-    const categoryTabs = document.querySelectorAll('.cat-tab');
+    const categoryNav = document.getElementById('audio-category-nav');
+    const trackCatEl = document.getElementById('track-category-tag');
     const shuffleBtn = document.getElementById('shuffle-btn');
     const repeatBtn = document.getElementById('repeat-btn');
     const vinylDisc = document.getElementById('vinyl-disc');
@@ -33,28 +34,45 @@
 
     if (!audio) return;
 
-    const fullPlaylist = CONFIG.music.playlist || [];
-    let currentCategory = localStorage.getItem('mahikari_player_category') || 'all';
+    const fullPlaylist = (CONFIG.music && CONFIG.music.playlist) || [];
 
-    function getFilteredPlaylist() {
-        if (currentCategory === 'all') return fullPlaylist;
-        return fullPlaylist.filter(song => song.category === currentCategory);
+    // Bộ lọc đang xem: 'all' hoặc key của persona. Bộ lọc KHÔNG ảnh hưởng bài đang phát.
+    function currentPersonaKey() {
+        const p = typeof window.getCurrentPersona === 'function' ? window.getCurrentPersona() : null;
+        return p ? p.key : 'alya';
     }
 
-    let activePlaylist = getFilteredPlaylist();
+    let currentFilter = localStorage.getItem('minkoi_player_filter') || currentPersonaKey();
+    if (currentFilter !== 'all' && !CONFIG.getPersona(currentFilter)) {
+        currentFilter = 'all';
+    }
+
+    function getFilteredPlaylist() {
+        if (currentFilter === 'all') return fullPlaylist;
+        return fullPlaylist.filter(song => song.persona === currentFilter);
+    }
+
+    function personaOf(track) {
+        return track ? CONFIG.getPersona(track.persona) : null;
+    }
+
+    // Luôn là index trong fullPlaylist
     let currentTrackIndex = 0;
-    let isShuffle = localStorage.getItem('mahikari_player_shuffle') === 'true';
-    let repeatMode = localStorage.getItem('mahikari_player_repeat') || 'all'; // 'all', 'one', 'none'
+    let isShuffle = localStorage.getItem('minkoi_player_shuffle') === 'true';
+    let repeatMode = localStorage.getItem('minkoi_player_repeat') || 'all'; // 'all', 'one', 'none'
     let currentAudioFx = localStorage.getItem('mahikari_audio_fx') || 'hifi';
     let isMuted = false;
     let lastVolume = CONFIG.music.defaultVolume || 45;
     let searchQuery = '';
 
-    // Web Audio Architecture
+    // Web Audio Architecture & Live Visualizer
     let audioCtx = null;
     let eqFilter = null;
+    let analyser = null;
     let audioSource = null;
     let isContextReady = false;
+    let visualizerData = null;
+    let visualizerFrameId = null;
 
     function initAudioContext() {
         if (isContextReady) return;
@@ -63,12 +81,58 @@
             if (!AudioContextClass) return;
             audioCtx = new AudioContextClass();
             eqFilter = audioCtx.createBiquadFilter();
+            
+            analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 64; // 32 frequency bins
+            analyser.smoothingTimeConstant = 0.8;
+            visualizerData = new Uint8Array(analyser.frequencyBinCount);
+
             audioSource = audioCtx.createMediaElementSource(audio);
             audioSource.connect(eqFilter);
-            eqFilter.connect(audioCtx.destination);
+            eqFilter.connect(analyser);
+            analyser.connect(audioCtx.destination);
+
             applyEqPreset(currentAudioFx);
             isContextReady = true;
+            startVisualizerLoop();
         } catch (_) {}
+    }
+
+    function startVisualizerLoop() {
+        const bars = document.querySelectorAll('.live-visualizer-bars .viz-bar');
+        const vinylDisc = document.getElementById('vinyl-disc');
+
+        function loop() {
+            visualizerFrameId = requestAnimationFrame(loop);
+            if (!analyser || document.hidden) return;
+
+            analyser.getByteFrequencyData(visualizerData);
+
+            if (!audio.paused && bars.length > 0) {
+                // Animate spectrum bars
+                for (let i = 0; i < bars.length; i++) {
+                    const binIdx = Math.min(i + 1, visualizerData.length - 1);
+                    const val = visualizerData[binIdx] || 0;
+                    const heightPercent = Math.max(10, Math.min(100, Math.round((val / 255) * 100)));
+                    bars[i].style.height = `${heightPercent}%`;
+                }
+
+                // Gentle bass pulse on vinyl disc glow
+                if (vinylDisc) {
+                    const bass = (visualizerData[1] + visualizerData[2] + visualizerData[3]) / (3 * 255);
+                    const glowSpread = Math.floor(bass * 20);
+                    vinylDisc.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${8 + glowSpread}px var(--color-accent-glow)`;
+                }
+            } else if (audio.paused && bars.length > 0) {
+                for (let i = 0; i < bars.length; i++) {
+                    bars[i].style.height = '10%';
+                }
+                if (vinylDisc) {
+                    vinylDisc.style.boxShadow = '';
+                }
+            }
+        }
+        loop();
     }
 
     function applyEqPreset(presetId) {
@@ -106,12 +170,13 @@
 
     function updateMediaSession(track) {
         if (!('mediaSession' in navigator)) return;
+        const persona = personaOf(track);
         navigator.mediaSession.metadata = new MediaMetadata({
             title: track.name,
             artist: track.artist,
-            album: 'Mahikari Studio Collection',
+            album: persona ? `${persona.name} · MinKoi Studio` : 'MinKoi Studio Collection',
             artwork: [
-                { src: 'assets/avatar1.png', sizes: '512x512', type: 'image/png' }
+                { src: (persona && persona.avatar) ? persona.avatar : 'assets/avatar_alya.png', sizes: '512x512', type: 'image/png' }
             ]
         });
 
@@ -121,28 +186,41 @@
         navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
     }
 
+    function updateCategoryTag() {
+        if (!trackCatEl) return;
+        const persona = personaOf(fullPlaylist[currentTrackIndex]);
+        if (!persona) {
+            trackCatEl.textContent = '';
+            return;
+        }
+        trackCatEl.textContent = `${persona.name} · ${persona.role}`;
+        trackCatEl.dataset.persona = persona.key;
+        trackCatEl.classList.toggle('is-dim', currentFilter !== 'all' && currentFilter !== persona.key);
+        trackCatEl.title = `Xem danh sách nhạc của ${persona.name}`;
+    }
+
     function loadTrack(index, autoPlay = false) {
-        if (activePlaylist.length === 0) return;
-        if (index < 0) index = activePlaylist.length - 1;
-        if (index >= activePlaylist.length) index = 0;
+        if (fullPlaylist.length === 0) return;
+        if (index < 0) index = fullPlaylist.length - 1;
+        if (index >= fullPlaylist.length) index = 0;
 
         currentTrackIndex = index;
-        const track = activePlaylist[currentTrackIndex];
+        const track = fullPlaylist[currentTrackIndex];
         if (!track) return;
+
+        try { localStorage.setItem('minkoi_player_track_idx', currentTrackIndex.toString()); } catch (_) {}
 
         audio.src = track.file;
         if (trackNameEl) trackNameEl.textContent = track.name;
         if (trackArtistEl) trackArtistEl.textContent = track.artist;
         if (currentTrackNumEl) currentTrackNumEl.textContent = (currentTrackIndex + 1).toString();
-        if (totalTracksNumEl) totalTracksNumEl.textContent = activePlaylist.length.toString();
+        if (totalTracksNumEl) totalTracksNumEl.textContent = fullPlaylist.length.toString();
 
         if (seekFill) seekFill.style.width = '0%';
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
         if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
 
-        const trackCatEl = document.getElementById('track-category-tag');
-        if (trackCatEl) trackCatEl.textContent = track.categoryLabel || '';
-
+        updateCategoryTag();
         updateMediaSession(track);
         renderPlaylist();
 
@@ -161,6 +239,10 @@
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
             if (vinylDisc) vinylDisc.classList.add('spinning');
             if (audioAlert) audioAlert.classList.add('hidden');
+            const track = fullPlaylist[currentTrackIndex];
+            if (track) {
+                document.title = `▶ ${track.name} · ${CONFIG.name}`;
+            }
         }).catch(() => {
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (vinylDisc) vinylDisc.classList.remove('spinning');
@@ -171,6 +253,7 @@
         audio.pause();
         if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (vinylDisc) vinylDisc.classList.remove('spinning');
+        document.title = `${CONFIG.name} · Waifu & Music Studio`;
     }
 
     function togglePlay() {
@@ -181,15 +264,36 @@
         }
     }
 
+    // Danh sách điều hướng: ưu tiên bộ lọc đang xem nếu bài đang phát thuộc bộ lọc đó.
+    function navigationList() {
+        const track = fullPlaylist[currentTrackIndex];
+        if (currentFilter !== 'all' && track && track.persona === currentFilter) {
+            return getFilteredPlaylist();
+        }
+        return fullPlaylist;
+    }
+
+    function playTrackAt(index, autoPlay) {
+        const list = navigationList();
+        if (list.length === 0) return;
+        const track = list[index];
+        const globalIndex = fullPlaylist.indexOf(track);
+        loadTrack(globalIndex >= 0 ? globalIndex : 0, autoPlay);
+    }
+
     function nextTrack() {
-        if (isShuffle && activePlaylist.length > 1) {
-            let nextIdx = currentTrackIndex;
-            while (nextIdx === currentTrackIndex) {
-                nextIdx = Math.floor(Math.random() * activePlaylist.length);
+        const list = navigationList();
+        if (list.length === 0) return;
+        const pos = list.indexOf(fullPlaylist[currentTrackIndex]);
+
+        if (isShuffle && list.length > 1) {
+            let nextIdx = pos;
+            while (nextIdx === pos) {
+                nextIdx = Math.floor(Math.random() * list.length);
             }
-            loadTrack(nextIdx, true);
+            playTrackAt(nextIdx, true);
         } else {
-            loadTrack(currentTrackIndex + 1, true);
+            playTrackAt((pos + 1) % list.length, true);
         }
     }
 
@@ -198,7 +302,10 @@
             audio.currentTime = 0;
             return;
         }
-        loadTrack(currentTrackIndex - 1, true);
+        const list = navigationList();
+        if (list.length === 0) return;
+        const pos = list.indexOf(fullPlaylist[currentTrackIndex]);
+        playTrackAt((pos - 1 + list.length) % list.length, true);
     }
 
     function setVolume(val) {
@@ -206,6 +313,10 @@
         audio.volume = clamped / 100;
         if (volumeCtrl) volumeCtrl.value = clamped;
         isMuted = clamped === 0;
+
+        if (!isMuted) {
+            try { localStorage.setItem('minkoi_player_volume', clamped.toString()); } catch (_) {}
+        }
 
         if (muteBtn) {
             if (clamped === 0) {
@@ -227,25 +338,83 @@
         }
     }
 
-    // Category Tabs Filter
-    function setupCategoryTabs() {
-        categoryTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const cat = tab.dataset.cat;
-                if (!cat || cat === currentCategory) return;
+    // Persona Playlist Tabs — All + từng waifu
+    function setFilter(key, options) {
+        if (key !== 'all' && !CONFIG.getPersona(key)) key = 'all';
+        currentFilter = key;
+        try { localStorage.setItem('minkoi_player_filter', key); } catch (_) {}
 
-                categoryTabs.forEach(t => t.classList.toggle('active', t.dataset.cat === cat));
-                currentCategory = cat;
-                localStorage.setItem('mahikari_player_category', cat);
-
-                activePlaylist = getFilteredPlaylist();
-                loadTrack(0, !audio.paused);
+        if (categoryNav) {
+            categoryNav.querySelectorAll('.cat-tab').forEach(tab => {
+                const active = tab.dataset.cat === key;
+                tab.classList.toggle('active', active);
+                tab.setAttribute('aria-selected', active ? 'true' : 'false');
             });
+            const activeTab = categoryNav.querySelector('.cat-tab.active');
+            if (activeTab && typeof activeTab.scrollIntoView === 'function') {
+                activeTab.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+            }
+        }
+
+        if (options && options.openList && playlistMenu) {
+            playlistMenu.classList.add('open');
+            renderPlaylist();
+        }
+        updateCategoryTag();
+    }
+
+    function renderCategoryTabs() {
+        if (!categoryNav) return;
+        const counts = {};
+        fullPlaylist.forEach(song => {
+            counts[song.persona] = (counts[song.persona] || 0) + 1;
         });
 
-        // Set initial active tab
-        categoryTabs.forEach(t => t.classList.toggle('active', t.dataset.cat === currentCategory));
+        const tabs = [
+            `<button class="cat-tab" data-cat="all" role="tab" type="button"><i class="fas fa-layer-group" aria-hidden="true"></i> All (${fullPlaylist.length})</button>`
+        ];
+
+        CONFIG.personas
+            .filter(p => p.available && counts[p.key])
+            .forEach(p => {
+                tabs.push(
+                    `<button class="cat-tab" data-cat="${p.key}" role="tab" type="button" title="${p.name}">` +
+                    `<i class="fas fa-music" aria-hidden="true"></i> ${p.name}` +
+                    `<span class="cat-count">${counts[p.key]}</span></button>`
+                );
+            });
+
+        categoryNav.innerHTML = tabs.join('');
+        setFilter(currentFilter);
     }
+
+    if (categoryNav) {
+        categoryNav.addEventListener('click', (e) => {
+            const tab = e.target.closest('.cat-tab');
+            if (!tab) return;
+            setFilter(tab.dataset.cat);
+        });
+    }
+
+    // Bấm vào tag thể loại dưới tên bài -> mở danh sách của waifu đang phát
+    if (trackCatEl) {
+        trackCatEl.setAttribute('role', 'button');
+        trackCatEl.setAttribute('tabindex', '0');
+        trackCatEl.addEventListener('click', () => {
+            const key = trackCatEl.dataset.persona;
+            if (key) setFilter(key, { openList: true });
+        });
+    }
+
+    // Đổi waifu bên avatar.js -> chuyển bộ lọc danh sách, KHÔNG đổi bài đang phát
+    window.addEventListener('minkoi:persona', (e) => {
+        const key = e.detail && e.detail.key;
+        if (!key) return;
+        setFilter(key);
+        if (playlistMenu && playlistMenu.classList.contains('open')) {
+            renderPlaylist();
+        }
+    });
 
     // Audio Progress & Seek Bar
     audio.addEventListener('timeupdate', () => {
@@ -265,7 +434,7 @@
         if (repeatMode === 'one') {
             audio.currentTime = 0;
             playAudio();
-        } else if (repeatMode === 'none' && currentTrackIndex === activePlaylist.length - 1) {
+        } else if (repeatMode === 'none' && currentTrackIndex === fullPlaylist.length - 1) {
             pauseAudio();
         } else {
             nextTrack();
@@ -390,7 +559,13 @@
     // Playlist Search & Dropdown Menu
     function renderPlaylist() {
         if (!playlistMenu) return;
-        const filtered = activePlaylist.filter(song => {
+        const visible = getFilteredPlaylist();
+        const filterPersona = currentFilter === 'all' ? null : CONFIG.getPersona(currentFilter);
+        const headerTitle = filterPersona
+            ? `${filterPersona.name.toUpperCase()} · ${visible.length} TRACKS`
+            : `ALL TRACKS · ${visible.length}`;
+
+        const filtered = visible.filter(song => {
             if (!searchQuery) return true;
             const q = searchQuery.toLowerCase();
             return song.name.toLowerCase().includes(q) || song.artist.toLowerCase().includes(q);
@@ -398,7 +573,7 @@
 
         playlistMenu.innerHTML = `
             <div class="playlist-header">
-                <span>PLAYLIST · ${activePlaylist.length} TRACKS</span>
+                <span>${headerTitle}</span>
                 <div class="search-wrap">
                     <i class="fas fa-search"></i>
                     <input type="text" id="playlist-search-input" placeholder="Search track or artist..." value="${searchQuery}">
@@ -407,14 +582,15 @@
             <div class="playlist-items-scroll">
                 ${filtered.length === 0 ? '<div class="no-tracks">No matching tracks</div>' : ''}
                 ${filtered.map(song => {
-                    const originalIdx = activePlaylist.findIndex(s => s.id === song.id);
-                    const isPlaying = originalIdx === currentTrackIndex;
+                    const globalIdx = fullPlaylist.indexOf(song);
+                    const isPlaying = globalIdx === currentTrackIndex;
+                    const persona = personaOf(song);
                     return `
-                        <button class="playlist-row ${isPlaying ? 'active' : ''}" data-idx="${originalIdx}" type="button">
-                            <span class="row-num">${isPlaying ? '<i class="fas fa-volume-high"></i>' : originalIdx + 1}</span>
+                        <button class="playlist-row ${isPlaying ? 'active' : ''}" data-idx="${globalIdx}" type="button">
+                            <span class="row-num">${isPlaying ? '<i class="fas fa-volume-high"></i>' : visible.indexOf(song) + 1}</span>
                             <span class="row-info">
                                 <span class="row-title">${song.name}</span>
-                                <span class="row-artist">${song.artist}</span>
+                                <span class="row-artist">${song.artist}${persona && currentFilter === 'all' ? ` · ${persona.name}` : ''}</span>
                             </span>
                             <span class="row-duration">${song.duration}</span>
                         </button>
@@ -485,8 +661,10 @@
     });
 
     // Initial boot
-    setupCategoryTabs();
+    renderCategoryTabs();
     renderFxMenu();
-    setVolume(CONFIG.music.defaultVolume || 45);
-    loadTrack(0, false);
+    let savedVol = parseInt(localStorage.getItem('minkoi_player_volume') || (CONFIG.music.defaultVolume || 45), 10);
+    let savedIdx = parseInt(localStorage.getItem('minkoi_player_track_idx') || '0', 10);
+    setVolume(isNaN(savedVol) ? 45 : savedVol);
+    loadTrack(isNaN(savedIdx) ? 0 : savedIdx, false);
 })();

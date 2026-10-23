@@ -3,26 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Mahikari · Studio & Digital Identity</title>
-    <meta name="description" content="Mahikari · Creative Technologist, UI/UX Architect, and Cosmic Audio Suite. A bespoke digital identity experience.">
+    <title>MinKoi · Waifu & Music Studio</title>
+    <meta name="description" content="MinKoi · dabbling and researching. Kho lưu trữ nhạc và waifu.">
     <meta name="theme-color" content="#080a14">
     <meta name="color-scheme" content="dark light">
     
     <!-- Open Graph & Twitter Cards -->
     <meta property="og:type" content="profile">
-    <meta property="og:title" content="Mahikari · Studio & Digital Identity">
-    <meta property="og:description" content="Creative Technologist, UI/UX Architect, and Ambient Audio Suite.">
-    <meta property="og:image" content="assets/banner1.png">
+    <meta property="og:title" content="MinKoi · Waifu & Music Studio">
+    <meta property="og:description" content="dabbling and researching · Tuturu tôi chỉ muốn bình yên ☺">
+    <meta property="og:image" content="assets/banner_alya_pc.jpg">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Mahikari · Studio & Digital Identity">
-    <meta name="twitter:description" content="Creative Technologist, UI/UX Architect, and Ambient Audio Suite.">
-    <meta name="twitter:image" content="assets/banner1.png">
+    <meta name="twitter:title" content="MinKoi · Waifu & Music Studio">
+    <meta name="twitter:description" content="dabbling and researching · Tuturu tôi chỉ muốn bình yên ☺">
+    <meta name="twitter:image" content="assets/banner_alya_pc.jpg">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="assets/avatar1.png">
-    <link rel="apple-touch-icon" href="assets/avatar1.png">
+    <link rel="icon" type="image/png" href="assets/avatar_alya.png">
+    <link rel="apple-touch-icon" href="assets/avatar_alya.png">
     <link rel="manifest" href="manifest.webmanifest">
-    <link rel="preload" as="image" href="assets/banner1.png" fetchpriority="high">
+    <link rel="preload" as="image" href="assets/avatar_alya.png" fetchpriority="high">
+    <link rel="preload" as="image" href="assets/banner_alya_pc.jpg" fetchpriority="high">
 
     <!-- Premium Google Fonts: Outfit (Brand/Headings), Inter (Body), Fira Code (Technical labels) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,12 +34,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=12.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=12.0">
-    <link rel="stylesheet" href="css/style-card.css?v=12.0">
-    <link rel="stylesheet" href="css/style-left.css?v=12.0">
-    <link rel="stylesheet" href="css/style-right.css?v=12.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=12.0">
+    <link rel="stylesheet" href="css/style-base.css?v=13.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=13.0">
+    <link rel="stylesheet" href="css/style-card.css?v=13.0">
+    <link rel="stylesheet" href="css/style-left.css?v=13.0">
+    <link rel="stylesheet" href="css/style-right.css?v=13.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=13.0">
 </head>
 <body>
 
@@ -46,7 +47,7 @@
 
     <!-- 6 ULTRA-CRISP PRE-RASTERIZED GPU BANNER LAYERS -->
     <div class="banner-stage" id="banner-stage" aria-hidden="true">
-        <div class="banner-layer active" data-index="0" style="background-image: url('assets/banner1.png');"></div>
+        <div class="banner-layer active" data-index="0" style="background-image: url('assets/banner_alya_pc.jpg');"></div>
         <div class="banner-layer" data-index="1"></div>
         <div class="banner-layer" data-index="2"></div>
         <div class="banner-layer" data-index="3"></div>
@@ -60,18 +61,28 @@
     <!-- GLOBAL LUXURY BRAND HEADER -->
     <header class="site-brand-header">
         <div class="brand-monogram-wrap">
-            <div class="monogram-symbol" aria-hidden="true">M</div>
+            <div class="monogram-symbol" aria-hidden="true">MK</div>
             <div class="brand-text-block">
-                <span class="brand-name">MAHIKARI</span>
-                <span class="brand-sub">STUDIO · ARCHITECT</span>
+                <span class="brand-name">MINKOI</span>
+                <span class="brand-sub">DABBLING & RESEARCHING</span>
             </div>
         </div>
 
         <div class="top-bar-controls">
+            <div class="live-clock-pill" title="Giờ Việt Nam (ICT · GMT+7)">
+                <i class="far fa-clock" aria-hidden="true"></i>
+                <span id="live-clock-time">--:--:--</span>
+                <span class="clock-tz">ICT</span>
+            </div>
+
             <div class="status-indicator-pill" title="Status: Active & Available for Projects">
                 <span class="status-pulse-dot" aria-hidden="true"></span>
                 <span class="status-label">AVAILABLE</span>
             </div>
+
+            <button class="top-action-btn zen-toggle-btn" id="zen-mode-toggle" type="button" title="Chế độ Màn hình chờ (Z)" aria-label="Chế độ Màn hình chờ">
+                <i class="fas fa-expand" aria-hidden="true"></i>
+            </button>
 
             <button class="top-action-btn" id="copy-profile" type="button" title="Sao chép liên kết hồ sơ" aria-label="Sao chép liên kết hồ sơ">
                 <i class="fas fa-link" aria-hidden="true"></i>
@@ -103,52 +114,45 @@
                         <div class="avatar-backdrop-disc" aria-hidden="true"></div>
                         <div class="halo-rotate" aria-hidden="true"></div>
                         <div class="halo-rotate outer" aria-hidden="true"></div>
-                        <img src="assets/avatar1.png" alt="Mahikari Portrait" class="avatar-img avatar-portrait" id="char-avatar" fetchpriority="high">
+                        <img src="assets/avatar_alya.png" alt="Alya Kujou Portrait" class="avatar-img avatar-portrait" id="char-avatar" fetchpriority="high">
                         <div class="avatar-status-badge online" title="Status: Online & Active"></div>
                     </div>
 
                     <!-- IDENTITY HEADER -->
                     <div class="identity-header">
                         <div class="name-title-row">
-                            <h1 class="creator-name" id="creator-name">Mahikari</h1>
+                            <h1 class="creator-name" id="creator-name">MinKoi</h1>
                             <span class="verified-badge" title="Verified Creator" aria-label="Verified"><i class="fas fa-circle-check"></i></span>
                         </div>
-                        <div class="creator-handle">@mahikari</div>
-                        <p class="creator-tagline" id="persona-role-text">Angel of Light · The Angel Next Door</p>
+                        <div class="creator-handle">@minkoi</div>
+                        <p class="creator-tagline" id="persona-role-text">Solitary Princess · Alya Sometimes Hides Her Feelings in Russian</p>
                     </div>
 
                     <!-- EDITORIAL BIOGRAPHY -->
                     <p class="creator-bio">
-                        Crafting bespoke digital artifacts, cinematic web aesthetics, and ambient sonic environments across the digital cosmos.
+                        Tuturu tôi chỉ muốn bình yên ☺
                     </p>
 
                     <!-- SOCIAL DESTINATION PILLS -->
                     <div class="social-destination-grid" aria-label="Mạng xã hội & Kênh liên kết">
-                        <a href="https://www.facebook.com/profile.php?id=61582336522985" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="Facebook - Mahikari">
-                            <span class="pill-brand">
-                                <i class="fab fa-facebook-f" aria-hidden="true"></i>
-                                <span>Facebook</span>
-                            </span>
-                            <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
-                        </a>
-                        <a href="https://www.tiktok.com/@mahikari_hola" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="TikTok - @mahikari_hola">
-                            <span class="pill-brand">
-                                <i class="fab fa-tiktok" aria-hidden="true"></i>
-                                <span>TikTok</span>
-                            </span>
-                            <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
-                        </a>
-                        <a href="https://discord.gg/NkbMV48zY6" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="Discord Community">
+                        <a href="https://discord.com/minhkhoi_1516/" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="Discord - minhkhoi_1516">
                             <span class="pill-brand">
                                 <i class="fab fa-discord" aria-hidden="true"></i>
                                 <span>Discord</span>
                             </span>
                             <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
                         </a>
-                        <a href="https://github.com/Hibandd122" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="GitHub - Hibandd122">
+                        <a href="https://github.com/minhkhoi1516" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="GitHub - minhkhoi1516">
                             <span class="pill-brand">
                                 <i class="fab fa-github" aria-hidden="true"></i>
                                 <span>GitHub</span>
+                            </span>
+                            <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
+                        </a>
+                        <a href="https://tiktok.com/@minhkhoi_141209" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="TikTok - @minhkhoi_141209">
+                            <span class="pill-brand">
+                                <i class="fab fa-tiktok" aria-hidden="true"></i>
+                                <span>TikTok</span>
                             </span>
                             <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
                         </a>
@@ -166,28 +170,32 @@
                                 <span>STUDIO AUDIO SUITE</span>
                             </div>
                             <div class="track-indicator">
-                                <span id="current-track-num">1</span> / <span id="total-tracks-num">33</span>
+                                <span id="current-track-num">1</span> / <span id="total-tracks-num">23</span>
                             </div>
                         </div>
 
-                        <!-- CATEGORY NAVIGATION TABS -->
-                        <div class="audio-category-nav" role="tablist">
-                            <button class="cat-tab active" data-cat="all" role="tab" type="button"><i class="fas fa-layer-group"></i> All (33)</button>
-                            <button class="cat-tab" data-cat="angel" role="tab" type="button"><i class="fas fa-feather-alt"></i> The Angel Next Door</button>
-                            <button class="cat-tab" data-cat="cpk" role="tab" type="button"><i class="fas fa-bolt"></i> CPK Collection</button>
-                        </div>
+                        <!-- PERSONA PLAYLIST TABS (rendered by js/music.js) -->
+                        <div class="audio-category-nav" id="audio-category-nav" role="tablist" aria-label="Chọn danh sách nhạc theo waifu"></div>
 
                         <!-- TRACK STAGE (VINYL & METADATA) -->
                         <div class="now-playing-stage">
                             <div class="vinyl-disc-wrap" id="vinyl-disc" aria-hidden="true">
                                 <div class="vinyl-platter">
-                                    <img src="assets/avatar1.png" alt="Album Cover" class="vinyl-art" id="player-album-art">
+                                    <img src="assets/avatar_alya.png" alt="Album Cover" class="vinyl-art" id="player-album-art">
                                 </div>
                             </div>
                             <div class="track-metadata">
                                 <h2 class="track-title" id="track-name">Chiisana Koi no Uta</h2>
                                 <p class="track-artist" id="track-artist">Iwami Manaka</p>
-                                <span class="track-category-tag" id="track-category-tag">Thiên Sứ Nhà Bên</span>
+                                <div class="track-meta-row">
+                                    <span class="track-category-tag" id="track-category-tag">Alya Kujou · Solitary Princess</span>
+                                    <div class="live-visualizer-bars" id="audio-visualizer-bars" aria-hidden="true">
+                                        <span class="viz-bar"></span><span class="viz-bar"></span><span class="viz-bar"></span>
+                                        <span class="viz-bar"></span><span class="viz-bar"></span><span class="viz-bar"></span>
+                                        <span class="viz-bar"></span><span class="viz-bar"></span><span class="viz-bar"></span>
+                                        <span class="viz-bar"></span><span class="viz-bar"></span><span class="viz-bar"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -264,7 +272,7 @@
                     <div class="persona-section">
                         <div class="section-micro-header">
                             <span class="micro-title"><i class="fas fa-sparkles"></i> WAIFU & THEME COLLECTION</span>
-                            <span class="micro-meta">6 PERSONAS · CLICK TO EQUIP</span>
+                            <span class="micro-meta" id="persona-count">7 PERSONAS · CLICK TO EQUIP</span>
                         </div>
                         <div class="persona-selector-grid" id="persona-selector">
                             <!-- Populated dynamically via js/avatar.js -->
@@ -273,7 +281,7 @@
 
                     <!-- MINIMAL FOOTER CREDITS -->
                     <footer class="studio-card-footer">
-                        <span class="footer-copy">© 2026 MAHIKARI STUDIO · ALL RIGHTS RESERVED</span>
+                        <span class="footer-copy">© 2026 MINKOI STUDIO · ALL RIGHTS RESERVED</span>
                         <span class="footer-meta">VIETNAM · BESPOKE DIGITAL IDENTITY</span>
                     </footer>
 
@@ -281,6 +289,34 @@
             </div>
         </div>
     </main>
+
+    <!-- AMBIENT ZEN FLOATING ENTRY POINT (mobile friendly) -->
+    <button class="zen-fab" id="zen-fab" type="button" title="Chế độ Màn hình chờ" aria-label="Chế độ Màn hình chờ">
+        <i class="fas fa-expand" aria-hidden="true"></i>
+    </button>
+
+    <!-- AMBIENT ZEN FLOATING MINI DOCK (Screensaver & Chill Audio Player) -->
+    <aside class="zen-mini-dock" id="zen-mini-dock" aria-label="Zen Mode Audio Controller">
+        <div class="zen-dock-disc" aria-hidden="true">
+            <i class="fas fa-compact-disc"></i>
+        </div>
+        <div class="zen-dock-info">
+            <span class="zen-track-title" id="zen-track-name">Chiisana Koi no Uta</span>
+            <span class="zen-track-sub" id="zen-track-artist">Iwami Manaka</span>
+        </div>
+        <div class="zen-dock-actions">
+            <button class="zen-ctrl-btn zen-play-btn" id="zen-play-pause" type="button" title="Phát / Dừng" aria-label="Phát hoặc dừng">
+                <i class="fas fa-play" aria-hidden="true"></i>
+            </button>
+            <button class="zen-ctrl-btn zen-exit-btn" id="zen-exit-btn" type="button" title="Thoát màn hình chờ (Esc / Z)" aria-label="Thoát màn hình chờ">
+                <i class="fas fa-compress" aria-hidden="true"></i>
+            </button>
+        </div>
+    </aside>
+
+    <div class="zen-hint-toast" aria-hidden="true">
+        <i class="fas fa-sparkles"></i> Nhấn phím <b>Z</b>, <b>Esc</b> hoặc chạm bất kỳ đâu để quay lại
+    </div>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
@@ -290,10 +326,10 @@
     </noscript>
 
     <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=12.0"></script>
-    <script src="js/stars.js?v=12.0"></script>
-    <script src="js/avatar.js?v=12.0"></script>
-    <script src="js/music.js?v=12.0"></script>
-    <script src="js/features.js?v=12.0"></script>
+    <script src="js/config.js?v=13.0"></script>
+    <script src="js/stars.js?v=13.0"></script>
+    <script src="js/avatar.js?v=13.0"></script>
+    <script src="js/music.js?v=13.0"></script>
+    <script src="js/features.js?v=13.0"></script>
 </body>
 </html>
