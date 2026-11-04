@@ -233,6 +233,9 @@
                 document.body.classList.remove('zen-idle');
                 requestWakeLock();
                 wakeZenDock();
+                if (typeof window.syncZenPlayer === 'function') {
+                    window.syncZenPlayer();
+                }
                 showToast('Chế độ màn hình chờ. Nhấn phím Z hoặc chạm nền để quay lại.', 'fa-sparkles');
                 playChimeSFX();
             } else {
@@ -263,13 +266,6 @@
             });
         }
 
-        if (zenPlayBtn && mainPlayBtn) {
-            zenPlayBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                mainPlayBtn.click();
-            });
-        }
-
         // Click outside on banner stage to exit Zen mode
         const bannerStage = document.getElementById('banner-stage');
         if (bannerStage) {
@@ -291,30 +287,9 @@
             }
         });
 
-        // Sync Zen Mini Dock track metadata with main audio player
-        const trackTitle = document.getElementById('track-name');
-        const trackArtist = document.getElementById('track-artist');
-        const zenTitle = document.getElementById('zen-track-name');
-        const zenArtist = document.getElementById('zen-track-artist');
-        const audioPlayer = document.getElementById('audio-player');
-
-        if (audioPlayer && zenPlayBtn) {
-            audioPlayer.addEventListener('play', () => {
-                const icon = zenPlayBtn.querySelector('i');
-                if (icon) icon.className = 'fas fa-pause';
-            });
-            audioPlayer.addEventListener('pause', () => {
-                const icon = zenPlayBtn.querySelector('i');
-                if (icon) icon.className = 'fas fa-play';
-            });
-        }
-
-        if (trackTitle && zenTitle) {
-            const observer = new MutationObserver(() => {
-                if (zenTitle) zenTitle.textContent = trackTitle.textContent;
-                if (zenArtist && trackArtist) zenArtist.textContent = trackArtist.textContent;
-            });
-            observer.observe(trackTitle, { childList: true, characterData: true, subtree: true });
+        // Initial sync of Zen Mini Dock
+        if (typeof window.syncZenPlayer === 'function') {
+            window.syncZenPlayer();
         }
     }
 

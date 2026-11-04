@@ -35,6 +35,20 @@
     const vinylDisc = document.getElementById('vinyl-disc');
     const albumArt = document.getElementById('player-album-art');
 
+    // Zen Mode Mini Dock Elements
+    const zenTitle = document.getElementById('zen-track-name');
+    const zenArtist = document.getElementById('zen-track-artist');
+    const zenPlayBtn = document.getElementById('zen-play-pause');
+    const zenDisc = document.getElementById('zen-dock-disc');
+    const zenSeekFill = document.getElementById('zen-seek-fill');
+    const zenPrevBtn = document.getElementById('zen-prev-track');
+    const zenNextBtn = document.getElementById('zen-next-track');
+
+    // Extended Utility Elements
+    const themeSyncBtn = document.getElementById('theme-sync-btn');
+    const speedBtn = document.getElementById('playback-speed-btn');
+    const speedLabel = document.getElementById('playback-speed-label');
+
     if (!audio) return;
 
     const fullPlaylist = (CONFIG.music && CONFIG.music.playlist) || [];
@@ -109,6 +123,21 @@
     let searchQuery = '';
     let isScrubbing = false;
     let hasPreloadedNext = false;
+
+    // Auto-Sync Waifu Theme with Music State
+    let autoSyncTheme = safeGet('minkoi_auto_theme_sync', 'true') === 'true';
+
+    // Playback Speed State (1.0x, 1.25x Nightcore, 1.5x, 0.85x Lo-Fi Slowed)
+    const SPEED_PRESETS = [
+        { rate: 1.0, label: '1.0x', toast: 'Tốc độ: 1.0x (Bình thường)' },
+        { rate: 1.25, label: '1.25x', toast: 'Tốc độ: 1.25x (Nightcore Mode)' },
+        { rate: 1.5, label: '1.5x', toast: 'Tốc độ: 1.5x (Super Fast)' },
+        { rate: 0.85, label: '0.85x', toast: 'Tốc độ: 0.85x (Lo-Fi Slowed)' }
+    ];
+    let currentSpeedIndex = parseInt(safeGet('minkoi_player_speed_idx', '0'), 10);
+    if (isNaN(currentSpeedIndex) || currentSpeedIndex < 0 || currentSpeedIndex >= SPEED_PRESETS.length) {
+        currentSpeedIndex = 0;
+    }
 
     // Sleep Timer State
     let sleepTimerInterval = null;
@@ -312,10 +341,30 @@
         if (currentTrackNumEl) currentTrackNumEl.textContent = (currentTrackIndex + 1).toString();
         if (totalTracksNumEl) totalTracksNumEl.textContent = fullPlaylist.length.toString();
 
+        // Direct sync with Zen Mode Mini Dock
+        if (zenTitle) zenTitle.textContent = track.name;
+        if (zenArtist) zenArtist.textContent = track.artist;
+        if (zenSeekFill) zenSeekFill.style.width = '0%';
+
         if (seekFill) seekFill.style.width = '0%';
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
         if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', '0');
+
+        // Maintain playback speed
+        if (SPEED_PRESETS[currentSpeedIndex]) {
+            audio.playbackRate = SPEED_PRESETS[currentSpeedIndex].rate;
+        }
+
+        // Auto-Sync Waifu Theme with Music
+        if (autoSyncTheme && track && track.persona) {
+            const pIdx = CONFIG.personas.findIndex(p => p.key === track.persona && p.available);
+            if (pIdx >= 0 && typeof window.setPersona === 'function') {
+                if (window.getCurrentPersonaIndex?.() !== pIdx) {
+                    window.setPersona(pIdx, false);
+                }
+            }
+        }
 
         updateCategoryTag();
         updateMediaSession(track);
@@ -326,6 +375,24 @@
         }
     }
 
+    function syncZenPlayer() {
+        const track = fullPlaylist[currentTrackIndex];
+        if (track) {
+            if (zenTitle) zenTitle.textContent = track.name;
+            if (zenArtist) zenArtist.textContent = track.artist;
+        }
+        if (zenPlayBtn) {
+            zenPlayBtn.innerHTML = audio.paused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+        }
+        if (zenDisc) {
+            zenDisc.classList.toggle('spinning', !audio.paused);
+        }
+        if (zenSeekFill && audio.duration) {
+            zenSeekFill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        }
+    }
+    window.syncZenPlayer = syncZenPlayer;
+
     function playAudio() {
         initAudioContext();
         if (audioCtx && audioCtx.state === 'suspended') {
@@ -334,7 +401,9 @@
 
         audio.play().then(() => {
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
             if (vinylDisc) vinylDisc.classList.add('spinning');
+            if (zenDisc) zenDisc.classList.add('spinning');
             if (audioAlert) audioAlert.classList.add('hidden');
             const track = fullPlaylist[currentTrackIndex];
             if (track) {
@@ -343,14 +412,18 @@
             startVisualizerLoop();
         }).catch((err) => {
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (vinylDisc) vinylDisc.classList.remove('spinning');
+            if (zenDisc) zenDisc.classList.remove('spinning');
         });
     }
 
     function pauseAudio() {
         audio.pause();
         if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
+        if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (vinylDisc) vinylDisc.classList.remove('spinning');
+        if (zenDisc) zenDisc.classList.remove('spinning');
         document.title = `${CONFIG.name} · Waifu & Music Studio`;
         if (visualizerFrameId) {
             cancelAnimationFrame(visualizerFrameId);
@@ -541,6 +614,7 @@
         const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         audio.currentTime = pos * audio.duration;
         if (seekFill) seekFill.style.width = `${pos * 100}%`;
+        if (zenSeekFill) zenSeekFill.style.width = `${pos * 100}%`;
         if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
@@ -549,6 +623,7 @@
         if (!audio.duration || isScrubbing) return;
         const pct = (audio.currentTime / audio.duration) * 100;
         if (seekFill) seekFill.style.width = `${pct}%`;
+        if (zenSeekFill) zenSeekFill.style.width = `${pct}%`;
         if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', Math.round(pct).toString());
 
@@ -655,6 +730,76 @@
     if (nextBtn) nextBtn.addEventListener('click', nextTrack);
     if (prevBtn) prevBtn.addEventListener('click', prevTrack);
     if (muteBtn) muteBtn.addEventListener('click', toggleMute);
+
+    // Zen Mode Dock Controls
+    if (zenPrevBtn) {
+        zenPrevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevTrack();
+        });
+    }
+    if (zenNextBtn) {
+        zenNextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextTrack();
+        });
+    }
+    if (zenPlayBtn) {
+        zenPlayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+    }
+
+    // Auto-Sync Waifu Theme with Music Button
+    if (themeSyncBtn) {
+        themeSyncBtn.classList.toggle('active', autoSyncTheme);
+        themeSyncBtn.title = autoSyncTheme ? 'Tự đổi Waifu theo bài hát (Đang BẬT)' : 'Tự đổi Waifu theo bài hát (Đang TẮT)';
+        themeSyncBtn.addEventListener('click', () => {
+            autoSyncTheme = !autoSyncTheme;
+            safeSet('minkoi_auto_theme_sync', autoSyncTheme.toString());
+            themeSyncBtn.classList.toggle('active', autoSyncTheme);
+            themeSyncBtn.title = autoSyncTheme ? 'Tự đổi Waifu theo bài hát (Đang BẬT)' : 'Tự đổi Waifu theo bài hát (Đang TẮT)';
+            if (typeof window.showToast === 'function') {
+                window.showToast(autoSyncTheme ? 'Tự đổi Waifu theo bài hát: BẬT' : 'Tự đổi Waifu theo bài hát: TẮT', 'fa-wand-magic-sparkles');
+            }
+            if (autoSyncTheme) {
+                const track = fullPlaylist[currentTrackIndex];
+                if (track && track.persona) {
+                    const pIdx = CONFIG.personas.findIndex(p => p.key === track.persona && p.available);
+                    if (pIdx >= 0 && typeof window.setPersona === 'function') {
+                        window.setPersona(pIdx, false);
+                    }
+                }
+            }
+        });
+    }
+
+    // Playback Speed Controller Button
+    function updateSpeedUI() {
+        const cur = SPEED_PRESETS[currentSpeedIndex];
+        if (cur) {
+            audio.playbackRate = cur.rate;
+            if (speedLabel) speedLabel.textContent = cur.label;
+            if (speedBtn) {
+                speedBtn.classList.toggle('active', cur.rate !== 1.0);
+                speedBtn.title = `Tốc độ: ${cur.label} · Nhấn để đổi`;
+            }
+        }
+    }
+
+    if (speedBtn) {
+        updateSpeedUI();
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % SPEED_PRESETS.length;
+            safeSet('minkoi_player_speed_idx', currentSpeedIndex.toString());
+            updateSpeedUI();
+            const cur = SPEED_PRESETS[currentSpeedIndex];
+            if (typeof window.showToast === 'function') {
+                window.showToast(cur.toast, cur.rate > 1.0 ? 'fa-forward' : (cur.rate < 1.0 ? 'fa-backward' : 'fa-play'));
+            }
+        });
+    }
 
     if (volumeCtrl) {
         volumeCtrl.addEventListener('input', (e) => {

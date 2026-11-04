@@ -111,6 +111,10 @@
                     
                     <!-- AVATAR PRESENTATION STAGE -->
                     <div class="avatar-zone" id="avatar-zone-wrap">
+                        <div class="waifu-quote-bubble" id="waifu-quote-bubble" aria-live="polite">
+                            <span class="quote-text" id="waifu-quote-text">Было бы неплохо... ✨</span>
+                            <span class="quote-tail"></span>
+                        </div>
                         <div class="ripple-ground" aria-hidden="true"><span></span><span></span><span></span></div>
                         <div class="avatar-backdrop-disc" aria-hidden="true"></div>
                         <div class="halo-rotate" aria-hidden="true"></div>
@@ -234,6 +238,16 @@
                             </div>
 
                             <div class="controls-utility-group">
+                                <!-- Auto-Sync Waifu Theme with Music Toggle -->
+                                <button class="ctrl-btn active" id="theme-sync-btn" type="button" title="Tự đổi Waifu theo bài hát (Đang BẬT)" aria-label="Tự đổi Waifu theo bài hát">
+                                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                                </button>
+
+                                <!-- Playback Speed (Nightcore / Normal / Slowed) -->
+                                <button class="ctrl-btn speed-toggle-btn" id="playback-speed-btn" type="button" title="Tốc độ phát: 1.0x" aria-label="Tốc độ phát nhạc">
+                                    <span class="speed-label" id="playback-speed-label">1.0x</span>
+                                </button>
+
                                 <!-- Sleep Timer -->
                                 <div class="dropdown-wrapper">
                                     <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
@@ -308,20 +322,29 @@
 
     <!-- AMBIENT ZEN FLOATING MINI DOCK (Screensaver & Chill Audio Player) -->
     <aside class="zen-mini-dock" id="zen-mini-dock" aria-label="Zen Mode Audio Controller">
-        <div class="zen-dock-disc" aria-hidden="true">
+        <div class="zen-dock-disc" id="zen-dock-disc" aria-hidden="true">
             <i class="fas fa-compact-disc"></i>
         </div>
         <div class="zen-dock-info">
-            <span class="zen-track-title" id="zen-track-name">可愛くてごめん (Kawaikute Gomen)</span>
-            <span class="zen-track-sub" id="zen-track-artist">Alya Kujou</span>
+            <span class="zen-track-title" id="zen-track-name">Đang tải giai điệu...</span>
+            <span class="zen-track-sub" id="zen-track-artist">MinKoi Studio</span>
         </div>
         <div class="zen-dock-actions">
-            <button class="zen-ctrl-btn zen-play-btn" id="zen-play-pause" type="button" title="Phát / Dừng" aria-label="Phát hoặc dừng">
+            <button class="zen-ctrl-btn" id="zen-prev-track" type="button" title="Bài trước (J)" aria-label="Bài trước">
+                <i class="fas fa-backward-step" aria-hidden="true"></i>
+            </button>
+            <button class="zen-ctrl-btn zen-play-btn" id="zen-play-pause" type="button" title="Phát / Dừng (Space)" aria-label="Phát hoặc dừng">
                 <i class="fas fa-play" aria-hidden="true"></i>
+            </button>
+            <button class="zen-ctrl-btn" id="zen-next-track" type="button" title="Bài kế tiếp (K)" aria-label="Bài kế tiếp">
+                <i class="fas fa-forward-step" aria-hidden="true"></i>
             </button>
             <button class="zen-ctrl-btn zen-exit-btn" id="zen-exit-btn" type="button" title="Thoát màn hình chờ (Esc / Z)" aria-label="Thoát màn hình chờ">
                 <i class="fas fa-compress" aria-hidden="true"></i>
             </button>
+        </div>
+        <div class="zen-dock-progress-bar" aria-hidden="true">
+            <div class="zen-dock-progress-fill" id="zen-seek-fill"></div>
         </div>
     </aside>
 

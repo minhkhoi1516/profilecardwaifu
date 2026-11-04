@@ -214,6 +214,27 @@
         }, 120);
     }
 
+    // Quote Bubble Engine
+    const quoteBubble = document.getElementById('waifu-quote-bubble');
+    const quoteText = document.getElementById('waifu-quote-text');
+    let quoteTimer = null;
+
+    function showWaifuQuote(customText) {
+        if (!quoteBubble || !quoteText) return;
+        const persona = personas[currentIndex];
+        const quotes = persona?.quotes || [];
+        const text = customText || (quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)] : "✨");
+
+        quoteText.textContent = text;
+        quoteBubble.classList.add('visible');
+
+        if (quoteTimer) clearTimeout(quoteTimer);
+        quoteTimer = setTimeout(() => {
+            quoteBubble.classList.remove('visible');
+        }, 4500);
+    }
+    window.showWaifuQuote = showWaifuQuote;
+
     let currentPersona = null;
 
     function setPersona(index, persist) {
@@ -237,9 +258,12 @@
             window.setAmbientParticleMode(index);
         }
 
-        // Play gentle magic chime SFX when manually switched
-        if (persist && typeof window.playChimeSFX === 'function') {
-            window.playChimeSFX();
+        // Play gentle magic chime SFX & show quote when switched
+        if (persist) {
+            if (typeof window.playChimeSFX === 'function') {
+                window.playChimeSFX();
+            }
+            showWaifuQuote();
         }
 
         // Update active chip state + aria-selected

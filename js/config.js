@@ -39,6 +39,11 @@ const CONFIG = {
             accentSecondary: "#f43f5e",
             accentGlow: "rgba(56, 189, 248, 0.28)",
             particleTheme: "snow",
+            quotes: [
+                "Было бы неплохо... (Nếu như vậy thì tốt biết mấy...)",
+                "Ku-ku-ku, đồ ngốc Masachika!",
+                "Tớ chỉ nói tiếng Nga khi không muốn ai hiểu thôi nha!"
+            ],
             available: true
         },
         {
@@ -56,6 +61,11 @@ const CONFIG = {
             accentSecondary: "#f59e0b",
             accentGlow: "rgba(251, 191, 36, 0.28)",
             particleTheme: "stardust",
+            quotes: [
+                "Cậu lại lười biếng rồi à, Amane-kun?",
+                "Một tách trà ấm cho ngày dài nhé?",
+                "Thiên sứ sao? Tớ chỉ là một cô gái bình thường thôi mà."
+            ],
             available: true
         },
         {
@@ -73,6 +83,11 @@ const CONFIG = {
             accentSecondary: "#fda4af",
             accentGlow: "rgba(251, 113, 133, 0.28)",
             particleTheme: "sakura",
+            quotes: [
+                "Bánh ngọt ở tiệm bánh của tớ thơm ngon lắm đấy!",
+                "Nụ cười của cậu làm một ngày của tớ sáng bừng lên!",
+                "Rintaro-kun, hôm nay cùng nhau cố gắng nhé!"
+            ],
             available: true
         },
         {
@@ -90,6 +105,11 @@ const CONFIG = {
             accentSecondary: "#fb7185",
             accentGlow: "rgba(244, 114, 182, 0.28)",
             particleTheme: "sakura",
+            quotes: [
+                "Mùa xuân đến rồi, hoa anh đào nở rộ khắp nơi!",
+                "Hãy cùng hòa ca khúc hát của những cánh hoa nhé!",
+                "Senbonzakura yoru ni magire~ ✨"
+            ],
             available: true
         },
         {
@@ -108,6 +128,11 @@ const CONFIG = {
             accentSecondary: "#818cf8",
             accentGlow: "rgba(168, 85, 247, 0.28)",
             particleTheme: "twilight",
+            quotes: [
+                "Trăng đêm nay đẹp lắm đúng không?",
+                "Độc dược hay liều thuốc chữa lành, ranh giới thật mong manh.",
+                "Moshi mosh~ Cậu có đang lắng nghe giai điệu này không?"
+            ],
             available: true
         },
         {
@@ -125,6 +150,11 @@ const CONFIG = {
             accentSecondary: "#fb7185",
             accentGlow: "rgba(249, 168, 212, 0.28)",
             particleTheme: "twilight",
+            quotes: [
+                "Cuốn sách này ẩn chứa một câu chuyện rất đặc biệt...",
+                "Hãy để sự tĩnh lặng này xoa dịu tâm hồn cậu.",
+                "Tách trà thảo mộc này thơm dịu lắm, cậu thử một ngụm nhé?"
+            ],
             available: true
         },
         {
@@ -142,6 +172,11 @@ const CONFIG = {
             accentSecondary: "#0ea5e9",
             accentGlow: "rgba(34, 211, 238, 0.28)",
             particleTheme: "ocean",
+            quotes: [
+                "Biển sớm mai luôn mang lại cảm giác bình yên nhất...",
+                "Đi dạo bờ cát ngắm hoàng hôn với tớ một chút không?",
+                "Từng đợt sóng vỗ như đang ngân nga giai điệu của riêng nó vậy."
+            ],
             available: true
         },
         {

@@ -1,4 +1,4 @@
-﻿/* ========================================================
+/* ========================================================
    MAHIKARI · LUXURY PROFILE CARD & BRAND TOP BAR
    Obsidian Glass Hybrid Architecture · Editorial Precision
 ======================================================== */
@@ -452,6 +452,7 @@ body.zen-mode .site-brand-header:hover {
     border: 1px solid var(--color-border-active);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 28px var(--color-accent-glow);
     transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
 }
 
 body.zen-mode .zen-mini-dock {
@@ -466,7 +467,28 @@ body.zen-mode .zen-mini-dock {
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: rotateHalo 8s linear infinite;
+    transition: transform var(--transition-normal);
+}
+
+.zen-dock-disc.spinning {
+    animation: rotateHalo 6s linear infinite;
+}
+
+.zen-dock-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+
+.zen-dock-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-secondary));
+    transition: width 0.2s linear;
 }
 
 .zen-dock-info {
@@ -598,4 +620,22 @@ body.zen-mode .zen-fab {
 /* Mini dock dims when idle in zen mode */
 body.zen-idle .zen-mini-dock {
     opacity: 0.18;
+}
+
+@media (max-width: 520px) {
+    .zen-mini-dock {
+        padding: 0.5rem 0.85rem;
+        gap: 0.65rem;
+        bottom: 16px;
+        max-width: calc(100vw - 20px);
+    }
+    .zen-dock-info {
+        min-width: 80px;
+        max-width: 130px;
+    }
+    .zen-ctrl-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 0.72rem;
+    }
 }

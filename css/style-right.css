@@ -391,6 +391,19 @@
     color: var(--color-accent);
 }
 
+.speed-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    letter-spacing: -0.02em;
+}
+
+.speed-toggle-btn.active {
+    color: var(--color-accent);
+    border-color: var(--color-border-active);
+    background: rgba(255, 255, 255, 0.04);
+}
+
 .play-hero-btn {
     width: 48px;
     height: 48px;
