@@ -1,4 +1,4 @@
-﻿/* ========================================================
+/* ========================================================
    MINKOI · ADAPTIVE AMBIENT PARTICLES ENGINE
    Sakura Petals, Crystalline Snowflakes & Golden Stardust
    Optimized 60fps Native Canvas Engine with Auto-Sleep
@@ -19,6 +19,8 @@
     const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function getThemeForPersona(index) {
+        const persona = (typeof CONFIG !== 'undefined' && CONFIG.personas) ? CONFIG.personas[index] : null;
+        if (persona && persona.particleTheme) return persona.particleTheme;
         switch (index) {
             case 0: return 'snow';       // Alya Kujou: Snowflakes / Frost Sparkles
             case 1: return 'stardust';   // Shiina Mahiru: Golden Stardust

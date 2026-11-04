@@ -1,4 +1,4 @@
-﻿/* ========================================================
+/* ========================================================
    MINKOI · PERSONA & VISUAL IDENTITY ENGINE
    Random banner pool, crossfade, theme tokens, asset preload
 ======================================================= */
@@ -150,28 +150,36 @@
         if (personaRoleEl) personaRoleEl.textContent = `${persona.role} · ${persona.title}`;
     }
 
+    function ensureBannerLayers() {
+        if (!bannerStage) return;
+        const currentLayers = bannerStage.querySelectorAll('.banner-layer');
+        if (currentLayers.length < personas.length) {
+            for (let i = currentLayers.length; i < personas.length; i++) {
+                if (personas[i].available) {
+                    const layer = document.createElement('div');
+                    layer.className = 'banner-layer';
+                    layer.dataset.index = i;
+                    layer.dataset.key = personas[i].key;
+                    bannerStage.appendChild(layer);
+                }
+            }
+        }
+    }
+
     function updateBannerLayers(persona) {
         const src = pickBanner(persona);
 
         if (bannerStage) {
+            ensureBannerLayers();
             const layers = bannerStage.querySelectorAll('.banner-layer');
-            layers.forEach((layer, idx) => {
-                const isActive = idx === currentIndex;
+            layers.forEach((layer) => {
+                const layerIdx = parseInt(layer.dataset.index, 10);
+                const isActive = layerIdx === currentIndex;
                 layer.classList.toggle('active', isActive);
                 if (isActive) {
                     layer.style.backgroundImage = src ? `url('${src}')` : 'none';
                 }
             });
-        }
-
-        if (heroBanner && src) {
-            heroBanner.style.opacity = '0.4';
-            const img = new Image();
-            img.onload = () => {
-                heroBanner.src = src;
-                heroBanner.style.opacity = '1';
-            };
-            img.src = src;
         }
 
         currentBannerSrc = src;

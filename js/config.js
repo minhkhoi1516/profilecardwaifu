@@ -1,4 +1,4 @@
-﻿/* ========================================================
+/* ========================================================
    MINKOI · BESPOKE DIGITAL IDENTITY & STUDIO CONFIG
    Persona roster + per-persona audio library
 ======================================================== */
@@ -38,6 +38,7 @@ const CONFIG = {
             accent: "#38bdf8",
             accentSecondary: "#f43f5e",
             accentGlow: "rgba(56, 189, 248, 0.28)",
+            particleTheme: "snow",
             available: true
         },
         {
@@ -54,6 +55,7 @@ const CONFIG = {
             accent: "#fbbf24",
             accentSecondary: "#f59e0b",
             accentGlow: "rgba(251, 191, 36, 0.28)",
+            particleTheme: "stardust",
             available: true
         },
         {
@@ -70,6 +72,7 @@ const CONFIG = {
             accent: "#fb7185",
             accentSecondary: "#fda4af",
             accentGlow: "rgba(251, 113, 133, 0.28)",
+            particleTheme: "sakura",
             available: true
         },
         {
@@ -86,6 +89,7 @@ const CONFIG = {
             accent: "#f472b6",
             accentSecondary: "#fb7185",
             accentGlow: "rgba(244, 114, 182, 0.28)",
+            particleTheme: "sakura",
             available: true
         },
         {
@@ -103,6 +107,7 @@ const CONFIG = {
             accent: "#a855f7",
             accentSecondary: "#818cf8",
             accentGlow: "rgba(168, 85, 247, 0.28)",
+            particleTheme: "twilight",
             available: true
         },
         {
@@ -119,6 +124,7 @@ const CONFIG = {
             accent: "#f9a8d4",
             accentSecondary: "#fb7185",
             accentGlow: "rgba(249, 168, 212, 0.28)",
+            particleTheme: "twilight",
             available: true
         },
         {
@@ -135,6 +141,7 @@ const CONFIG = {
             accent: "#22d3ee",
             accentSecondary: "#0ea5e9",
             accentGlow: "rgba(34, 211, 238, 0.28)",
+            particleTheme: "ocean",
             available: true
         },
         {
