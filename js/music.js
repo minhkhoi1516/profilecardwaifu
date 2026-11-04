@@ -370,10 +370,17 @@
         updateMediaSession(track);
         updatePlaylistItems();
 
+        window.dispatchEvent(new CustomEvent('minkoi:trackchange', {
+            detail: { index: currentTrackIndex, track }
+        }));
+
         if (autoPlay) {
             playAudio();
         }
     }
+
+    window.getCurrentTrackIndex = () => currentTrackIndex;
+    window.getCurrentTrack = () => fullPlaylist[currentTrackIndex];
 
     function syncZenPlayer() {
         const track = fullPlaylist[currentTrackIndex];

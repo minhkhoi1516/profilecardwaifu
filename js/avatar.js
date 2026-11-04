@@ -261,7 +261,7 @@
         // Play gentle magic chime SFX & show quote when switched
         if (persist) {
             if (typeof window.playChimeSFX === 'function') {
-                window.playChimeSFX();
+                window.playChimeSFX(persona.key);
             }
             showWaifuQuote();
         }

@@ -121,7 +121,7 @@
     }
 
     // 4. SYNTHESIZED MAGIC CHIME SFX (Web Audio API, 0ms latency, 0 files)
-    function playChimeSFX() {
+    function playChimeSFX(personaKey) {
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
@@ -129,22 +129,39 @@
             if (ctx.state === 'suspended') ctx.resume();
 
             const now = ctx.currentTime;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
+            
+            // Chord frequencies tailored to waifu personalities
+            let notes = [880, 1174.66, 1567.98]; // Default crystalline A5, D6, G6
+            if (personaKey === 'alya') {
+                notes = [1046.50, 1318.51, 1760.00]; // Ice Snowflake C6, E6, A6
+            } else if (personaKey === 'mahiru') {
+                notes = [659.25, 880.00, 1318.51];  // Warm Angel E5, A5, E6
+            } else if (personaKey === 'kaoruko' || personaKey === 'sakuramiku') {
+                notes = [783.99, 987.77, 1396.91];  // Sakura Blossom G5, B5, F6
+            } else if (personaKey === 'umi') {
+                notes = [587.33, 880.00, 1174.66];  // Ocean Tide D5, A5, D6
+            } else if (personaKey === 'shinobu' || personaKey === 'hinako') {
+                notes = [739.99, 932.33, 1318.51];  // Midnight Twilight F#5, A#5, E6
+            }
 
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(880, now); // A5
-            osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.08); // E6
+            notes.forEach((freq, idx) => {
+                const noteTime = now + (idx * 0.045);
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
 
-            gain.gain.setValueAtTime(0.001, now);
-            gain.gain.linearRampToValueAtTime(0.07, now + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.32);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, noteTime);
 
-            osc.connect(gain);
-            gain.connect(ctx.destination);
+                gain.gain.setValueAtTime(0.0001, noteTime);
+                gain.gain.linearRampToValueAtTime(0.045, noteTime + 0.015);
+                gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.28);
 
-            osc.start(now);
-            osc.stop(now + 0.33);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(noteTime);
+                osc.stop(noteTime + 0.29);
+            });
         } catch (_) {}
     }
     window.playChimeSFX = playChimeSFX;

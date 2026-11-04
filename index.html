@@ -93,6 +93,10 @@
                 <i class="fas fa-arrow-up-from-bracket" aria-hidden="true"></i>
             </button>
 
+            <button class="top-action-btn" id="snapshot-card-btn" type="button" title="Chụp & Tải ảnh thẻ hồ sơ" aria-label="Chụp & Tải ảnh thẻ hồ sơ">
+                <i class="fas fa-camera" aria-hidden="true"></i>
+            </button>
+
             <button class="top-action-btn theme-toggle-btn" id="theme-toggle" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
                 <i class="fas fa-sun icon-sun" aria-hidden="true"></i>
                 <i class="fas fa-moon icon-moon" aria-hidden="true"></i>
@@ -268,6 +272,11 @@
                                     </div>
                                 </div>
 
+                                <!-- Lyrics / Karaoke View -->
+                                <button class="ctrl-btn" id="lyrics-toggle-btn" type="button" title="Xem lời bài hát (Lyrics)" aria-label="Xem lời bài hát">
+                                    <i class="fas fa-quote-right" aria-hidden="true"></i>
+                                </button>
+
                                 <!-- Playlist Selector -->
                                 <div class="dropdown-wrapper">
                                     <button class="ctrl-btn" id="playlist-toggle-btn" type="button" title="Danh sách phát & Tìm kiếm" aria-label="Danh sách phát">
@@ -352,6 +361,26 @@
         <i class="fas fa-sparkles"></i> Nhấn phím <b>Z</b>, <b>Esc</b> hoặc chạm bất kỳ đâu để quay lại
     </div>
 
+    <!-- SYNCHRONIZED KARAOKE / LYRICS MODAL -->
+    <aside class="lyrics-drawer-modal" id="lyrics-modal" aria-labelledby="lyrics-title" role="dialog" aria-modal="true">
+        <div class="lyrics-drawer-header">
+            <div class="lyrics-meta">
+                <span class="lyrics-badge"><i class="fas fa-sparkles"></i> LIVE LYRICS</span>
+                <h3 class="lyrics-track-title" id="lyrics-title">可爱くてごめん</h3>
+                <span class="lyrics-track-artist" id="lyrics-artist">Alya Kujou</span>
+            </div>
+            <button class="lyrics-close-btn" id="lyrics-close-btn" type="button" title="Đóng lời bài hát (Esc)" aria-label="Đóng lời bài hát">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+        <div class="lyrics-body" id="lyrics-body">
+            <!-- Populated dynamically via js/lyrics.js -->
+        </div>
+        <div class="lyrics-footer">
+            <i class="fas fa-arrow-pointer"></i> Nhấp vào câu bất kỳ để tua nhanh tới đoạn đó
+        </div>
+    </aside>
+
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div class="toast-region" id="toast-region" role="status" aria-live="polite"></div>
 
@@ -364,6 +393,8 @@
     <script src="js/stars.js?v=14.0"></script>
     <script src="js/avatar.js?v=14.0"></script>
     <script src="js/music.js?v=14.0"></script>
+    <script src="js/lyrics.js?v=14.0"></script>
+    <script src="js/snapshot.js?v=14.0"></script>
     <script src="js/features.js?v=14.0"></script>
 </body>
 </html>

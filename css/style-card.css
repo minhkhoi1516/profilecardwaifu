@@ -639,3 +639,192 @@ body.zen-idle .zen-mini-dock {
         font-size: 0.72rem;
     }
 }
+
+/* ========================================================
+   SYNCHRONIZED LIVE LYRICS DRAWER MODAL
+======================================================== */
+.lyrics-drawer-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -46%) scale(0.95);
+    width: 90%;
+    max-width: 480px;
+    height: 520px;
+    max-height: 80vh;
+    background: var(--surface-1);
+    backdrop-filter: blur(32px) saturate(190%);
+    -webkit-backdrop-filter: blur(32px) saturate(190%);
+    border: 1px solid var(--color-border-active);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px var(--color-accent-glow);
+    border-radius: var(--radius-lg);
+    z-index: 150;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lyrics-drawer-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.lyrics-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem 0.85rem 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.lyrics-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.lyrics-badge {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--color-accent);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.lyrics-track-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+    max-width: 320px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lyrics-track-artist {
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+}
+
+.lyrics-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.lyrics-close-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    transform: scale(1.08);
+}
+
+.lyrics-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    scrollbar-width: thin;
+}
+
+.lyric-line {
+    padding: 0.55rem 0.85rem;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    opacity: 0.45;
+}
+
+.lyric-line:hover {
+    opacity: 0.85;
+    background: var(--surface-hover);
+}
+
+.lyric-line.active {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 3px solid var(--color-accent);
+    transform: translateX(4px);
+}
+
+.lyric-time {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    min-width: 35px;
+}
+
+.lyric-line.active .lyric-time {
+    color: var(--color-accent);
+    font-weight: 700;
+}
+
+.lyric-text {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--color-text);
+    line-height: 1.4;
+}
+
+.lyric-line.active .lyric-text {
+    color: var(--color-accent);
+    font-weight: 700;
+    text-shadow: 0 0 12px var(--color-accent-glow);
+}
+
+.lyrics-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+    color: var(--color-text-muted);
+    gap: 0.75rem;
+    padding: 2rem;
+}
+
+.lyrics-placeholder i {
+    font-size: 2.2rem;
+    color: var(--color-accent);
+    opacity: 0.6;
+}
+
+.lyrics-placeholder .placeholder-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.lyrics-placeholder .placeholder-sub {
+    font-size: 0.75rem;
+    margin: 0;
+}
+
+.lyrics-footer {
+    padding: 0.65rem 1.25rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    font-family: var(--font-mono);
+}
+
