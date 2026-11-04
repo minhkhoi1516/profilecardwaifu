@@ -776,17 +776,102 @@ body.zen-idle .zen-mini-dock {
     font-weight: 700;
 }
 
-.lyric-text {
-    font-size: 0.92rem;
-    font-weight: 500;
-    color: var(--color-text);
-    line-height: 1.4;
+.lyric-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
 }
 
-.lyric-line.active .lyric-text {
+.lyric-romaji {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--color-text);
+    line-height: 1.35;
+}
+
+.lyric-vi {
+    font-size: 0.74rem;
+    color: var(--color-text-muted);
+    line-height: 1.35;
+}
+
+.lyric-line.active .lyric-romaji {
     color: var(--color-accent);
     font-weight: 700;
     text-shadow: 0 0 12px var(--color-accent-glow);
+}
+
+.lyric-line.active .lyric-vi {
+    color: var(--color-text-secondary);
+}
+
+/* Instrumental Card View */
+.lyrics-instrumental-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.25rem;
+    gap: 0.95rem;
+}
+
+.inst-disc-halo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 2px solid var(--color-border-active);
+    box-shadow: 0 0 24px var(--color-accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    color: var(--color-accent);
+    animation: rotateHalo 12s linear infinite;
+}
+
+.inst-tag {
+    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--color-border);
+    padding: 0.2rem 0.65rem;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.08em;
+}
+
+.inst-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+    margin: 0;
+}
+
+.inst-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    max-width: 380px;
+    margin: 0;
+}
+
+.inst-quote {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 0.65rem 1rem;
+    font-style: italic;
+    font-size: 0.8rem;
+    color: var(--color-text);
+    max-width: 380px;
+}
+
+.inst-hint {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
 }
 
 .lyrics-placeholder {

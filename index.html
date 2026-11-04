@@ -178,8 +178,20 @@
                             <div class="suite-title" id="audio-suite-title">
                                 <span>STUDIO AUDIO SUITE</span>
                             </div>
-                            <div class="track-indicator">
-                                <span id="current-track-num">1</span> / <span id="total-tracks-num">23</span>
+                            <div class="suite-header-actions">
+                                <!-- Auto-Sync Waifu Theme with Music Toggle -->
+                                <button class="suite-badge-btn active" id="theme-sync-btn" type="button" title="Tự đổi Waifu theo bài hát (Đang BẬT)" aria-label="Tự đổi Waifu theo bài hát">
+                                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
+                                    <span>AUTO WAIFU</span>
+                                </button>
+                                <!-- Playback Speed (Nightcore / Normal / Slowed) -->
+                                <button class="suite-badge-btn speed-toggle-btn" id="playback-speed-btn" type="button" title="Tốc độ phát: 1.0x" aria-label="Tốc độ phát nhạc">
+                                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                                    <span class="speed-label" id="playback-speed-label">1.0X</span>
+                                </button>
+                                <div class="track-indicator">
+                                    <span id="current-track-num">1</span> / <span id="total-tracks-num">23</span>
+                                </div>
                             </div>
                         </div>
 
@@ -242,16 +254,6 @@
                             </div>
 
                             <div class="controls-utility-group">
-                                <!-- Auto-Sync Waifu Theme with Music Toggle -->
-                                <button class="ctrl-btn active" id="theme-sync-btn" type="button" title="Tự đổi Waifu theo bài hát (Đang BẬT)" aria-label="Tự đổi Waifu theo bài hát">
-                                    <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i>
-                                </button>
-
-                                <!-- Playback Speed (Nightcore / Normal / Slowed) -->
-                                <button class="ctrl-btn speed-toggle-btn" id="playback-speed-btn" type="button" title="Tốc độ phát: 1.0x" aria-label="Tốc độ phát nhạc">
-                                    <span class="speed-label" id="playback-speed-label">1.0x</span>
-                                </button>
-
                                 <!-- Sleep Timer -->
                                 <div class="dropdown-wrapper">
                                     <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
