@@ -1,4 +1,4 @@
-/* ========================================================
+﻿/* ========================================================
    MINKOI · PERSONA & VISUAL IDENTITY ENGINE
    Random banner pool, crossfade, theme tokens, asset preload
 ======================================================= */
@@ -55,22 +55,38 @@
         return chosen;
     }
 
-    // Preload persona assets for immediate zero-latency switching
+    // Progressive idle preload: load active persona first, others when idle
     function preloadAssets() {
-        personas.filter(p => p.available).forEach(p => {
-            if (p.avatar) {
-                const av = new Image();
-                av.decoding = 'async';
-                av.src = p.avatar;
-            }
-            ['pc', 'phone'].forEach(mode => {
+        const mode = isMobileViewport() ? 'phone' : 'pc';
+        const active = personas[currentIndex];
+        if (active) {
+            (active.banners?.[mode] || []).forEach(src => {
+                const img = new Image();
+                img.decoding = 'async';
+                img.src = src;
+            });
+        }
+
+        const idleLoad = () => {
+            personas.filter(p => p.available && p !== active).forEach(p => {
+                if (p.avatar) {
+                    const av = new Image();
+                    av.decoding = 'async';
+                    av.src = p.avatar;
+                }
                 (p.banners?.[mode] || []).forEach(src => {
                     const img = new Image();
                     img.decoding = 'async';
                     img.src = src;
                 });
             });
-        });
+        };
+
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(idleLoad, { timeout: 3000 });
+        } else {
+            setTimeout(idleLoad, 1200);
+        }
     }
 
     // Apply color tokens based on active persona

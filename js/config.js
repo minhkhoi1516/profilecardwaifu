@@ -1,4 +1,4 @@
-/* ========================================================
+﻿/* ========================================================
    MINKOI · BESPOKE DIGITAL IDENTITY & STUDIO CONFIG
    Persona roster + per-persona audio library
 ======================================================== */
@@ -172,9 +172,9 @@ const CONFIG = {
         defaultVolume: 45,
         playlist: [
             // --- ALYA KUJOU (4) ---
-            { id: 1, persona: "alya", name: "可愛くてごめん (Kawaikute Gomen)", artist: "Alya Kujou", file: "music/可愛くてごめん.mp3", duration: "3:35" },
-            { id: 2, persona: "alya", name: "小さな恋のうた (Chiisana Koi no Uta)", artist: "Alya Kujou", file: "music/小さな恋のうた.mp3", duration: "4:09" },
-            { id: 3, persona: "alya", name: "ワールドイズマイン (World is Mine)", artist: "Alya Kujou", file: "music/ワールドイズマイン.mp3", duration: "4:12" },
+            { id: 1, persona: "alya", name: "可愛くてごめん (Kawaikute Gomen)", artist: "Alya Kujou", file: "music/alya_01_Kawaikute_Gomen.mp3", duration: "3:35" },
+            { id: 2, persona: "alya", name: "小さな恋のうた (Chiisana Koi no Uta)", artist: "Alya Kujou", file: "music/alya_02_Chiisana_Koi_no_Uta.mp3", duration: "4:09" },
+            { id: 3, persona: "alya", name: "ワールドイズマイン (World is Mine)", artist: "Alya Kujou", file: "music/alya_03_World_is_Mine.mp3", duration: "4:12" },
             { id: 4, persona: "alya", name: "CHE.R.RY", artist: "Alya Kujou", file: "music/CHE.R.RY.mp3", duration: "3:29" },
 
             // --- SHIINA MAHIRU (7) ---
@@ -187,22 +187,22 @@ const CONFIG = {
             { id: 11, persona: "mahiru", name: "Gift (Inst.)", artist: "Iwami Manaka", file: "music/angel_07_Gift_Inst.mp3", duration: "5:28" },
 
             // --- WAGURI KAORUKO (4) ---
-            { id: 12, persona: "kaoruko", name: "ハレの日に (Hare no Hi ni)", artist: "Waguri Kaoruko", file: "music/ハレの日に - Harenohini.mp3", duration: "4:37" },
-            { id: 13, persona: "kaoruko", name: "まなざしは光 (Manazashi wa Hikari)", artist: "Waguri Kaoruko", file: "music/まなざしは光.mp3", duration: "3:27" },
-            { id: 14, persona: "kaoruko", name: "ひとひら (Hitohira)", artist: "Waguri Kaoruko", file: "music/ひとひら.mp3", duration: "4:42" },
-            { id: 15, persona: "kaoruko", name: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "Waguri Kaoruko", file: "music/凛太郎と薫子.mp3", duration: "1:38" },
+            { id: 12, persona: "kaoruko", name: "ハレの日に (Hare no Hi ni)", artist: "Waguri Kaoruko", file: "music/kaoruko_01_Hare_no_Hi_ni.mp3", duration: "4:37" },
+            { id: 13, persona: "kaoruko", name: "まなざしは光 (Manazashi wa Hikari)", artist: "Waguri Kaoruko", file: "music/kaoruko_02_Manazashi_wa_Hikari.mp3", duration: "3:27" },
+            { id: 14, persona: "kaoruko", name: "ひとひら (Hitohira)", artist: "Waguri Kaoruko", file: "music/kaoruko_03_Hitohira.mp3", duration: "4:42" },
+            { id: 15, persona: "kaoruko", name: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "Waguri Kaoruko", file: "music/kaoruko_04_Rintaro_to_Kaoruko.mp3", duration: "1:38" },
 
             // --- SAKURA MIKU (2) ---
-            { id: 16, persona: "sakuramiku", name: "君のせいで愛してる (Kimi no Sei de Aishiteru)", artist: "Sakura Miku", file: "music/君のせいで愛してる.mp3", duration: "3:51" },
-            { id: 17, persona: "sakuramiku", name: "リトルワールド (Little World)", artist: "Sakura Miku", file: "music/リトルワールド.mp3", duration: "3:08" },
+            { id: 16, persona: "sakuramiku", name: "君のせいで愛してる (Kimi no Sei de Aishiteru)", artist: "Sakura Miku", file: "music/sakuramiku_01_Kimi_no_Sei_de_Aishiteru.mp3", duration: "3:51" },
+            { id: 17, persona: "sakuramiku", name: "リトルワールド (Little World)", artist: "Sakura Miku", file: "music/sakuramiku_02_Little_World.mp3", duration: "3:08" },
 
             // --- SHINOBU UZUKI (2) ---
-            { id: 18, persona: "shinobu", name: "月に向かって撃て (Tsuki ni Mukatte Ute)", artist: "Shinobu Uzuki", file: "music/月に向かって撃て.mp3", duration: "3:15" },
-            { id: 19, persona: "shinobu", name: "声の軌跡 (Koe no Kiseki)", artist: "Shinobu Uzuki", file: "music/声の軌跡.mp3", duration: "3:19" },
+            { id: 18, persona: "shinobu", name: "月に向かって撃て (Tsuki ni Mukatte Ute)", artist: "Shinobu Uzuki", file: "music/shinobu_01_Tsuki_ni_Mukatte_Ute.mp3", duration: "3:15" },
+            { id: 19, persona: "shinobu", name: "声の軌跡 (Koe no Kiseki)", artist: "Shinobu Uzuki", file: "music/shinobu_02_Koe_no_Kiseki.mp3", duration: "3:19" },
 
             // --- KONOHANA HINAKO (2) ---
-            { id: 20, persona: "hinako", name: "最最最高級のお世話して (Saishuu Saikoukyuu no Osewa Shite)", artist: "Konohana Hinako", file: "music/最最最高級のお世話して.mp3", duration: "3:14" },
-            { id: 21, persona: "hinako", name: "完璧じゃないわたし (Kanpeki ja Nai Watashi)", artist: "Konohana Hinako", file: "music/完璧じゃないわたし.mp3", duration: "3:36" },
+            { id: 20, persona: "hinako", name: "最最最高級のお世話して (Saishuu Saikoukyuu no Osewa Shite)", artist: "Konohana Hinako", file: "music/hinako_01_Saikoukyuu_no_Osewa_Shite.mp3", duration: "3:14" },
+            { id: 21, persona: "hinako", name: "完璧じゃないわたし (Kanpeki ja Nai Watashi)", artist: "Konohana Hinako", file: "music/hinako_02_Kanpeki_ja_Nai_Watashi.mp3", duration: "3:36" },
 
             // --- ASANAGI UMI (2) ---
             { id: 22, persona: "umi", name: "Submarine Youth", artist: "Asanagi Umi", file: "music/Submarine_Youth.mp3", duration: "3:27" },
@@ -222,8 +222,8 @@ const CONFIG = {
 
     // Social Links
     social: [
-        { key: "discord", name: "Discord", handle: "minhkhoi_1516", url: "https://discord.com/minhkhoi_1516/", icon: "fab fa-discord" },
+        { key: "discord", name: "Discord", handle: "minhkhoi_1516", url: "https://discord.com/users/minhkhoi_1516", icon: "fab fa-discord" },
         { key: "github", name: "GitHub", handle: "minhkhoi1516", url: "https://github.com/minhkhoi1516", icon: "fab fa-github" },
-        { key: "tiktok", name: "TikTok", handle: "@minhkhoi_141209", url: "https://tiktok.com/@minhkhoi_141209", icon: "fab fa-tiktok" }
+        { key: "tiktok", name: "TikTok", handle: "@minhkhoi_141209", url: "https://www.tiktok.com/@minhkhoi_141209", icon: "fab fa-tiktok" }
     ]
 };

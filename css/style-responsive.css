@@ -257,6 +257,18 @@
    ULTRA-COMPACT (< 360px: Galaxy Z Flip cover, SE 1st gen)
 ======================================================== */
 @media (max-width: 360px) {
+    .site-brand-header {
+        padding: 0.5rem 0.65rem;
+    }
+
+    .top-bar-controls {
+        gap: 0.3rem;
+    }
+
+    .live-clock-pill {
+        display: none;
+    }
+
     .social-destination-grid {
         grid-template-columns: 1fr;
     }

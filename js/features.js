@@ -125,8 +125,7 @@
         try {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
             if (!AudioCtx) return;
-            if (!window.__sfxCtx) window.__sfxCtx = new AudioCtx();
-            const ctx = window.__sfxCtx;
+            const ctx = window.__minkoiAudioCtx || (window.__sfxCtx = window.__sfxCtx || new AudioCtx());
             if (ctx.state === 'suspended') ctx.resume();
 
             const now = ctx.currentTime;

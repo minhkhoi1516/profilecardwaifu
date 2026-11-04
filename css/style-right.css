@@ -641,6 +641,26 @@
     text-overflow: ellipsis;
 }
 
+.row-fav-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: 3px 6px;
+    font-size: 0.75rem;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.row-fav-btn:hover {
+    color: #f43f5e;
+    transform: scale(1.15);
+}
+
+.row-fav-btn.active {
+    color: #f43f5e;
+}
+
 .row-duration {
     font-family: var(--font-mono);
     font-size: 0.675rem;

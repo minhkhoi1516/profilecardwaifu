@@ -34,18 +34,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=13.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=13.0">
-    <link rel="stylesheet" href="css/style-card.css?v=13.0">
-    <link rel="stylesheet" href="css/style-left.css?v=13.0">
-    <link rel="stylesheet" href="css/style-right.css?v=13.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=13.0">
+    <link rel="stylesheet" href="css/style-base.css?v=14.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=14.0">
+    <link rel="stylesheet" href="css/style-card.css?v=14.0">
+    <link rel="stylesheet" href="css/style-left.css?v=14.0">
+    <link rel="stylesheet" href="css/style-right.css?v=14.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=14.0">
 </head>
 <body>
 
     <a class="skip-link" href="#profile-content">Bỏ qua đến nội dung chính</a>
 
-    <!-- 6 ULTRA-CRISP PRE-RASTERIZED GPU BANNER LAYERS -->
+    <!-- 7 ULTRA-CRISP PRE-RASTERIZED GPU BANNER LAYERS -->
     <div class="banner-stage" id="banner-stage" aria-hidden="true">
         <div class="banner-layer active" data-index="0" style="background-image: url('assets/banner_alya_pc.jpg');"></div>
         <div class="banner-layer" data-index="1"></div>
@@ -53,6 +53,7 @@
         <div class="banner-layer" data-index="3"></div>
         <div class="banner-layer" data-index="4"></div>
         <div class="banner-layer" data-index="5"></div>
+        <div class="banner-layer" data-index="6"></div>
     </div>
 
     <!-- AMBIENT PARTICLES CANVAS -->
@@ -135,7 +136,7 @@
 
                     <!-- SOCIAL DESTINATION PILLS -->
                     <div class="social-destination-grid" aria-label="Mạng xã hội & Kênh liên kết">
-                        <a href="https://discord.com/minhkhoi_1516/" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="Discord - minhkhoi_1516">
+                        <a href="https://discord.com/users/minhkhoi_1516" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="Discord - minhkhoi_1516">
                             <span class="pill-brand">
                                 <i class="fab fa-discord" aria-hidden="true"></i>
                                 <span>Discord</span>
@@ -149,7 +150,7 @@
                             </span>
                             <i class="fas fa-arrow-up-right-from-square pill-arrow" aria-hidden="true"></i>
                         </a>
-                        <a href="https://tiktok.com/@minhkhoi_141209" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="TikTok - @minhkhoi_141209">
+                        <a href="https://www.tiktok.com/@minhkhoi_141209" target="_blank" rel="noopener noreferrer" class="social-link-pill" title="TikTok - @minhkhoi_141209">
                             <span class="pill-brand">
                                 <i class="fab fa-tiktok" aria-hidden="true"></i>
                                 <span>TikTok</span>
@@ -185,8 +186,8 @@
                                 </div>
                             </div>
                             <div class="track-metadata">
-                                <h2 class="track-title" id="track-name">Chiisana Koi no Uta</h2>
-                                <p class="track-artist" id="track-artist">Iwami Manaka</p>
+                                <h2 class="track-title" id="track-name">可愛くてごめん (Kawaikute Gomen)</h2>
+                                <p class="track-artist" id="track-artist">Alya Kujou</p>
                                 <div class="track-meta-row">
                                     <span class="track-category-tag" id="track-category-tag">Alya Kujou · Solitary Princess</span>
                                     <div class="live-visualizer-bars" id="audio-visualizer-bars" aria-hidden="true">
@@ -204,9 +205,9 @@
                             <div class="time-display">
                                 <span id="current-time">0:00</span>
                                 <span class="time-sep">/</span>
-                                <span id="total-time">3:38</span>
+                                <span id="total-time">3:35</span>
                             </div>
-                            <div class="seek-bar-track" id="seek-container" role="slider" aria-label="Audio progress" tabindex="0">
+                            <div class="seek-bar-track" id="seek-container" role="slider" aria-label="Audio progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
                                 <div class="seek-fill-bar" id="seek-fill"></div>
                                 <div class="seek-hover-tooltip" id="seek-tip">0:00</div>
                             </div>
@@ -233,6 +234,16 @@
                             </div>
 
                             <div class="controls-utility-group">
+                                <!-- Sleep Timer -->
+                                <div class="dropdown-wrapper">
+                                    <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
+                                        <i class="far fa-clock" aria-hidden="true"></i>
+                                    </button>
+                                    <div class="dropdown-flyout sleep-timer-menu" id="sleep-timer-menu">
+                                        <!-- Populated dynamically via js/music.js -->
+                                    </div>
+                                </div>
+
                                 <!-- Equalizer Selector -->
                                 <div class="dropdown-wrapper">
                                     <button class="ctrl-btn" id="audio-fx-btn" type="button" title="Studio Equalizer" aria-label="Bộ lọc âm thanh">
@@ -264,7 +275,7 @@
                         </div>
 
                         <!-- NATIVE AUDIO ELEMENT -->
-                        <audio id="audio-player" preload="metadata"></audio>
+                        <audio id="audio-player" preload="metadata" crossorigin="anonymous"></audio>
                         <div id="audio-alert" class="audio-alert hidden">Audio currently unavailable</div>
                     </div>
 
@@ -301,8 +312,8 @@
             <i class="fas fa-compact-disc"></i>
         </div>
         <div class="zen-dock-info">
-            <span class="zen-track-title" id="zen-track-name">Chiisana Koi no Uta</span>
-            <span class="zen-track-sub" id="zen-track-artist">Iwami Manaka</span>
+            <span class="zen-track-title" id="zen-track-name">可愛くてごめん (Kawaikute Gomen)</span>
+            <span class="zen-track-sub" id="zen-track-artist">Alya Kujou</span>
         </div>
         <div class="zen-dock-actions">
             <button class="zen-ctrl-btn zen-play-btn" id="zen-play-pause" type="button" title="Phát / Dừng" aria-label="Phát hoặc dừng">
@@ -326,10 +337,10 @@
     </noscript>
 
     <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=13.0"></script>
-    <script src="js/stars.js?v=13.0"></script>
-    <script src="js/avatar.js?v=13.0"></script>
-    <script src="js/music.js?v=13.0"></script>
-    <script src="js/features.js?v=13.0"></script>
+    <script src="js/config.js?v=14.0"></script>
+    <script src="js/stars.js?v=14.0"></script>
+    <script src="js/avatar.js?v=14.0"></script>
+    <script src="js/music.js?v=14.0"></script>
+    <script src="js/features.js?v=14.0"></script>
 </body>
 </html>

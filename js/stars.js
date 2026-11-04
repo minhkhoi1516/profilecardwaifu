@@ -1,4 +1,4 @@
-/* ========================================================
+﻿/* ========================================================
    MINKOI · ADAPTIVE AMBIENT PARTICLES ENGINE
    Sakura Petals, Crystalline Snowflakes & Golden Stardust
    Optimized 60fps Native Canvas Engine with Auto-Sleep
@@ -25,7 +25,8 @@
             case 2: return 'sakura';     // Waguri Kaoruko: Camellia / Sakura Petals
             case 3: return 'sakura';     // Sakura Miku: Sakura Petals
             case 4: return 'twilight';   // Shinobu Uzuki: Midnight Lavender Embers
-            case 5: return 'twilight';   // Rikka Inohana: Soundwave Cyan Sparkles
+            case 5: return 'twilight';   // Konohana Hinako: Midnight Twilight Sparkles
+            case 6: return 'ocean';      // Asanagi Umi: Tide of Dawn Aqua Bubbles
             default: return 'snow';
         }
     }
@@ -91,8 +92,23 @@
                 baseAlpha: depth * 0.4 + 0.2,
                 alpha: depth * 0.4 + 0.2
             };
+        } else if (mode === 'ocean') {
+            // Tide of Dawn Aqua Water Bubbles & Sea Sparkles (Asanagi Umi)
+            return {
+                type: 'ocean',
+                x: startX,
+                y: randomizeY ? Math.random() * height : height + 15,
+                radius: depth * 2.4 + 1.0,
+                speedY: -(depth * 0.55 + 0.25),
+                speedX: (Math.random() - 0.5) * 0.3,
+                swaySpeed: 0.015 + Math.random() * 0.02,
+                swayAngle: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.03 + Math.random() * 0.04,
+                twinklePhase: Math.random() * Math.PI * 2,
+                alpha: depth * 0.5 + 0.3
+            };
         } else {
-            // Twilight Starlight (Shinobu & Rikka)
+            // Twilight Starlight (Shinobu & Hinako)
             return {
                 type: 'twilight',
                 x: startX,
@@ -167,9 +183,25 @@
         ctx.restore();
     }
 
+    function drawOceanBubble(ctx, p, accentColor) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(34, 211, 238, 0.22)';
+        ctx.globalAlpha = p.alpha;
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        ctx.fill();
+        ctx.restore();
+    }
+
     function render() {
+        if (document.hidden) {
+            animationId = null;
+            return; // Battery saving: truly pause loop
+        }
         animationId = requestAnimationFrame(render);
-        if (document.hidden) return; // Battery saving
 
         ctx.clearRect(0, 0, width, height);
         const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#38bdf8';
@@ -200,6 +232,16 @@
                     }
                     if (p.x > width + 10) p.x = 0;
                     if (p.x < -10) p.x = width;
+                } else if (p.type === 'ocean') {
+                    p.swayAngle += p.swaySpeed;
+                    p.x += Math.sin(p.swayAngle) * 0.5 + p.speedX;
+                    p.y += p.speedY;
+
+                    if (p.y < -15) {
+                        particles[i] = createParticle('ocean', false);
+                    }
+                    if (p.x > width + 15) p.x = 0;
+                    if (p.x < -15) p.x = width;
                 } else {
                     // Stardust / Twilight
                     p.twinklePhase += p.twinkleSpeed;
@@ -219,6 +261,8 @@
                 drawSakuraPetal(ctx, p);
             } else if (p.type === 'snow') {
                 drawSnowflake(ctx, p, accentColor);
+            } else if (p.type === 'ocean') {
+                drawOceanBubble(ctx, p, accentColor);
             } else {
                 drawStardust(ctx, p, accentColor);
             }
@@ -248,7 +292,7 @@
     });
 
     // Detect initial theme
-    const initialIndex = parseInt(localStorage.getItem('mahikari_persona_index') || '0', 10);
+    const initialIndex = parseInt(localStorage.getItem('minkoi_persona_index') || localStorage.getItem('mahikari_persona_index') || '0', 10);
     currentThemeMode = getThemeForPersona(isNaN(initialIndex) ? 0 : initialIndex);
 
     resize();
