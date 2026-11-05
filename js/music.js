@@ -227,6 +227,8 @@
         const vinyl = document.getElementById('vinyl-disc');
         const charAvatar = document.getElementById('char-avatar');
         const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
+        const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
+        const waifuCtx = waifuCanvas ? waifuCanvas.getContext('2d') : null;
 
         function loop() {
             if (audio.paused || document.hidden || !analyser) {
@@ -246,6 +248,9 @@
                 }
                 if (charAvatar) {
                     charAvatar.style.transform = '';
+                }
+                if (waifuCtx && waifuCanvas) {
+                    waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
                 }
                 return;
             }
@@ -281,6 +286,33 @@
             }
             if (charAvatar) {
                 charAvatar.style.transform = `translateX(-50%) scale(${(1 + bass * 0.022).toFixed(3)})`;
+            }
+
+            // Canvas Circular Audio Waves behind Waifu
+            if (waifuCtx && waifuCanvas) {
+                waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
+                const centerX = waifuCanvas.width / 2;
+                const centerY = waifuCanvas.height / 2;
+                const baseRadius = 66;
+                const points = 24;
+
+                waifuCtx.beginPath();
+                for (let p = 0; p < points; p++) {
+                    const angle = (p / points) * Math.PI * 2;
+                    const bin = Math.min(p + 1, visualizerData.length - 1);
+                    const amp = (visualizerData[bin] / 255) * 22;
+                    const r = baseRadius + amp;
+                    const x = centerX + Math.cos(angle) * r;
+                    const y = centerY + Math.sin(angle) * r;
+                    if (p === 0) waifuCtx.moveTo(x, y);
+                    else waifuCtx.lineTo(x, y);
+                }
+                waifuCtx.closePath();
+                waifuCtx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
+                waifuCtx.lineWidth = 2.0;
+                waifuCtx.shadowColor = 'rgba(56, 189, 248, 0.8)';
+                waifuCtx.shadowBlur = 8;
+                waifuCtx.stroke();
             }
         }
         visualizerFrameId = requestAnimationFrame(loop);
@@ -391,14 +423,23 @@
         safeSet('minkoi_player_track_idx', currentTrackIndex.toString());
         hasPreloadedNext = false;
 
-        // Clean reload to free previous decode buffer
+        // Clean reload to free previous decode buffer completely
         audio.pause();
+        audio.removeAttribute('src');
+        audio.load();
+
         if (track.file.startsWith('http://') || track.file.startsWith('https://')) {
-            audio.crossOrigin = 'anonymous';
+            if (!track.file.startsWith(window.location.origin)) {
+                audio.crossOrigin = 'anonymous';
+            } else {
+                audio.removeAttribute('crossorigin');
+            }
         } else {
             audio.removeAttribute('crossorigin');
         }
-        audio.src = encodeURI(track.file);
+
+        // Bỏ encodeURI: dùng đường dẫn trực tiếp vì tất cả file trong config.js đều là ASCII chuẩn
+        audio.src = track.file;
         audio.load();
 
         if (trackNameEl) trackNameEl.textContent = track.name;
@@ -444,26 +485,27 @@
         }
     }
 
-    // Crossfade Playback Transition Engine
+    // Crossfade Playback Transition Engine (1.0s Total: 0.48s fade-out + 0.52s fade-in)
     function changeTrack(newIndex, autoPlay = true) {
         if (isCrossfadeActive && audioCtx && gainNode && !audio.paused && audio.currentTime > 0) {
             const now = audioCtx.currentTime;
             const targetVol = isMuted ? 0 : (parseInt(volumeCtrl?.value || '45', 10) / 100);
 
-            // Smoothly ramp down volume over 260ms
+            // Fade-out êm dịu trong 0.48s
             gainNode.gain.cancelScheduledValues(now);
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.26);
+            gainNode.gain.linearRampToValueAtTime(0.001, now + 0.48);
 
             setTimeout(() => {
                 loadTrack(newIndex, autoPlay);
                 if (audioCtx && gainNode) {
                     const afterNow = audioCtx.currentTime;
+                    // Fade-in êm dịu trong 0.52s
                     gainNode.gain.cancelScheduledValues(afterNow);
-                    gainNode.gain.setValueAtTime(0.01, afterNow);
-                    gainNode.gain.linearRampToValueAtTime(targetVol, afterNow + 0.32);
+                    gainNode.gain.setValueAtTime(0.001, afterNow);
+                    gainNode.gain.linearRampToValueAtTime(targetVol, afterNow + 0.52);
                 }
-            }, 280);
+            }, 500);
         } else {
             loadTrack(newIndex, autoPlay);
         }
@@ -762,16 +804,15 @@
     audio.addEventListener('error', () => {
         const code = audio.error ? audio.error.code : 0;
         const track = fullPlaylist[currentTrackIndex];
-        console.warn(`[Audio Error] Code ${code} on track "${track ? track.name : ''}"`);
+        console.error(`[Audio Error] Mã lỗi: ${code} (Code 4 = MEDIA_ERR_SRC_NOT_SUPPORTED) khi tải: "${track ? track.file : ''}"`);
 
         if (audioAlert) {
             audioAlert.classList.remove('hidden');
             audioAlert.innerHTML = `
                 <div class="audio-alert-inner">
-                    <span class="audio-alert-msg"><i class="fas fa-triangle-exclamation"></i> Không thể phát giai điệu này (Mã lỗi ${code})</span>
+                    <span class="audio-alert-msg"><i class="fas fa-triangle-exclamation"></i> Không thể phát bài hát này (Mã lỗi ${code}: File không tìm thấy hoặc trình duyệt không hỗ trợ)</span>
                     <div class="audio-alert-actions">
                         <button class="audio-alert-btn retry-btn" type="button" title="Thử kết nối lại"><i class="fas fa-rotate-right"></i> Thử lại</button>
-                        <button class="audio-alert-btn skip-btn" type="button" title="Chuyển ngay sang bài tiếp"><i class="fas fa-forward-step"></i> Bài tiếp</button>
                     </div>
                 </div>
             `;
@@ -780,29 +821,14 @@
                 audioAlert.classList.add('hidden');
                 loadTrack(currentTrackIndex, true);
             });
-            audioAlert.querySelector('.skip-btn')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                audioAlert.classList.add('hidden');
-                nextTrack();
-            });
         }
 
-        // Tự động chuyển bài sau 3.5 giây để tránh gián đoạn nghe nhạc
-        if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
-        autoAdvanceTimer = setTimeout(() => {
-            if (audioAlert) audioAlert.classList.add('hidden');
-            nextTrack();
-        }, 3500);
-
+        // KHÔNG tự động chuyển bài khi lỗi: dừng lại để tránh spam request và cho người dùng chủ động kiểm tra
         pauseAudio();
     });
 
     audio.addEventListener('canplay', () => {
         if (audioAlert) audioAlert.classList.add('hidden');
-        if (autoAdvanceTimer) {
-            clearTimeout(autoAdvanceTimer);
-            autoAdvanceTimer = null;
-        }
     });
 
     if (seekContainer) {
