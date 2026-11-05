@@ -363,17 +363,35 @@
         <i class="fas fa-sparkles"></i> Nhấn phím <b>Z</b>, <b>Esc</b> hoặc chạm bất kỳ đâu để quay lại
     </div>
 
+    <!-- ZEN AMBIENT FLOATING LYRIC (Anime MV Screensaver) -->
+    <div class="zen-ambient-lyric" id="zen-ambient-lyric" aria-hidden="true">
+        <p class="zen-lyric-romaji" id="zen-lyric-romaji"></p>
+        <p class="zen-lyric-vi" id="zen-lyric-vi"></p>
+    </div>
+
     <!-- SYNCHRONIZED KARAOKE / LYRICS MODAL -->
     <aside class="lyrics-drawer-modal" id="lyrics-modal" aria-labelledby="lyrics-title" role="dialog" aria-modal="true">
         <div class="lyrics-drawer-header">
             <div class="lyrics-meta">
-                <span class="lyrics-badge"><i class="fas fa-sparkles"></i> LIVE LYRICS</span>
+                <div class="lyrics-badge-row">
+                    <span class="lyrics-badge"><i class="fas fa-sparkles"></i> LIVE LYRICS</span>
+                    <button class="lyrics-mode-btn" id="lyrics-mode-toggle" type="button" title="Chuyển chế độ xem lời">
+                        <i class="fas fa-align-left" aria-hidden="true"></i> <span id="lyrics-mode-label">Toàn bài</span>
+                    </button>
+                </div>
                 <h3 class="lyrics-track-title" id="lyrics-title">可爱くてごめん</h3>
                 <span class="lyrics-track-artist" id="lyrics-artist">Alya Kujou</span>
             </div>
-            <button class="lyrics-close-btn" id="lyrics-close-btn" type="button" title="Đóng lời bài hát (Esc)" aria-label="Đóng lời bài hát">
-                <i class="fas fa-xmark"></i>
-            </button>
+            <div class="lyrics-header-actions">
+                <div class="lyrics-offset-pill" title="Tinh chỉnh độ lệch thời gian (sớm / trễ)">
+                    <button class="offset-nudge-btn" id="offset-minus-btn" type="button" title="Lời chạy sớm hơn (-0.2s)">-0.2s</button>
+                    <span class="offset-val-badge" id="offset-val-text" title="Nhấp để đặt lại về 0.0s">0.0s</span>
+                    <button class="offset-nudge-btn" id="offset-plus-btn" type="button" title="Lời chạy trễ hơn (+0.2s)">+0.2s</button>
+                </div>
+                <button class="lyrics-close-btn" id="lyrics-close-btn" type="button" title="Đóng lời bài hát (Esc)" aria-label="Đóng lời bài hát">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
         </div>
         <div class="lyrics-body" id="lyrics-body">
             <!-- Populated dynamically via js/lyrics.js -->

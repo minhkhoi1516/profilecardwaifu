@@ -201,7 +201,10 @@
                         bars[i].style.height = '10%';
                     }
                 }
-                if (vinyl) vinyl.style.boxShadow = '';
+                if (vinyl) {
+                    vinyl.style.boxShadow = '';
+                    vinyl.style.transform = '';
+                }
                 return;
             }
 
@@ -219,8 +222,11 @@
 
             if (vinyl) {
                 const bass = (visualizerData[1] + visualizerData[2] + visualizerData[3]) / (3 * 255);
-                const glowSpread = Math.floor(bass * 20);
-                vinyl.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${8 + glowSpread}px var(--color-accent-glow)`;
+                const mid = (visualizerData[4] + visualizerData[5] + visualizerData[6]) / (3 * 255);
+                const glowSpread = Math.floor(bass * 26);
+                const scaleAmp = 1 + (bass * 0.035);
+                vinyl.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${10 + glowSpread}px var(--color-accent-glow), 0 0 ${Math.floor(mid * 14)}px rgba(255, 255, 255, 0.12)`;
+                vinyl.style.transform = `scale(${scaleAmp.toFixed(3)})`;
             }
         }
         visualizerFrameId = requestAnimationFrame(loop);
@@ -381,6 +387,7 @@
 
     window.getCurrentTrackIndex = () => currentTrackIndex;
     window.getCurrentTrack = () => fullPlaylist[currentTrackIndex];
+    window.getCurrentPlayingTrack = () => fullPlaylist[currentTrackIndex];
 
     function syncZenPlayer() {
         const track = fullPlaylist[currentTrackIndex];
