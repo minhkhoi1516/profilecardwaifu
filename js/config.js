@@ -252,13 +252,15 @@ const CONFIG = {
         ]
     },
 
-    // Audio Equalizer Presets
+    // Studio 5-Band Audio Equalizer Presets
     audioFx: {
         presets: [
-            { id: "hifi", name: "Studio Reference", icon: "fa-headphones", desc: "Transparent, linear studio response" },
-            { id: "bass", name: "Low-End Warmth", icon: "fa-bolt", desc: "Enhanced analog sub-bass (+6dB)" },
-            { id: "lofi", name: "Lo-Fi Tape", icon: "fa-record-vinyl", desc: "Vintage warmth & rolled-off highs" },
-            { id: "vocal", name: "Acoustic Presence", icon: "fa-microphone", desc: "Forward vocal clarity & articulation" }
+            { id: "hifi", name: "Studio Reference", icon: "fa-headphones", desc: "Cân bằng phẳng tiêu chuẩn (Flat Bypass)", gains: [0, 0, 0, 0, 0] },
+            { id: "bass", name: "Super Bass Boost", icon: "fa-bolt", desc: "Tăng cường âm trầm & lực đập kick (+7dB)", gains: [7, 4, 0, 1, 2] },
+            { id: "vocal", name: "Anime Idol Vocal", icon: "fa-microphone", desc: "Tôn giọng hát trong trẻo ngọt ngào (+5dB Mid)", gains: [1, -1, 5, 4, 2] },
+            { id: "acoustic", name: "Acoustic & Piano", icon: "fa-guitar", desc: "Dịu êm, mộc mạc cho nhạc cụ hòa tấu", gains: [2, 3, 0, 3, 4] },
+            { id: "nightcore", name: "Crystal Treble", icon: "fa-sparkles", desc: "Âm bổng trong vắt, sắc nét & sôi động", gains: [-3, 0, 2, 6, 7] },
+            { id: "lofi", name: "Lo-Fi Vintage Tape", icon: "fa-record-vinyl", desc: "Ấm áp, cắt bớt tần số chói phong cách hoài niệm", gains: [-2, 4, 2, -4, -8] }
         ]
     },
 

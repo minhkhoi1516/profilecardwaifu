@@ -151,7 +151,7 @@ body.light-mode .waifu-quote-bubble .quote-tail {
         0 0 24px var(--color-accent-glow);
     z-index: 2;
     pointer-events: none;
-    transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+    transition: box-shadow 0.08s ease, transform 0.08s ease, border-color var(--transition-normal);
 }
 
 body.light-mode .avatar-backdrop-disc {

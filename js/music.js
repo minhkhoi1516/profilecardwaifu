@@ -147,12 +147,15 @@
     // Web Audio Architecture & Live Visualizer
     let audioCtx = null;
     let gainNode = null;
-    let eqFilter = null;
+    let eqBands = null; // 5-Band Biquad Filter Bank: sub, bass, mid, treble, air
+    let eqBandGains = [0, 0, 0, 0, 0];
     let analyser = null;
     let audioSource = null;
     let isContextReady = false;
     let visualizerData = null;
     let visualizerFrameId = null;
+    let isCrossfadeActive = safeGet('minkoi_crossfade', 'true') === 'true';
+    let autoAdvanceTimer = null;
 
     function initAudioContext() {
         if (isContextReady) return;
@@ -165,21 +168,51 @@
             window.__minkoiAudioCtx = audioCtx;
 
             gainNode = audioCtx.createGain();
-            eqFilter = audioCtx.createBiquadFilter();
+
+            // Studio 5-Band Equalizer: 60Hz, 250Hz, 1kHz, 4kHz, 12kHz
+            eqBands = {
+                sub: audioCtx.createBiquadFilter(),     // 60Hz LowShelf (Sub-bass)
+                bass: audioCtx.createBiquadFilter(),    // 250Hz Peaking (Kick/Bass)
+                mid: audioCtx.createBiquadFilter(),     // 1000Hz Peaking (Vocal)
+                treble: audioCtx.createBiquadFilter(),  // 4000Hz Peaking (Presence)
+                air: audioCtx.createBiquadFilter()      // 12000Hz HighShelf (Air/Treble)
+            };
+
+            eqBands.sub.type = 'lowshelf';
+            eqBands.sub.frequency.value = 60;
+
+            eqBands.bass.type = 'peaking';
+            eqBands.bass.frequency.value = 250;
+            eqBands.bass.Q.value = 1.0;
+
+            eqBands.mid.type = 'peaking';
+            eqBands.mid.frequency.value = 1000;
+            eqBands.mid.Q.value = 1.0;
+
+            eqBands.treble.type = 'peaking';
+            eqBands.treble.frequency.value = 4000;
+            eqBands.treble.Q.value = 1.0;
+
+            eqBands.air.type = 'highshelf';
+            eqBands.air.frequency.value = 12000;
 
             analyser = audioCtx.createAnalyser();
             analyser.fftSize = 64; // 32 frequency bins
             analyser.smoothingTimeConstant = 0.8;
             visualizerData = new Uint8Array(analyser.frequencyBinCount);
 
-            // Connect: Source -> GainNode -> EQ Filter -> Analyser -> Output
+            // Connect in series: Source -> GainNode -> Sub -> Bass -> Mid -> Treble -> Air -> Analyser -> Output
             audioSource = audioCtx.createMediaElementSource(audio);
             audioSource.connect(gainNode);
-            gainNode.connect(eqFilter);
-            eqFilter.connect(analyser);
+            gainNode.connect(eqBands.sub);
+            eqBands.sub.connect(eqBands.bass);
+            eqBands.bass.connect(eqBands.mid);
+            eqBands.mid.connect(eqBands.treble);
+            eqBands.treble.connect(eqBands.air);
+            eqBands.air.connect(analyser);
             analyser.connect(audioCtx.destination);
 
-            // Set initial volume on GainNode (guarantees volume control works on iOS Safari)
+            // Set initial volume on GainNode
             const currentVol = parseInt(volumeCtrl?.value || '45', 10);
             gainNode.gain.setValueAtTime(currentVol / 100, audioCtx.currentTime);
 
@@ -192,6 +225,8 @@
         if (visualizerFrameId) cancelAnimationFrame(visualizerFrameId);
         const bars = document.querySelectorAll('.live-visualizer-bars .viz-bar');
         const vinyl = document.getElementById('vinyl-disc');
+        const charAvatar = document.getElementById('char-avatar');
+        const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
 
         function loop() {
             if (audio.paused || document.hidden || !analyser) {
@@ -204,6 +239,13 @@
                 if (vinyl) {
                     vinyl.style.boxShadow = '';
                     vinyl.style.transform = '';
+                }
+                if (avatarBackdrop) {
+                    avatarBackdrop.style.boxShadow = '';
+                    avatarBackdrop.style.transform = '';
+                }
+                if (charAvatar) {
+                    charAvatar.style.transform = '';
                 }
                 return;
             }
@@ -220,13 +262,25 @@
                 }
             }
 
+            const bass = (visualizerData[1] + visualizerData[2] + visualizerData[3]) / (3 * 255);
+            const mid = (visualizerData[4] + visualizerData[5] + visualizerData[6]) / (3 * 255);
+
+            // Reactive Vinyl Disc Halo
             if (vinyl) {
-                const bass = (visualizerData[1] + visualizerData[2] + visualizerData[3]) / (3 * 255);
-                const mid = (visualizerData[4] + visualizerData[5] + visualizerData[6]) / (3 * 255);
                 const glowSpread = Math.floor(bass * 26);
                 const scaleAmp = 1 + (bass * 0.035);
                 vinyl.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${10 + glowSpread}px var(--color-accent-glow), 0 0 ${Math.floor(mid * 14)}px rgba(255, 255, 255, 0.12)`;
                 vinyl.style.transform = `scale(${scaleAmp.toFixed(3)})`;
+            }
+
+            // Ambient Waifu Reactive Aura (Glow & Subtle Pulse on Avatar)
+            if (avatarBackdrop) {
+                const auraGlow = Math.floor(bass * 32);
+                avatarBackdrop.style.boxShadow = `0 12px 28px -4px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 0 ${20 + auraGlow}px var(--color-accent-glow)`;
+                avatarBackdrop.style.transform = `translate(-50%, -50%) scale(${(1 + bass * 0.04).toFixed(3)})`;
+            }
+            if (charAvatar) {
+                charAvatar.style.transform = `translateX(-50%) scale(${(1 + bass * 0.022).toFixed(3)})`;
             }
         }
         visualizerFrameId = requestAnimationFrame(loop);
@@ -235,39 +289,39 @@
     function applyEqPreset(presetId) {
         currentAudioFx = presetId;
         safeSet('mahikari_audio_fx', presetId);
-        if (!eqFilter || !audioCtx) {
-            renderFxMenu();
-            return;
+
+        const preset = (CONFIG.audioFx && CONFIG.audioFx.presets) ? CONFIG.audioFx.presets.find(p => p.id === presetId) : null;
+        eqBandGains = preset ? [...preset.gains] : [0, 0, 0, 0, 0];
+
+        if (eqBands && audioCtx) {
+            const now = audioCtx.currentTime;
+            const filters = [eqBands.sub, eqBands.bass, eqBands.mid, eqBands.treble, eqBands.air];
+            filters.forEach((filter, idx) => {
+                if (filter) {
+                    filter.gain.cancelScheduledValues(now);
+                    filter.gain.setValueAtTime(filter.gain.value, now);
+                    filter.gain.linearRampToValueAtTime(eqBandGains[idx] || 0, now + 0.12);
+                }
+            });
         }
+        renderFxMenu();
+    }
 
-        const now = audioCtx.currentTime;
+    function setCustomEqBand(bandIdx, gainValue) {
+        if (bandIdx < 0 || bandIdx > 4) return;
+        eqBandGains[bandIdx] = Math.max(-12, Math.min(12, parseFloat(gainValue) || 0));
+        currentAudioFx = 'custom';
+        safeSet('mahikari_audio_fx', 'custom');
 
-        // Reset baseline parameters to avoid phase skew between presets
-        eqFilter.gain.cancelScheduledValues(now);
-        eqFilter.frequency.cancelScheduledValues(now);
-        eqFilter.Q.cancelScheduledValues(now);
-
-        if (presetId === 'bass') {
-            eqFilter.type = 'lowshelf';
-            eqFilter.frequency.setValueAtTime(180, now);
-            eqFilter.gain.setValueAtTime(6.0, now);
-            eqFilter.Q.setValueAtTime(1.0, now);
-        } else if (presetId === 'lofi') {
-            eqFilter.type = 'bandpass';
-            eqFilter.frequency.setValueAtTime(1500, now);
-            eqFilter.Q.setValueAtTime(0.85, now);
-            eqFilter.gain.setValueAtTime(0, now);
-        } else if (presetId === 'vocal') {
-            eqFilter.type = 'peaking';
-            eqFilter.frequency.setValueAtTime(2600, now);
-            eqFilter.Q.setValueAtTime(1.0, now);
-            eqFilter.gain.setValueAtTime(5.0, now);
-        } else {
-            // 'hifi' Studio Reference: clean flat bypass
-            eqFilter.type = 'peaking';
-            eqFilter.frequency.setValueAtTime(1000, now);
-            eqFilter.gain.setValueAtTime(0, now);
-            eqFilter.Q.setValueAtTime(1.0, now);
+        if (eqBands && audioCtx) {
+            const now = audioCtx.currentTime;
+            const filters = [eqBands.sub, eqBands.bass, eqBands.mid, eqBands.treble, eqBands.air];
+            const filter = filters[bandIdx];
+            if (filter) {
+                filter.gain.cancelScheduledValues(now);
+                filter.gain.setValueAtTime(filter.gain.value, now);
+                filter.gain.linearRampToValueAtTime(eqBandGains[bandIdx], now + 0.08);
+            }
         }
         renderFxMenu();
     }
@@ -339,6 +393,11 @@
 
         // Clean reload to free previous decode buffer
         audio.pause();
+        if (track.file.startsWith('http://') || track.file.startsWith('https://')) {
+            audio.crossOrigin = 'anonymous';
+        } else {
+            audio.removeAttribute('crossorigin');
+        }
         audio.src = encodeURI(track.file);
         audio.load();
 
@@ -385,9 +444,35 @@
         }
     }
 
+    // Crossfade Playback Transition Engine
+    function changeTrack(newIndex, autoPlay = true) {
+        if (isCrossfadeActive && audioCtx && gainNode && !audio.paused && audio.currentTime > 0) {
+            const now = audioCtx.currentTime;
+            const targetVol = isMuted ? 0 : (parseInt(volumeCtrl?.value || '45', 10) / 100);
+
+            // Smoothly ramp down volume over 260ms
+            gainNode.gain.cancelScheduledValues(now);
+            gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.26);
+
+            setTimeout(() => {
+                loadTrack(newIndex, autoPlay);
+                if (audioCtx && gainNode) {
+                    const afterNow = audioCtx.currentTime;
+                    gainNode.gain.cancelScheduledValues(afterNow);
+                    gainNode.gain.setValueAtTime(0.01, afterNow);
+                    gainNode.gain.linearRampToValueAtTime(targetVol, afterNow + 0.32);
+                }
+            }, 280);
+        } else {
+            loadTrack(newIndex, autoPlay);
+        }
+    }
+
     window.getCurrentTrackIndex = () => currentTrackIndex;
     window.getCurrentTrack = () => fullPlaylist[currentTrackIndex];
     window.getCurrentPlayingTrack = () => fullPlaylist[currentTrackIndex];
+    window.changeTrack = changeTrack;
 
     function syncZenPlayer() {
         const track = fullPlaylist[currentTrackIndex];
@@ -472,7 +557,7 @@
         if (list.length === 0) return;
         const track = list[index];
         const globalIndex = fullPlaylist.indexOf(track);
-        loadTrack(globalIndex >= 0 ? globalIndex : 0, autoPlay);
+        changeTrack(globalIndex >= 0 ? globalIndex : 0, autoPlay);
     }
 
     function nextTrack() {
@@ -676,11 +761,48 @@
 
     audio.addEventListener('error', () => {
         const code = audio.error ? audio.error.code : 0;
+        const track = fullPlaylist[currentTrackIndex];
+        console.warn(`[Audio Error] Code ${code} on track "${track ? track.name : ''}"`);
+
         if (audioAlert) {
             audioAlert.classList.remove('hidden');
-            audioAlert.textContent = 'Audio file currently unavailable (Code ' + code + ')';
+            audioAlert.innerHTML = `
+                <div class="audio-alert-inner">
+                    <span class="audio-alert-msg"><i class="fas fa-triangle-exclamation"></i> Không thể phát giai điệu này (Mã lỗi ${code})</span>
+                    <div class="audio-alert-actions">
+                        <button class="audio-alert-btn retry-btn" type="button" title="Thử kết nối lại"><i class="fas fa-rotate-right"></i> Thử lại</button>
+                        <button class="audio-alert-btn skip-btn" type="button" title="Chuyển ngay sang bài tiếp"><i class="fas fa-forward-step"></i> Bài tiếp</button>
+                    </div>
+                </div>
+            `;
+            audioAlert.querySelector('.retry-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                audioAlert.classList.add('hidden');
+                loadTrack(currentTrackIndex, true);
+            });
+            audioAlert.querySelector('.skip-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                audioAlert.classList.add('hidden');
+                nextTrack();
+            });
         }
+
+        // Tự động chuyển bài sau 3.5 giây để tránh gián đoạn nghe nhạc
+        if (autoAdvanceTimer) clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = setTimeout(() => {
+            if (audioAlert) audioAlert.classList.add('hidden');
+            nextTrack();
+        }, 3500);
+
         pauseAudio();
+    });
+
+    audio.addEventListener('canplay', () => {
+        if (audioAlert) audioAlert.classList.add('hidden');
+        if (autoAdvanceTimer) {
+            clearTimeout(autoAdvanceTimer);
+            autoAdvanceTimer = null;
+        }
     });
 
     if (seekContainer) {
@@ -864,14 +986,32 @@
         });
     }
 
-    // Audio FX Equalizer Menu
+    // Audio FX Equalizer Menu & Crossfade Controller
+    const EQ_BAND_NAMES = ['60Hz', '250Hz', '1kHz', '4kHz', '12kHz'];
+
     function renderFxMenu() {
         if (!audioFxMenu) return;
         audioFxMenu.innerHTML = `
             <div class="menu-header">
-                <span>STUDIO EQUALIZER</span>
+                <span><i class="fas fa-sliders"></i> STUDIO 5-BAND EQUALIZER</span>
             </div>
-            <div class="menu-items">
+
+            <!-- 5-Band Interactive Sliders -->
+            <div class="eq-bands-wrapper" title="Kéo thanh trượt để tinh chỉnh dải tần tùy thích">
+                ${EQ_BAND_NAMES.map((name, idx) => `
+                    <div class="eq-band-col">
+                        <span class="eq-band-val" id="eq-val-${idx}">${eqBandGains[idx] > 0 ? '+' : ''}${eqBandGains[idx]}dB</span>
+                        <input type="range" class="eq-slider" min="-12" max="12" step="1" value="${eqBandGains[idx]}" data-band="${idx}" aria-label="Band ${name}">
+                        <span class="eq-band-label">${name}</span>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Presets Grid -->
+            <div class="menu-header" style="margin-top: 0.4rem; font-size: 0.65rem;">
+                <span>CÁC BỘ LỌC TỐI ƯU SẴN (PRESETS)</span>
+            </div>
+            <div class="menu-items" style="max-height: 180px; overflow-y: auto;">
                 ${CONFIG.audioFx.presets.map(p => `
                     <button class="fx-option ${p.id === currentAudioFx ? 'active' : ''}" data-fx="${p.id}" type="button">
                         <i class="fas ${p.icon}"></i>
@@ -883,18 +1023,55 @@
                     </button>
                 `).join('')}
             </div>
+
+            <!-- Crossfade Transition Toggle -->
+            <div class="crossfade-row">
+                <div class="crossfade-meta">
+                    <span class="crossfade-title"><i class="fas fa-wave-square"></i> Chuyển bài êm dịu (Crossfade)</span>
+                    <span class="crossfade-desc">Tự động hòa âm mượt mà khi đổi bài</span>
+                </div>
+                <button class="crossfade-toggle ${isCrossfadeActive ? 'active' : ''}" id="crossfade-toggle-btn" type="button" role="switch" aria-checked="${isCrossfadeActive}">
+                    <span class="toggle-knob"></span>
+                </button>
+            </div>
         `;
 
+        // Bind preset click
         audioFxMenu.querySelectorAll('.fx-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 applyEqPreset(btn.dataset.fx);
-                audioFxMenu.classList.remove('open');
                 if (typeof window.showToast === 'function') {
                     const preset = CONFIG.audioFx.presets.find(x => x.id === btn.dataset.fx);
                     window.showToast(`Equalizer: ${preset ? preset.name : btn.dataset.fx}`, 'fa-sliders');
                 }
             });
         });
+
+        // Bind 5-band slider input
+        audioFxMenu.querySelectorAll('.eq-slider').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                const bandIdx = parseInt(slider.dataset.band, 10);
+                const val = parseInt(e.target.value, 10);
+                setCustomEqBand(bandIdx, val);
+                const valEl = document.getElementById(`eq-val-${bandIdx}`);
+                if (valEl) valEl.textContent = `${val > 0 ? '+' : ''}${val}dB`;
+            });
+        });
+
+        // Bind crossfade toggle
+        const crossfadeBtn = audioFxMenu.querySelector('#crossfade-toggle-btn');
+        if (crossfadeBtn) {
+            crossfadeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isCrossfadeActive = !isCrossfadeActive;
+                safeSet('minkoi_crossfade', isCrossfadeActive.toString());
+                crossfadeBtn.classList.toggle('active', isCrossfadeActive);
+                crossfadeBtn.setAttribute('aria-checked', isCrossfadeActive);
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`Crossfade: ${isCrossfadeActive ? 'Đang bật (0.3s hòa âm)' : 'Đã tắt'}`, 'fa-wave-square');
+                }
+            });
+        }
     }
 
     if (audioFxBtn && audioFxMenu) {
