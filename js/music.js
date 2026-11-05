@@ -396,6 +396,14 @@
         trackCatEl.title = `Xem danh sách nhạc của ${persona.name}`;
     }
 
+    let hasRetriedCurrentTrack = false;
+
+    function safeEncodePath(path) {
+        if (!path) return '';
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        return path.split('/').map(segment => encodeURIComponent(decodeURIComponent(segment))).join('/');
+    }
+
     function preloadNextTrack() {
         const list = navigationList();
         if (list.length <= 1) return;
@@ -406,7 +414,7 @@
             const prefetcher = document.createElement('link');
             prefetcher.rel = 'prefetch';
             prefetcher.as = 'fetch';
-            prefetcher.href = encodeURI(nextSong.file);
+            prefetcher.href = safeEncodePath(nextSong.file);
             document.head.appendChild(prefetcher);
         }
     }
@@ -422,6 +430,7 @@
 
         safeSet('minkoi_player_track_idx', currentTrackIndex.toString());
         hasPreloadedNext = false;
+        hasRetriedCurrentTrack = false;
 
         // Clean reload to free previous decode buffer completely
         audio.pause();
@@ -438,8 +447,8 @@
             audio.removeAttribute('crossorigin');
         }
 
-        // Bỏ encodeURI: dùng đường dẫn trực tiếp vì tất cả file trong config.js đều là ASCII chuẩn
-        audio.src = track.file;
+        // Mã hóa từng segment an toàn thay vì encodeURI toàn bộ chuỗi
+        audio.src = safeEncodePath(track.file);
         audio.load();
 
         if (trackNameEl) trackNameEl.textContent = track.name;
@@ -803,8 +812,22 @@
 
     audio.addEventListener('error', () => {
         const code = audio.error ? audio.error.code : 0;
+        const message = audio.error ? audio.error.message : 'N/A';
         const track = fullPlaylist[currentTrackIndex];
-        console.error(`[Audio Error] Mã lỗi: ${code} (Code 4 = MEDIA_ERR_SRC_NOT_SUPPORTED) khi tải: "${track ? track.file : ''}"`);
+        const requestedUrl = audio.currentSrc || audio.src || (track ? track.file : '');
+        console.error(`[Audio Error] Mã lỗi: ${code} (Code 4 = MEDIA_ERR_SRC_NOT_SUPPORTED), Message: "${message}", URL đã request: "${requestedUrl}"`);
+
+        // Tự động thử lại 1 lần với URL gốc nếu chưa thử
+        if (!hasRetriedCurrentTrack && track) {
+            hasRetriedCurrentTrack = true;
+            console.warn(`[Audio Retry] Đang thử tải lại bài hát lần 1 với URL gốc: "${track.file}"`);
+            audio.src = track.file;
+            audio.load();
+            if (isPlaying) {
+                audio.play().catch(err => console.debug('[Audio Retry Play Deferred]', err));
+            }
+            return;
+        }
 
         if (audioAlert) {
             audioAlert.classList.remove('hidden');
@@ -813,13 +836,21 @@
                     <span class="audio-alert-msg"><i class="fas fa-triangle-exclamation"></i> Không thể phát bài hát này (Mã lỗi ${code}: File không tìm thấy hoặc trình duyệt không hỗ trợ)</span>
                     <div class="audio-alert-actions">
                         <button class="audio-alert-btn retry-btn" type="button" title="Thử kết nối lại"><i class="fas fa-rotate-right"></i> Thử lại</button>
+                        <button class="audio-alert-btn skip-btn" type="button" title="Bỏ qua và chuyển sang bài tiếp theo"><i class="fas fa-forward-step"></i> Bài khác</button>
                     </div>
                 </div>
             `;
             audioAlert.querySelector('.retry-btn')?.addEventListener('click', (e) => {
                 e.stopPropagation();
                 audioAlert.classList.add('hidden');
+                hasRetriedCurrentTrack = false;
                 loadTrack(currentTrackIndex, true);
+            });
+            audioAlert.querySelector('.skip-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                audioAlert.classList.add('hidden');
+                hasRetriedCurrentTrack = false;
+                nextTrack();
             });
         }
 
