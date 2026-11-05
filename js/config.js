@@ -220,35 +220,35 @@ const CONFIG = {
             { id: 4, persona: "alya", name: "CHE.R.RY", artist: "Alya Kujou", file: "music/CHE.R.RY.mp3", duration: "3:29" },
 
             // --- SHIINA MAHIRU (7) ---
-            { id: 5, persona: "mahiru", name: "Chiisana Koi no Uta", artist: "Iwami Manaka", file: "music/angel_01_Chiisana_Koi_no_Uta.mp3", duration: "5:00" },
-            { id: 6, persona: "mahiru", name: "Ai Uta", artist: "Iwami Manaka", file: "music/angel_02_Ai_Uta.mp3", duration: "3:35" },
-            { id: 7, persona: "mahiru", name: "Chiisana Koi no Uta (Inst.)", artist: "Iwami Manaka", file: "music/angel_03_Chiisana_Koi_no_Uta_Inst.mp3", duration: "4:24" },
-            { id: 8, persona: "mahiru", name: "Ai Uta (Inst.)", artist: "Iwami Manaka", file: "music/angel_04_Ai_Uta_Inst.mp3", duration: "3:33" },
+            { id: 5, persona: "mahiru", name: "小さな恋のうた (Chiisana Koi no Uta)", artist: "椎名真昼 (CV.石見舞菜香)", file: "music/angel_01_Chiisana_Koi_no_Uta.mp3", duration: "5:00" },
+            { id: 6, persona: "mahiru", name: "うれしい! たのしい! 大好き!", artist: "椎名真昼 (CV.石見舞菜香)", file: "music/angel_02_Ai_Uta.mp3", duration: "3:35" },
+            { id: 7, persona: "mahiru", name: "小さな恋のうた (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", file: "music/angel_03_Chiisana_Koi_no_Uta_Inst.mp3", duration: "4:24" },
+            { id: 8, persona: "mahiru", name: "うれしい! たのしい! 大好き! (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", file: "music/angel_04_Ai_Uta_Inst.mp3", duration: "3:33" },
             { id: 9, persona: "mahiru", name: "Kimi ni Todoke (Inst.)", artist: "Iwami Manaka", file: "music/angel_05_Kimi_ni_Todoke_Inst.mp3", duration: "5:10" },
             { id: 10, persona: "mahiru", name: "Valentine Kiss (Inst.)", artist: "Iwami Manaka", file: "music/angel_06_Valentine_Kiss_Inst.mp3", duration: "3:35" },
             { id: 11, persona: "mahiru", name: "Gift (Inst.)", artist: "Iwami Manaka", file: "music/angel_07_Gift_Inst.mp3", duration: "5:28" },
 
             // --- WAGURI KAORUKO (4) ---
-            { id: 12, persona: "kaoruko", name: "ハレの日に (Hare no Hi ni)", artist: "Waguri Kaoruko", file: "music/kaoruko_01_Hare_no_Hi_ni.mp3", duration: "4:37" },
-            { id: 13, persona: "kaoruko", name: "まなざしは光 (Manazashi wa Hikari)", artist: "Waguri Kaoruko", file: "music/kaoruko_02_Manazashi_wa_Hikari.mp3", duration: "3:27" },
-            { id: 14, persona: "kaoruko", name: "ひとひら (Hitohira)", artist: "Waguri Kaoruko", file: "music/kaoruko_03_Hitohira.mp3", duration: "4:42" },
-            { id: 15, persona: "kaoruko", name: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "Waguri Kaoruko", file: "music/kaoruko_04_Rintaro_to_Kaoruko.mp3", duration: "1:38" },
+            { id: 12, persona: "kaoruko", name: "ハレの日に (Hare no Hi ni)", artist: "汐れいら (Reira Ushio)", file: "music/kaoruko_01_Hare_no_Hi_ni.mp3", duration: "4:37" },
+            { id: 13, persona: "kaoruko", name: "まなざしは光 (Manazashi wa Hikari)", artist: "原田萌喜 (Kaoru Hana OST)", file: "music/kaoruko_02_Manazashi_wa_Hikari.mp3", duration: "3:27" },
+            { id: 14, persona: "kaoruko", name: "ひとひら (Hitohira)", artist: "原田萌喜 (Kaoru Hana OST)", file: "music/kaoruko_03_Hitohira.mp3", duration: "4:42" },
+            { id: 15, persona: "kaoruko", name: "偏見と葛藤 (Henken to Kattou)", artist: "原田萌喜 (Kaoru Hana OST)", file: "music/kaoruko_04_Rintaro_to_Kaoruko.mp3", duration: "1:37" },
 
             // --- SAKURA MIKU (2) ---
-            { id: 16, persona: "sakuramiku", name: "君のせいで愛してる (Kimi no Sei de Aishiteru)", artist: "Sakura Miku", file: "music/sakuramiku_01_Kimi_no_Sei_de_Aishiteru.mp3", duration: "3:51" },
-            { id: 17, persona: "sakuramiku", name: "リトルワールド (Little World)", artist: "Sakura Miku", file: "music/sakuramiku_02_Little_World.mp3", duration: "3:08" },
+            { id: 16, persona: "sakuramiku", name: "君のせいで愛してる (Kimi no Sei de Aishiteru)", artist: "CHiCO with HoneyWorks", file: "music/sakuramiku_01_Kimi_no_Sei_de_Aishiteru.mp3", duration: "3:51" },
+            { id: 17, persona: "sakuramiku", name: "リトルワールド (Little World)", artist: "PompadollS", file: "music/sakuramiku_02_Little_World.mp3", duration: "3:08" },
 
             // --- SHINOBU UZUKI (2) ---
-            { id: 18, persona: "shinobu", name: "月に向かって撃て (Tsuki ni Mukatte Ute)", artist: "Shinobu Uzuki", file: "music/shinobu_01_Tsuki_ni_Mukatte_Ute.mp3", duration: "3:15" },
-            { id: 19, persona: "shinobu", name: "声の軌跡 (Koe no Kiseki)", artist: "Shinobu Uzuki", file: "music/shinobu_02_Koe_no_Kiseki.mp3", duration: "3:19" },
+            { id: 18, persona: "shinobu", name: "月に向かって撃て (Tsuki ni Mukatte Ute)", artist: "星街すいせい (Hoshimachi Suisei)", file: "music/shinobu_01_Tsuki_ni_Mukatte_Ute.mp3", duration: "3:15" },
+            { id: 19, persona: "shinobu", name: "声の軌跡 (Koe no Kiseki)", artist: "Soala", file: "music/shinobu_02_Koe_no_Kiseki.mp3", duration: "3:19" },
 
             // --- KONOHANA HINAKO (2) ---
-            { id: 20, persona: "hinako", name: "最最最高級のお世話して (Saishuu Saikoukyuu no Osewa Shite)", artist: "Konohana Hinako", file: "music/hinako_01_Saikoukyuu_no_Osewa_Shite.mp3", duration: "3:14" },
-            { id: 21, persona: "hinako", name: "完璧じゃないわたし (Kanpeki ja Nai Watashi)", artist: "Konohana Hinako", file: "music/hinako_02_Kanpeki_ja_Nai_Watashi.mp3", duration: "3:36" },
+            { id: 20, persona: "hinako", name: "最最最高級のお世話して (Saishuu Saikoukyuu no Osewa Shite)", artist: "angela", file: "music/hinako_01_Saikoukyuu_no_Osewa_Shite.mp3", duration: "3:14" },
+            { id: 21, persona: "hinako", name: "完璧じゃないわたし (Kanpeki ja Nai Watashi)", artist: "前島亜美 (Ami Maeshima)", file: "music/hinako_02_Kanpeki_ja_Nai_Watashi.mp3", duration: "3:36" },
 
             // --- ASANAGI UMI (2) ---
-            { id: 22, persona: "umi", name: "Submarine Youth", artist: "Asanagi Umi", file: "music/Submarine_Youth.mp3", duration: "3:27" },
-            { id: 23, persona: "umi", name: "Zutto Ichibanni Shitene", artist: "Asanagi Umi", file: "music/Zutto_Ichibanni_Shitene.mp3", duration: "3:33" }
+            { id: 22, persona: "umi", name: "Submarine Youth (サブマリンユース)", artist: "reGretGirl", file: "music/Submarine_Youth.mp3", duration: "3:27" },
+            { id: 23, persona: "umi", name: "ずっと1番にしてね (Zutto Ichibanni Shitene)", artist: "コレサワ (Koresawa)", file: "music/Zutto_Ichibanni_Shitene.mp3", duration: "3:33" }
         ]
     },
 

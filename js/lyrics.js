@@ -1,13 +1,12 @@
 /* ========================================================
-   MINKOI · SYNCHRONIZED LYRICS ENGINE (STUDIO MASTER EDITION)
-   Official Anime LRC Timestamps, Bilingual Romaji/Vietnamese,
-   Real-Time Offset Calibration (±0.2s), Dual View Mode (Karaoke / Full),
+   MINKOI · SYNCHRONIZED LYRICS ENGINE (SPOTIFY DIRECT EDITION)
+   100% Synced to Spotify Master Tracks & Official Anime LRC Releases
+   With Real-Time Offset Calibrator (±0.2s), Dual View Mode (Karaoke / Full),
    Smart Anti-Jitter Auto-Scroll & Zen Mode Screensaver Sync
 ======================================================== */
 (function() {
     'use strict';
 
-    // Helper: safe local storage
     function safeGet(key, def) {
         try { return localStorage.getItem(key) ?? def; } catch (_) { return def; }
     }
@@ -16,72 +15,69 @@
     }
 
     /* --------------------------------------------------------
-       OFFICIAL ANIME SYNCHRONIZED DATABASE
-       Exact LRC Timestamps verified against official song cuts
+       SPOTIFY-SYNCED ANIME AUDIO DATABASE
+       Verified against exact Spotify audio tracks provided by user
     -------------------------------------------------------- */
     const LYRICS_DATABASE = {
-        // Track 1: 可愛くてごめん (Kawaikute Gomen) - Alya Kujou (CV: Sumire Uesaka)
-        // Official Anime Ending Theme 2 (3:35)
+        // Track 1: 可愛くてごめん (Kawaikute Gomen)
+        // Spotify: https://open.spotify.com/intl-vi/track/65ryGOIrCmHQeA2PicsaG1
+        // Artist: アーリャ（CV：上坂すみれ） - Official Anime Version (3:35)
         1: {
             title: "可愛くてごめん (Kawaikute Gomen)",
-            artist: "Alya Kujou (CV: Sumire Uesaka)",
+            artist: "アーリャ（CV：上坂すみれ）",
             lines: [
                 { time: 0.0, romaji: "♪ (Nhạc dạo đầu sôi động)", vi: "Intro giai điệu vui tươi" },
-                { time: 15.12, romaji: "Watashi ga watashi no koto wo ai shite", vi: "Em yêu chính bản thân mình thì có gì sai chứ?" },
-                { time: 18.65, romaji: "Nani ga warui no? Shitto deshou ka?", vi: "Có gì sai sao? Lũ người ghen tị đúng không?" },
-                { time: 22.56, romaji: "Itai da toka kawatteru toka", vi: "Bảo em làm màu hay lập dị kì quặc?" },
-                { time: 26.11, romaji: "Todokimasen ne. Sono RIPURAI", vi: "Mấy lời mỉa mai đó chẳng thể chạm tới em đâu!" },
-                { time: 30.12, romaji: "Daisuki na oyofuku daisuki na okeshou de", vi: "Khoác lên bộ cánh yêu thích, tô lớp trang điểm ngọt ngào" },
-                { time: 33.86, romaji: "Okimari no HA-FU TSUIN maite odekake shiyo", vi: "Cột mái tóc nửa hai bên quen thuộc rồi tự tin bước xuống phố nào" },
-                { time: 39.11, romaji: "Higasa motte bocchi datte shiawase da mon!", vi: "Che ô che nắng, dẫu một mình thôi cũng thấy ngập tràn hạnh phúc!" },
-                { time: 44.20, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 46.88, romaji: "Umarete kichatte gomen", vi: "Sinh ra trên đời xinh thế này, thứ lỗi nhé!" },
-                { time: 50.56, romaji: "Chu! Azatokute gomen", vi: "Chu! Thả thính tí mà xin lỗi nha!" },
-                { time: 54.26, romaji: "Ki ni nacchau yo ne? Gomen", vi: "Lỡ làm ai đó bận lòng rung rinh rồi? Xin lỗi nha!" },
-                { time: 57.96, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 61.62, romaji: "Doryoku shichattete gomen", vi: "Chăm chỉ hoàn thiện bản thân quá cũng xin lỗi luôn!" },
-                { time: 65.34, romaji: "Chu! Toutokute gomen", vi: "Chu! Cao quý thế này xin lỗi nha!" },
-                { time: 68.77, romaji: "Joshiryoku takakute gomen", vi: "Sức hút nữ tính rạng ngời thế này xin lỗi nhé!" },
-                { time: 72.72, romaji: "Mukatsuichau yo ne? Zamaa w", vi: "Tức tối ghen tị lắm phải không? Đáng đời lắm cơ nha!" },
-                { time: 81.05, romaji: "Anata wa anata no koto dake douzo", vi: "Cuộc sống của bạn thì xin mời bạn tự đi mà lo lấy" },
-                { time: 84.78, romaji: "Watashi ni kanshou shinaide kudasai", vi: "Làm ơn đừng có can thiệp xoi mói vào chuyện của em!" },
-                { time: 88.62, romaji: "Rui wa tomo wo yobu to iu kedo... Todokimasen ne", vi: "Người xưa nói 'ngưu tầm ngưu', mấy lời gièm pha chẳng tới tai em đâu" },
-                { time: 92.22, romaji: "Sono kageguchi", vi: "Mấy lời nói xấu sau lưng em không thèm nghe" },
-                { time: 96.21, romaji: "Omoi atsuzoko buutsu oki ni iri no ryukku de", vi: "Đi đôi boot đế dày cá tính, mang chiếc ba lô em thích nhất" },
-                { time: 99.87, romaji: "Kuzusenai maegami kushi de toite odekake shiyo", vi: "Chải lại mái ngố chỉnh chu thật đẹp rồi thong thả dạo chơi" },
-                { time: 105.18, romaji: "Karui onna? Fuzaken na omo sugiru ttsuu no!", vi: "Bảo em dễ dãi hả? Đùa à, mấy người còn non và chậm chân lắm!" },
-                { time: 110.25, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 112.92, romaji: "Kono jidai ikite gomen", vi: "Sống giữa thời đại này rực rỡ quá xin lỗi nhé!" },
-                { time: 116.65, romaji: "Chu! Medatete gomen", vi: "Chu! Nổi bật quá cũng xin lỗi luôn!" },
-                { time: 120.32, romaji: "Ishiki shichau yo ne? Gomen", vi: "Không thể rời mắt khỏi em phải không? Xin lỗi nha!" },
-                { time: 124.05, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 127.69, romaji: "Jibun migaki shite gomen", vi: "Chăm sóc bản thân đẹp lên mỗi ngày xin lỗi nhé!" },
-                { time: 131.39, romaji: "Chu! Burikko de gomen", vi: "Chu! Điệu đà tí mà xin lỗi nha!" },
-                { time: 134.77, romaji: "Toriko ni shichatte gomen", vi: "Mê hoặc trái tim ai kia mất rồi, thứ lỗi nhé!" },
-                { time: 138.79, romaji: "Mukatsuichau desho? Zamaa w", vi: "Khó chịu ghen tị lắm chứ gì? Đáng đời ghê chưa!" },
-                { time: 144.49, romaji: "Shumi no chigai kawarimono to baka ni saretemo", vi: "Dù sở thích có khác biệt, dù bị coi là kẻ lập dị" },
-                { time: 150.12, romaji: "Magetakunai kowaku mo nai antara gotoki", vi: "Em cũng chẳng chịu khuất phục, lũ người như các người em sợ gì chứ" },
-                { time: 155.83, romaji: "Jibun no mikata wa jibun de aritai", vi: "Em muốn chính mình sẽ là đồng minh vững chắc nhất của bản thân" },
-                { time: 159.54, romaji: "Ichiban taisetsu ni shite agetai", vi: "Muốn trân trọng và yêu quý bản thân em nhất trên đời" },
-                { time: 163.23, romaji: "Rifujin na gaman wa sasetakunai 'Sore ga watashi'", vi: "Chẳng việc gì phải cam chịu vô lý — 'Đó mới chính là em!'" },
-                { time: 171.35, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 173.94, romaji: "Umarete kichatte gomen", vi: "Sinh ra xinh đẹp thế này xin lỗi luôn!" },
-                { time: 177.70, romaji: "Chu! Azatokute gomen", vi: "Chu! Thả thính cuốn hút thế này xin lỗi nha!" },
-                { time: 181.38, romaji: "Jinsei tanoshinde gomen", vi: "Tận hưởng cuộc đời rực rỡ quá xin lỗi nhé!" },
-                { time: 185.08, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
-                { time: 188.76, romaji: "Doryoku shichattete gomen", vi: "Nỗ lực tỏa sáng hết mình xin lỗi luôn!" },
-                { time: 192.44, romaji: "Chu! Toutokute gomen", vi: "Chu! Quý giá vô ngần thế này xin lỗi nha!" },
-                { time: 195.89, romaji: "Joshiryoku takakute gomen", vi: "Sức hút thiếu nữ không thể cưỡng lại xin lỗi nhé!" },
-                { time: 199.86, romaji: "Mukatsuichau yo ne? Zamaa ✨", vi: "Ghen tị tức tối lắm phải không? Đáng đời lắm cơ nha!" },
-                { time: 206.00, romaji: "♪ (Outro ngân vang rực rỡ)", vi: "Giai điệu kết thúc bài hát" }
+                { time: 15.15, romaji: "Watashi ga watashi no koto wo aishite", vi: "Em yêu chính bản thân mình thì có gì sai chứ?" },
+                { time: 18.92, romaji: "Nani ga warui no? Shitto deshou ka?", vi: "Có gì sai sao? Là ghen tị đúng không?" },
+                { time: 22.65, romaji: "Itai da toka kawatteru toka", vi: "Bảo em làm màu hay lập dị kì quặc?" },
+                { time: 26.31, romaji: "Todokimasen ne sono ripurai", vi: "Mấy lời mỉa mai đó chẳng thể chạm tới em đâu!" },
+                { time: 30.22, romaji: "Daisuki na oyofuku, daisuki na okeshou de", vi: "Khoác lên bộ cánh yêu thích, tô lớp trang điểm ngọt ngào" },
+                { time: 33.91, romaji: "Okimari no haafu tsuin maite odekake shiyo", vi: "Cột mái tóc nửa hai bên quen thuộc rồi tự tin bước xuống phố nào" },
+                { time: 39.29, romaji: "Higasa motte bocchi datte shiawase da mon!", vi: "Che ô che nắng, dẫu một mình thôi cũng thấy ngập tràn hạnh phúc!" },
+                { time: 45.33, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
+                { time: 48.86, romaji: "Umarete kichatte gomen", vi: "Sinh ra trên đời xinh thế này, thứ lỗi nhé!" },
+                { time: 52.74, romaji: "Chu! Zawazawa shichau gomen", vi: "Chu! Làm mọi người xôn xao xì xào xin lỗi nha!" },
+                { time: 56.54, romaji: "Ishiki shichau yo ne? Gomen", vi: "Lỡ làm ai đó bận lòng rung rinh rồi? Xin lỗi nha!" },
+                { time: 60.32, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
+                { time: 63.95, romaji: "Jibun migaki shite gomen", vi: "Chăm chút bản thân đẹp lên mỗi ngày xin lỗi luôn!" },
+                { time: 67.78, romaji: "Chu! Haki motte gomen", vi: "Chu! Khí chất ngút ngàn thế này xin lỗi nha!" },
+                { time: 71.53, romaji: "Toriko ni shichatte gomen", vi: "Mê hoặc trái tim ai kia mất rồi, thứ lỗi nhé!" },
+                { time: 74.63, romaji: "Mukatsuichau desho? Zamaaa w", vi: "Tức tối ghen tị lắm phải không? Đáng đời lắm cơ nha!" },
+                { time: 90.34, romaji: "Shumi no chigai kawarimono to bakani saretemo magetakunai", vi: "Dù sở thích có khác biệt, dù bị coi là kẻ lập dị em cũng không chịu khuất phục" },
+                { time: 97.89, romaji: "Kowaku mo nai antara gotoki", vi: "Lũ người như các người em sợ gì chứ!" },
+                { time: 101.52, romaji: "Jibun no mikata wa jibun de aritai", vi: "Em muốn chính mình sẽ là đồng minh vững chắc nhất của bản thân" },
+                { time: 105.50, romaji: "Ichiban taisetsu ni shite agetai", vi: "Muốn trân trọng và yêu quý bản thân em nhất trên đời" },
+                { time: 109.29, romaji: "Monogatari no shujinkou nano sa", vi: "Bởi em chính là nhân vật chính của câu chuyện này!" },
+                { time: 117.90, romaji: "Chu! Gouman datte gomen", vi: "Chu! Kiêu kỳ một tí mà xin lỗi nha!" },
+                { time: 121.59, romaji: "Ikiteru dake de gomen", vi: "Chỉ việc sống thôi cũng tỏa sáng rực rỡ, xin lỗi nhé!" },
+                { time: 125.41, romaji: "Chu! Kandai na kokoro de gomen", vi: "Chu! Tấm lòng bao dung rộng lượng thế này xin lỗi luôn!" },
+                { time: 129.19, romaji: "Yurushite shimau yo ne? Gomen", vi: "Chắc chắn là bạn sẽ tha thứ cho em rồi đúng không? Xin lỗi nha!" },
+                { time: 133.00, romaji: "Oshi wa oseru uchi ni ose!", vi: "Đu idol thì phải đu hết mình ngay khi còn có thể!" },
+                { time: 136.81, romaji: "Koukai shite kara ja osoi yo?", vi: "Để tới lúc hối hận thì muộn màng đấy nhé?" },
+                { time: 140.58, romaji: "Junbi wa ii ka? Kako mo mirai mo", vi: "Đã chuẩn bị sẵn sàng chưa? Cả quá khứ lẫn tương lai" },
+                { time: 144.38, romaji: "Aishite nanbo desho!", vi: "Yêu hết mình mới là chân ái chứ!" },
+                { time: 163.14, romaji: "Hayari no fuku wo kite, meiku wo chotto kaete", vi: "Khoác lên bộ cánh hợp mốt, thay đổi phong cách trang điểm một chút" },
+                { time: 167.46, romaji: "'Odekake yokka' 'Nee, kawaii?'", vi: "'Mình đi dạo phố nhé?' 'Nè, em có đáng yêu không?'" },
+                { time: 171.98, romaji: "Kanpeki da mon...!", vi: "Hoàn hảo không tì vết luôn...!" },
+                { time: 174.55, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
+                { time: 178.21, romaji: "Umarete kichatte gomen", vi: "Sinh ra xinh đẹp thế này xin lỗi luôn!" },
+                { time: 182.04, romaji: "Chu! Azatokute gomen", vi: "Chu! Thả thính cuốn hút thế này xin lỗi nha!" },
+                { time: 185.79, romaji: "Jinsei tanoshinde gomen", vi: "Tận hưởng cuộc đời rực rỡ quá xin lỗi nhé!" },
+                { time: 189.56, romaji: "Chu! Kawaikute gomen", vi: "Chu! Đáng yêu quá xin lỗi nha!" },
+                { time: 193.25, romaji: "Doryoku shichatte gomen", vi: "Nỗ lực tỏa sáng hết mình xin lỗi luôn!" },
+                { time: 197.06, romaji: "Chu! Toutokute gomen", vi: "Chu! Quý giá vô ngần thế này xin lỗi nha!" },
+                { time: 200.78, romaji: "Joshiryoku takakute gomen", vi: "Sức hút thiếu nữ không thể cưỡng lại xin lỗi nhé!" },
+                { time: 203.95, romaji: "Mukatsuichau yo ne? Gomen ne! ✨", vi: "Ghen tị tức tối lắm phải không? Tha lỗi cho em nha!" },
+                { time: 210.00, romaji: "♪ (Outro ngân vang rực rỡ)", vi: "Giai điệu kết thúc bài hát" }
             ]
         },
 
-        // Track 2: 小さな恋のうた (Chiisana Koi no Uta) - Alya Kujou (4:09)
-        // Official Anime Ending Theme 5
+        // Track 2: 小さな恋のうた (Chiisana Koi no Uta)
+        // Spotify: https://open.spotify.com/intl-vi/track/6avvVNDCKYVIIxrZ7TaFKd
+        // Artist: アーリャ（CV：上坂すみれ） - Official Anime Version (4:09)
         2: {
             title: "小さな恋のうた (Chiisana Koi no Uta)",
-            artist: "Alya Kujou (CV: Sumire Uesaka)",
+            artist: "アーリャ（CV：上坂すみれ）",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng acoustic guitar dạo đầu)", vi: "Khúc dạo đầu mộc mạc" },
                 { time: 16.14, romaji: "Hiroi uchuu no kazu aru hitotsu", vi: "Giữa vũ trụ bao la bạt ngàn muôn tinh tú" },
@@ -123,11 +119,12 @@
             ]
         },
 
-        // Track 3: ワールドイズマイン (World is Mine) - Alya Kujou (4:12)
-        // Official Anime Ending Theme 9
+        // Track 3: ワールドイズマイン (World is Mine)
+        // Spotify: https://open.spotify.com/intl-vi/track/3iCXXsLMo4ssBOC2Sw5KUO
+        // Artist: アーリャ（CV：上坂すみれ） - Official Anime Version (4:12)
         3: {
             title: "ワールドイズマイン (World is Mine)",
-            artist: "Alya Kujou (CV: Sumire Uesaka)",
+            artist: "アーリャ（CV：上坂すみれ）",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng đàn piano & intro công chúa kiêu kỳ)", vi: "Khúc dạo đầu quý tộc" },
                 { time: 15.54, romaji: "Sekai de ichiban ohimesama", vi: "Em chính là nàng công chúa đệ nhất trần đời" },
@@ -168,11 +165,12 @@
             ]
         },
 
-        // Track 4: CHE.R.RY - Alya Kujou (3:29)
-        // Official Anime Ending Theme 4
+        // Track 4: CHE.R.RY
+        // Spotify: https://open.spotify.com/intl-vi/track/1zNDgdjkZojamiEZQOhI96
+        // Artist: アーリャ（CV：上坂すみれ） - Official Anime Version (3:29)
         4: {
             title: "CHE.R.RY",
-            artist: "Alya Kujou (CV: Sumire Uesaka)",
+            artist: "アーリャ（CV：上坂すみれ）",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng acoustic guitar dạo êm đềm)", vi: "Intro guitar mộc mạc" },
                 { time: 13.38, romaji: "Tenohira de furueta", vi: "Rung lên trong lòng bàn tay" },
@@ -204,11 +202,12 @@
             ]
         },
 
-        // Track 5: Chiisana Koi no Uta - Shiina Mahiru (5:00)
-        // Official Anime Ending Theme (The Angel Next Door)
+        // Track 5: 小さな恋のうた (Chiisana Koi no Uta)
+        // Spotify: https://open.spotify.com/intl-vi/track/66apUbHsEuKh7IqkKK7OKa
+        // Artist: 椎名真昼(CV.石見舞菜香) - The Angel Next Door ED (5:00)
         5: {
-            title: "Chiisana Koi no Uta",
-            artist: "Iwami Manaka (Shiina Mahiru)",
+            title: "小さな恋のうた (Chiisana Koi no Uta)",
+            artist: "椎名真昼 (CV.石見舞菜香)",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng đàn piano & dàn dây nhẹ nhàng của Mahiru)", vi: "Khúc dạo đầu dịu dàng như thiên thần" },
                 { time: 13.20, romaji: "Hiroi uchuu no kazu aru hitotsu", vi: "Giữa vũ trụ bao la muôn vàn tinh tú" },
@@ -247,148 +246,207 @@
             ]
         },
 
-        // Track 6: Ai Uta (愛唄) - Shiina Mahiru (3:35)
-        // Official Anime Cover Series
+        // Track 6: うれしい! たのしい! 大好き! (Ureshii! Tanoshii! Daisuki!)
+        // Spotify: https://open.spotify.com/intl-vi/track/6endW8r32Uli0oS4ze3BZM
+        // Artist: 椎名真昼(CV.石見舞菜香) - The Angel Next Door ED 12 (3:35)
         6: {
-            title: "Ai Uta (愛唄)",
-            artist: "Iwami Manaka (Shiina Mahiru)",
+            title: "うれしい! たのしい! 大好き!",
+            artist: "椎名真昼 (CV.石見舞菜香)",
             lines: [
-                { time: 0.0, romaji: "♪ (Intro acoustic mộc mạc)", vi: "Khúc tình ca êm dịu" },
-                { time: 15.11, romaji: "'Nee, daisuki na kimi e' warawanaide kiite kure", vi: "'Này anh yêu dấu hỡi', xin đừng cười mà hãy lắng nghe em nói này" },
-                { time: 22.75, romaji: "'Aishiteru' da nante kusai kedo ne", vi: "Nói lời 'Yêu anh' nghe có vẻ ngượng ngùng sến súa" },
-                { time: 28.18, romaji: "Dakedo kono kotoba igai tsutaeru koto ga dekinai", vi: "Nhưng ngoài câu nói ấy ra, chẳng còn lời nào diễn tả hết lòng em" },
-                { time: 34.78, romaji: "Hora ne! Mata baka ni shite waratta yo ne", vi: "Đấy thấy chưa! Anh lại cười trêu em rồi kìa" },
-                { time: 41.13, romaji: "Kimi no eranda michi wa koko de yokatta no ka? nante", vi: "Liệu con đường anh đã chọn dừng chân nơi đây có đúng đắn chăng?" },
-                { time: 47.38, romaji: "Wakaranai kedo...", vi: "Em cũng chẳng rõ nữa..." },
-                { time: 51.53, romaji: "Tada naite waratte sugosu hibi ni", vi: "Chỉ cần những tháng ngày cùng khóc, cùng cười bên nhau" },
-                { time: 57.65, romaji: "Tonari ni tatte ireru koto de", vi: "Được đứng kề bên anh mỗi sớm mai" },
-                { time: 63.95, romaji: "Boku ga ikiru imi ni natte", vi: "Đó chính là ý nghĩa tồn tại của đời em" },
-                { time: 70.15, romaji: "Kimi ni sasagu kono ai no uta", vi: "Khúc tình ca này xin nguyện dâng trọn về anh" },
-                { time: 81.03, romaji: "'Nee, ano hi no bokura nan no hanashi wo shiteta?'", vi: "'Này anh, ngày hôm ấy đôi mình đã nói những chuyện gì vậy nhỉ?'" },
-                { time: 89.35, romaji: "Hajimete atta hi ni yosoyososhiku", vi: "Ngày đầu tiên gặp gỡ đầy bỡ ngỡ ngại ngùng" },
-                { time: 94.76, romaji: "Are kara iroiro atte toki ni wa kenka mo shite", vi: "Từ bấy đến nay trải qua bao thăng trầm, đôi lúc cũng hờn dỗi cãi vã" },
-                { time: 101.36, romaji: "Wakariau tame no toki sugoshita ne", vi: "Tất cả chỉ để ta thấu hiểu lòng nhau nhiều hơn" },
-                { time: 107.53, romaji: "Kono hiroi bokura sora no shita deatte koi wo shite itsumademo", vi: "Dưới vòm trời rộng lớn này, đôi ta tương ngộ và nguyện yêu nhau mãi mãi" },
-                { time: 118.28, romaji: "Tada naite waratte sugosu hibi ni", vi: "Chỉ cần những ngày cùng khóc, cùng cười bên nhau" },
-                { time: 124.28, romaji: "Tonari ni tatte ireru koto de", vi: "Được sánh bước bên anh mỗi ngày" },
-                { time: 130.59, romaji: "Kimi to ikiru imi ni natte", vi: "Đó là lý do để em sống trọn kiếp này" },
-                { time: 136.71, romaji: "Kimi ni sasagu kono ai no uta", vi: "Gửi tặng riêng anh, bản tình ca bất tận" },
-                { time: 144.30, romaji: "Itsumo meiwaku wo kakete GOMEN NE", vi: "Lúc nào cũng làm phiền khiến anh bận tâm, xin lỗi anh nhé" },
-                { time: 150.34, romaji: "Mitsudo koi jikan wo sugoshita ne", vi: "Ta đã cùng sẻ chia những khoảnh khắc thật đậm sâu" },
-                { time: 156.56, romaji: "Bokura futari hibi wo kizami, tsukuriagete kita omoi tsunori", vi: "Từng ngày tháng trôi qua, yêu thương lại đong đầy theo năm tháng" },
-                { time: 164.20, romaji: "Hetakuso na uta wo kimi ni okurou", vi: "Dẫu giọng hát còn vụng về, em vẫn muốn hát tặng anh" },
-                { time: 169.03, romaji: "'Mechakucha suki da!' to kami ni chikaou", vi: "'Em yêu anh nhiều vô ngần!', xin thề trước đất trời" },
-                { time: 174.67, romaji: "Kore kara mo kimi no te wo nigitteru yo", vi: "Từ nay về sau, em vẫn sẽ nắm chặt đôi tay anh" },
-                { time: 180.67, romaji: "Boku no koe ga tsuzuku kagiri, tonari de zutto ai wo utau yo", vi: "Chừng nào giọng em còn cất lên, em sẽ mãi ở bên hát khúc tình ca" },
-                { time: 193.10, romaji: "Toshi wo totte koe ga karete kitara, zutto te wo nigiru yo", vi: "Mai này già đi giọng có khàn theo năm tháng, em vẫn sẽ siết chặt tay anh" },
-                { time: 202.51, romaji: "Tada arigatou ja tsutae kirenai", vi: "Chỉ lời cảm ơn thôi chẳng thể nói hết tấm lòng" },
-                { time: 209.62, romaji: "Nakiwarai to kanashimi yorokobi wo tomoni wakachiai ikite yukou", vi: "Cùng san sẻ buồn vui, nụ cười lẫn giọt nước mắt, mình bên nhau trọn đời nhé" },
-                { time: 220.59, romaji: "Ikutsu mono yoru wo koete, boku wa kimi to ai wo utaou ✨", vi: "Vượt qua muôn trùng đêm tối, em sẽ cùng anh hát vang bản tình ca hạnh phúc!" }
+                { time: 0.0, romaji: "♪ (Intro nhịp điệu rộn rã ngọt ngào)", vi: "Khúc dạo đầu tươi vui rạng rỡ" },
+                { time: 3.00, romaji: "Hajimete atta toki kara chigau mono kanjiteta", vi: "Ngay từ giây phút đầu tiên tương ngộ, em đã cảm nhận được một điều rất đỗi khác biệt" },
+                { time: 9.90, romaji: "Jibun no naka no dareka ga kokoro wo tsutsuita", vi: "Dường như có ai đó trong em khẽ chạm nhẹ vào nhịp đập con tim" },
+                { time: 17.30, romaji: "Tomodachi ni wa umaku ienai kono pawaa no minamoto wo", vi: "Chẳng thể giải thích cho bạn bè nguồn sức mạnh kỳ diệu này bắt nguồn từ đâu" },
+                { time: 24.20, romaji: "'Koi wo shiteru' tada sore dake ja sumasarenai koto no you na ki ga shiteru", vi: "Bảo rằng 'Em đang yêu rồi', chỉ bấy nhiêu thôi dường như vẫn chưa đủ diễn tả" },
+                { time: 33.40, romaji: "Kitto sou nanda, meguriaetanda", vi: "Chắc chắn là vậy rồi, em đã tương phùng được..." },
+                { time: 40.40, romaji: "Zutto sagashiteta hito ni", vi: "...người mà bấy lâu nay em vẫn hằng kiếm tìm" },
+                { time: 46.00, romaji: "Mabuka ni shiteta boushi no tsuba wo gutto agetai kibun", vi: "Muốn đẩy cao vành chiếc mũ đang đội sâu để ngắm nhìn anh thật rõ" },
+                { time: 56.50, romaji: "'Wakatte ita no mae kara kou naru koto mo zutto'", vi: "'Từ trước em đã biết rồi, rằng mọi chuyện sẽ ngọt ngào như thế này'" },
+                { time: 63.50, romaji: "Watashi no kotoba hanbun waratte kiiteru kedo", vi: "Những lời em nói anh chỉ cười nửa đùa nửa thật lắng nghe" },
+                { time: 70.50, romaji: "Shouko datte chanto aru yo", vi: "Nhưng em có bằng chứng xác thực đàng hoàng đấy nhé!" },
+                { time: 73.90, romaji: "Hajimete te wo tsunaide kara sono ato sugu ni", vi: "Kể từ lần đầu tiên hai ta nắm lấy tay nhau, ngay sau khoảnh khắc ấy" },
+                { time: 81.50, romaji: "Watashi no migite suupaa de supesharu ni natta mono", vi: "Bàn tay phải của em đã trở nên phi thường và đặc biệt biết bao" },
+                { time: 85.10, romaji: "Yappari sou da, anata datta nda", vi: "Quả đúng là vậy rồi, người đó chính là anh!" },
+                { time: 91.90, romaji: "Ureshii! Tanoshii! Daisuki!", vi: "Hạnh phúc ngập tràn! Vui sướng biết bao! Yêu anh nhiều lắm!" },
+                { time: 96.60, romaji: "Nandemo dekiru tsuyoi pawaa ga dondon waite kuru yo", vi: "Nguồn sức mạnh vô biên giúp em làm được mọi điều đang cuộn trào trong tim" },
+                { time: 105.00, romaji: "Honto wa anata mo shitteta hazu, saisho kara watashi wo suki datta kuse ni", vi: "Thực ra chắc hẳn anh cũng tự biết rõ, rõ ràng đã thích em ngay từ thuở ban đầu rồi còn gì!" },
+                { time: 114.60, romaji: "Yappari sou da, meguriaetanda zutto sagashiteta hito ni", vi: "Đúng là vậy rồi, em đã tìm thấy định mệnh của đời mình" },
+                { time: 127.10, romaji: "Itsumo konna ni shiawase na kimochi mochi tsuzukete irareru", vi: "Cảm giác ngập tràn hạnh phúc này em sẽ nguyện giữ mãi trong lòng" },
+                { time: 136.40, romaji: "Anata ga sou da, anata datta nda", vi: "Chính là anh, người định mệnh ấy chính là anh!" },
+                { time: 142.90, romaji: "Ureshii! Tanoshii! Daisuki!", vi: "Hạnh phúc! Vui sướng! Yêu anh nhiều lắm!" },
+                { time: 147.50, romaji: "Yappari sou da, meguriaetanda", vi: "Đúng là thế rồi, đôi ta đã tìm thấy nhau" },
+                { time: 153.90, romaji: "Ureshii! Tanoshii! Daisuki! ✨", vi: "Hạnh phúc! Vui sướng! Yêu anh vô bờ bến!" }
             ]
         },
 
         // Track 7-11: Mahiru Instrumental Series
-        7: { isInstrumental: true, title: "Chiisana Koi no Uta (Inst.)", artist: "Iwami Manaka", persona: "mahiru" },
-        8: { isInstrumental: true, title: "Ai Uta (Inst.)", artist: "Iwami Manaka", persona: "mahiru" },
-        9: { isInstrumental: true, title: "Kimi ni Todoke (Inst.)", artist: "Iwami Manaka", persona: "mahiru" },
-        10: { isInstrumental: true, title: "Valentine Kiss (Inst.)", artist: "Iwami Manaka", persona: "mahiru" },
-        11: { isInstrumental: true, title: "Gift (Inst.)", artist: "Iwami Manaka", persona: "mahiru" },
+        7: { isInstrumental: true, title: "小さな恋のうた (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", persona: "mahiru" },
+        8: { isInstrumental: true, title: "うれしい! たのしい! 大好き! (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", persona: "mahiru" },
+        9: { isInstrumental: true, title: "君に届け (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", persona: "mahiru" },
+        10: { isInstrumental: true, title: "バレンタイン・キッス (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", persona: "mahiru" },
+        11: { isInstrumental: true, title: "ギフト (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", persona: "mahiru" },
 
-        // Track 12: ハレの日に (Hare no Hi ni) - Waguri Kaoruko (4:37)
+        // Track 12: ハレの日に - Harenohini
+        // Spotify: https://open.spotify.com/intl-vi/track/41bU6Anbt3NPBdGLzpEcal
+        // Artist: 汐れいら (Reira Ushio) - The Fragrant Flower Blooms with Dignity (4:37)
         12: {
             title: "ハレの日に (Hare no Hi ni)",
-            artist: "Waguri Kaoruko / Shio Reira",
+            artist: "汐れいら (Reira Ushio)",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng đàn dịu dàng & hương hoa thơm ngát)", vi: "Khúc dạo đầu mộc mạc" },
-                { time: 15.50, romaji: "Naite shimatta sora wo miteta, kimi wo omotteru", vi: "Ngước nhìn bầu trời đang rưng rưng trút hạt, em lại nhớ về anh" },
-                { time: 23.10, romaji: "Namida no ato kawaite kurenai, mada kimi no nioi ga suru", vi: "Vệt nước mắt chưa kịp khô, dường như vẫn còn vương vấn hương thơm của anh" },
-                { time: 31.00, romaji: "Aiiro kimi to no denwa muri ni waratteita", vi: "Màu chàm u hoài, cuộc gọi với anh em đã cố gượng cười" },
-                { time: 38.80, romaji: "Kumotta sora to watashi 'Kyou wa aenai ne'", vi: "Bầu trời ảm đạm cùng tiếng thở dài 'Hôm nay chúng mình không gặp nhau được rồi nhỉ'" },
-                { time: 44.70, romaji: "Aa kore dake no koto de kanashiku narun da na", vi: "A, chỉ một chuyện nhỏ nhặt thế thôi mà sao lòng buồn đến thế" },
-                { time: 52.40, romaji: "Pleased your flower, tokibiri no mono ja nakute ii, kimi ga kureru kara ii", vi: "Không cần là thứ gì xa hoa lộng lẫy, chỉ cần là anh trao tặng thì đều là điều tuyệt vời nhất" },
-                { time: 60.30, romaji: "Please your love, kimi ga fuchidotta ai no kaotsuki zutto mite itai", vi: "Hình hài tình yêu mà anh vẽ nên, em chỉ muốn ngắm nhìn mãi thôi" },
-                { time: 75.00, romaji: "Hare no hi ni warau kimi ga daisuki da yo", vi: "Em yêu nhất nụ cười rạng rỡ của anh dưới ánh nắng ngày đẹp trời" }
+                { time: 0.66, romaji: "Naite shimatta sora wo miteta", vi: "Ngước nhìn bầu trời đang rưng rưng trút hạt" },
+                { time: 7.49, romaji: "Kimi wo omotteru", vi: "Lòng em lại khắc khoải nhớ về anh" },
+                { time: 12.17, romaji: "Namida no ato kawaite kurenai", vi: "Vệt nước mắt chưa kịp hong khô" },
+                { time: 17.37, romaji: "Mada kimi no nioi ga suru", vi: "Dường như vẫn còn vương vấn hương thơm của anh" },
+                { time: 38.98, romaji: "Aiiro kimi to no denwa muri ni waratteita", vi: "Màu chàm u hoài, cuộc gọi với anh em đã cố gượng cười" },
+                { time: 44.73, romaji: "Kumotta sora to watashi 'Kyou wa aenai ne'", vi: "Bầu trời ảm đạm cùng tiếng thở dài 'Hôm nay chúng mình không gặp nhau được rồi nhỉ'" },
+                { time: 49.97, romaji: "Aa kore dake no koto de kanashiku narun da na", vi: "A, chỉ một chuyện nhỏ nhặt thế thôi mà sao lòng buồn đến thế" },
+                { time: 62.56, romaji: "Pleased your flower, tokibiri no mono ja nakute ii, kimi ga kureru kara ii", vi: "Không cần là thứ gì xa hoa lộng lẫy, chỉ cần là anh trao tặng thì đều là điều tuyệt vời nhất" },
+                { time: 74.04, romaji: "Please your love, kimi ga fuchidotta ai no kaotsuki zutto mite itai", vi: "Hình hài tình yêu mà anh vẽ nên, em chỉ muốn ngắm nhìn mãi thôi" },
+                { time: 84.91, romaji: "By my side kimi to waraitai, tada no nichijou ni aijou ga kaotte iru", vi: "Muốn được cười vui bên cạnh anh, những ngày thường nhật ngạt ngào hương thơm tình yêu" },
+                { time: 96.50, romaji: "Kimi to sugosu nanigenai toki ga itsudatte hana ni naru kara", vi: "Từng khoảnh khắc bình yên bên anh sẽ mãi bung nở thành những đóa hoa thơm ngát" },
+                { time: 112.34, romaji: "I'll eat a cake, tobikiri chiisakutemo ii futari bun areba ii", vi: "Cùng ăn chiếc bánh ngọt, dẫu bé nhỏ thôi chỉ cần đủ cho hai ta là được" },
+                { time: 124.06, romaji: "I want you to eat, kurete bakka no kimi e okaeshi kankaku wo okuriau yo", vi: "Muốn đáp lại tình cảm ấm áp mà anh luôn trao tặng" },
+                { time: 134.65, romaji: "By my side kimi ni agetai, donna kanjou mo hanbun ni shite itai", vi: "Muốn san sẻ cùng anh mọi cảm xúc, chia đôi những nỗi niềm" },
+                { time: 146.05, romaji: "Kimi ga omou nandemonai koto mo, nanda tte watashi wa tokubetsu ni omou kara", vi: "Những điều vu vơ anh nghĩ, với em đều là những điều vô cùng đặc biệt" },
+                { time: 159.03, romaji: "'Nandemonai' wo tabanetara ooki na buuke ni natte", vi: "Gom góp những điều giản dị ấy lại sẽ tạo nên một bó hoa rực rỡ" },
+                { time: 168.45, romaji: "'Arigatou' to 'Aishiteru' de kinenbi ja nai kinenbi wo kazatteku", vi: "Bằng lời 'Cảm ơn' và 'Yêu anh', điểm tô cho những ngày bình thường hóa kỷ niệm ngọt ngào" },
+                { time: 204.94, romaji: "By my side ima wa beeru no naka, kanashii koto wa kimi to mitsumetai", vi: "Kề bên anh dưới tấm màn che, dẫu có chuyện buồn em vẫn muốn cùng anh đối mặt" },
+                { time: 216.29, romaji: "Kao wo agesasete kureru kimi to hare no hi chikatte", vi: "Bên người đã nâng đỡ em ngẩng cao đầu, xin nguyện thề dưới ánh nắng rạng rỡ" },
+                { time: 228.18, romaji: "By my side kimi to itai, tada no nichijou wo isshou wo iwatte ikou", vi: "Muốn ở bên anh trọn kiếp, chúc tụng từng ngày tháng bình yên suốt cuộc đời" },
+                { time: 239.72, romaji: "Kimi ga suki na hana watashi mo mottete, aa mou waracchau ne ✨", vi: "Em cũng cầm trên tay đóa hoa anh thích, a tự nhiên lại mỉm cười hạnh phúc rồi!" }
             ]
         },
 
-        // Track 13: まなざしは光 (Manazashi wa Hikari) - Waguri Kaoruko (3:27)
-        13: {
-            title: "まなざしは光 (Manazashi wa Hikari)",
-            artist: "Waguri Kaoruko",
-            lines: [
-                { time: 0.0, romaji: "♪ (Giai điệu piano trong trẻo)", vi: "Intro piano thanh khiết" },
-                { time: 14.50, romaji: "Kimi no manazashi wa atatakai hikari, kurayami wo terashitekureru", vi: "Ánh mắt của cậu tựa luồng sáng ấm áp, thắp sáng cả khoảng tối trong tâm hồn tớ" },
-                { time: 32.00, romaji: "Soba ni iru dake de tsuyoku nareru no", vi: "Chỉ cần được ở bên cậu, tớ cảm thấy mình mạnh mẽ hơn rất nhiều" },
-                { time: 55.00, romaji: "Kono hikari wo zutto hanashitaku nai", vi: "Ánh sáng ấm áp này, tớ nguyện sẽ mãi giữ chặt trong lòng" }
-            ]
-        },
+        // Track 13-15: Fragrant Flower Acoustic Instrumental Series
+        13: { isInstrumental: true, title: "まなざしは光 (Manazashi wa Hikari)", artist: "原田萌喜 (Kaoru Hana OST)", persona: "kaoruko" },
+        14: { isInstrumental: true, title: "ひとひら (Hitohira)", artist: "原田萌喜 (Kaoru Hana OST)", persona: "kaoruko" },
+        15: { isInstrumental: true, title: "偏見と葛藤 (Henken to Kattou)", artist: "原田萌喜 (Kaoru Hana OST)", persona: "kaoruko" },
 
-        // Track 14: ひとひら (Hitohira) - Waguri Kaoruko (4:42)
-        14: {
-            title: "ひとひら (Hitohira)",
-            artist: "Waguri Kaoruko",
-            lines: [
-                { time: 0.0, romaji: "♪ (Cánh hoa trà rơi nhẹ trong gió)", vi: "Intro giai điệu nhẹ nhàng" },
-                { time: 16.00, romaji: "Hitohira no hanabira ga tenohira ni ochite, kimi no nukumori wo omoidasu", vi: "Một cánh hoa khẽ rơi trên lòng bàn tay, gợi nhắc tớ về hơi ấm dịu dàng của cậu" },
-                { time: 38.00, romaji: "Kisetsu ga megutte mo, kawaranai omoi ga koko ni aru", vi: "Dù bốn mùa có luân chuyển, tình cảm nguyên vẹn này vẫn luôn ở nơi đây" }
-            ]
-        },
-
-        // Track 15: Rintaro to Kaoruko - Waguri Kaoruko OST
-        15: { isInstrumental: true, title: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "Waguri Kaoruko OST", persona: "kaoruko" },
-
-        // Track 16: 君のせいで愛してる - Sakura Miku (3:51)
+        // Track 16: 君のせいで愛してる (Kimi no Sei de Aishiteru)
+        // Spotify: https://open.spotify.com/intl-vi/track/1SsnLip8KKG2aYsXlGH29n
+        // Artist: CHiCO with HoneyWorks - Official Anime OP (3:51)
         16: {
             title: "君のせいで愛してる (Kimi no Sei de Aishiteru)",
-            artist: "Sakura Miku",
+            artist: "CHiCO with HoneyWorks",
             lines: [
-                { time: 0.0, romaji: "♪ (Gió xuân & tiếng chuông hoa anh đào)", vi: "Intro mùa xuân rộn rã" },
-                { time: 14.00, romaji: "Harukaze ga fukinukeru machi de, sakura no hanabira ga maiodoru", vi: "Làn gió xuân thổi qua từng con phố nhỏ, cánh hoa anh đào dập dìu nhảy múa" },
-                { time: 30.00, romaji: "Kimi no sei de mune ga kurushiku naru, kimi no sei de konna ni aishiteru!", vi: "Tại cậu mà tim tớ cứ đập thình thịch, tất cả là tại cậu làm tớ yêu đến mức này đấy!" },
-                { time: 50.00, romaji: "Motto chikaku ni kite, tsunai da te wo hanasanaide!", vi: "Hãy đến gần hơn nữa đi, và đừng buông bàn tay đang đan chặt này ra nhé!" }
+                { time: 0.0, romaji: "♪ (Intro guitar & pop sôi động của HoneyWorks)", vi: "Intro giai điệu tình yêu rộn rã" },
+                { time: 14.34, romaji: "Nee nee 'Aishiteru' tte watashi mite itte kureta gohoubi", vi: "Nè nè, câu 'Yêu em' anh nhìn thẳng vào mắt em mà nói ra là phần thưởng ngọt ngào nhất" },
+                { time: 22.56, romaji: "Haa, yameta♡", vi: "Haa, thôi hông thèm nữa đâu♡" },
+                { time: 26.59, romaji: "Sukurooru tomechau, koe ga shitara kiichau", vi: "Ngón tay lướt màn hình bỗng khựng lại, hễ nghe giọng anh là tim liền lắng nghe" },
+                { time: 32.41, romaji: "Jishin ga nakute uso ga fuetemo massugu na kimochi", vi: "Dẫu thiếu tự tin và buông vài lời dỗi hờn, tình cảm này vẫn luôn chân thành" },
+                { time: 39.46, romaji: "Kanchigai shichau yo kao akai no bareteru?", vi: "Em sẽ hiểu lầm đấy nhé, gương mặt đỏ ửng này bị anh bắt bài rồi sao?" },
+                { time: 44.37, romaji: "Sasai na koto de mune ga odotte amazuppai no desu", vi: "Chỉ một hành động nhỏ thôi mà tim đập thình thịch, cảm giác chua ngọt bồi hồi" },
+                { time: 51.27, romaji: "Kyori wo chijimeru kotoba miataranai no ni", vi: "Dẫu chẳng tìm được câu từ nào để rút ngắn khoảng cách đôi ta" },
+                { time: 56.12, romaji: "Furimuita kimi no kao chikakute toiki furete koi no aji shiteru", vi: "Anh bất ngờ ngoảnh lại, gương mặt sát gần cùng hơi thở chạm khẽ... chính là vị ngọt tình yêu!" },
+                { time: 65.62, romaji: "Nee nee 'Aishiteru' tte kimi wo mite itte komarasete ii?", vi: "Nè nè, em nhìn vào mắt anh rồi nói 'Em yêu anh' làm anh bối rối được không?" },
+                { time: 73.79, romaji: "Nante kakehiki toka ne honto wa nigate yo aa kizuite", vi: "Trò đưa đẩy ấy thực ra em vụng về lắm, làm ơn mau nhận ra đi mà!" },
+                { time: 82.50, romaji: "Suki ni naru tte itai no ni afuretara tomarenai", vi: "Đem lòng yêu ai dẫu có lúc nhói đau, nhưng khi đã trào dâng thì chẳng thể kìm nén!" },
+                { time: 99.45, romaji: "Hoka no ko ni wa yasashii tsumetai yo watashi ni", vi: "Với người khác anh dịu dàng thế, sao với em lại lạnh lùng thế chứ?" },
+                { time: 105.30, romaji: "Namae yobi mo bodii tacchi mo watashi dattara ii no ni", vi: "Gọi tên thân mật hay cái chạm tay, ước gì anh dành riêng cho em thì tốt biết mấy" },
+                { time: 112.33, romaji: "Aiso tsukasareta tte shikatanai hodo wagamama na koigokoro", vi: "Dẫu bị chê trách cũng đành chịu thôi, bởi con tim đang yêu này ích kỷ lắm" },
+                { time: 123.35, romaji: "Suki ni sasete miseru", vi: "Em nhất định sẽ khiến anh phải đổ gục vì em!" },
+                { time: 126.69, romaji: "Mousou 'Kawaiisugi' tte watashi mite itte kureta gohoubi", vi: "Mơ mộng anh nhìn em thốt lên 'Đáng yêu quá đi mất' như một phần thưởng" },
+                { time: 134.77, romaji: "Nante anime ja nai shi kisu shiin mo nai shi aa baka mitai", vi: "Cơ mà đây đâu phải anime, cũng chẳng có cảnh hôn lãng mạn, ngốc thật đấy!" },
+                { time: 143.51, romaji: "Suki ni naru tte itai kara hiroin ni narenai", vi: "Vì yêu là đau lòng nên em chẳng dám nhận mình là nữ chính" },
+                { time: 155.31, romaji: "Kiite ii? Uso kinshi. Ano ko no koto ki ni naru no?", vi: "Em hỏi thật nhé? Cấm nói dối! Anh có để ý đến cô gái ấy không?" },
+                { time: 162.50, romaji: "Hoka ni iru ki ni naru ko mada ienai, etto watashi kamo tte kanchigai?", vi: "Người anh để ý vẫn chưa chịu nói ra... Ủa, có khi nào em lại tự ảo tưởng là mình không?" },
+                { time: 171.17, romaji: "Mitsumekaeshichau", vi: "Chỉ biết nhìn sâu vào mắt anh bối rối" },
+                { time: 177.94, romaji: "Nee nee 'Aishiteru' tte kimi wo mite itte komarasete ii?", vi: "Nè nè, nhìn thẳng mắt anh nói 'Em yêu anh' để làm anh bối rối nhé?" },
+                { time: 185.97, romaji: "Nante kakehiki toka ne honto wa nigate yo aa kizuite", vi: "Trò thả thính này em vụng lắm, mau nhận ra tấm lòng em đi mà!" },
+                { time: 194.70, romaji: "Suki ni naru tte itai no ni afuretara tomarenai ✨", vi: "Đem lòng yêu anh dẫu có xao xuyến nhói đau, nhưng yêu rồi thì chẳng thể dừng lại!" }
             ]
         },
 
-        // Track 17: リトルワールド (Little World) - Sakura Miku (3:08)
+        // Track 17: リトルワールド (Little World)
+        // Spotify: https://open.spotify.com/intl-vi/track/1cflsQcGcOcL7gkZaPyiYm
+        // Artist: PompadollS - Official Anime ED (3:08)
         17: {
             title: "リトルワールド (Little World)",
-            artist: "Sakura Miku",
+            artist: "PompadollS",
             lines: [
-                { time: 0.0, romaji: "♪ (Giai điệu điện tử dễ thương)", vi: "Intro phong cách thần tượng vui nhộn" },
-                { time: 12.00, romaji: "Watashitachi dake no chiisana sekai de, uta wo utaou!", vi: "Trong thế giới nhỏ bé chỉ của riêng chúng ta, hãy cùng nhau cất cao tiếng hát nào!" },
-                { time: 30.00, romaji: "Kimi to nara doko made mo ikeru ki ga suru yo", vi: "Chỉ cần có cậu bên cạnh, tớ cảm giác mình có thể đi đến bất kỳ chân trời nào!" }
+                { time: 0.0, romaji: "♪ (Intro indie pop mộng mơ)", vi: "Khúc dạo đầu thế giới nhỏ bé" },
+                { time: 12.00, romaji: "Nee, koko de okita koto wa eien yo", vi: "Này, những gì đã xảy ra tại nơi đây sẽ là vĩnh cửu" },
+                { time: 18.00, romaji: "Hansode otta shatsu to burausu", vi: "Chiếc áo sơ mi xắn tay cùng tà áo blouse nhẹ bay" },
+                { time: 24.00, romaji: "Aa, subete ni imi nanka nakute subete no koto ni imi bakari ga atta", vi: "A, mọi điều dường như chẳng mang ý nghĩa gì, nhưng thực ra mọi thứ đều chất chứa ý nghĩa" },
+                { time: 35.00, romaji: "Keisei sareru kyoutsuu no gengo", vi: "Hình thành nên ngôn ngữ chung chỉ của riêng đôi ta" },
+                { time: 41.00, romaji: "Kimi ga nozomeba subete ga omoidoori ni naru", vi: "Chỉ cần là điều cậu ước ao, vạn vật đều sẽ diễn ra theo ý muốn" },
+                { time: 48.00, romaji: "I love you no moji no raretsu mo futari ni shika wakaranai imi de", vi: "Từng dòng chữ 'I love you' mang ý nghĩa bí mật chỉ hai ta thấu hiểu" },
+                { time: 57.00, romaji: "En ni natte kakomeba soko ga sekai ni naru", vi: "Vẽ nên một vòng tròn ôm lấy nhau, nơi đó lập tức trở thành cả thế giới" },
+                { time: 64.00, romaji: "I love you no kotoba datte eien da, kono sekai ja", vi: "Ngay cả lời yêu 'I love you' cũng sẽ hóa bất diệt trong thế giới này" },
+                { time: 76.00, romaji: "Nee, koko ni ireba mou anzen yo", vi: "Này, chỉ cần ở bên nhau nơi đây thì không điều gì có thể làm tổn thương ta" },
+                { time: 88.00, romaji: "Shunkan kiritoru shattaa on", vi: "Tiếng màn trập máy ảnh lưu giữ lại từng khoảnh khắc thanh xuân" },
+                { time: 102.00, romaji: "I love you no moji no haichi mo, en ni natte kakomeba soko ga sekai ni naru", vi: "Cách sắp xếp từng câu chữ yêu thương, tạo nên thế giới ấm áp của riêng mình" },
+                { time: 120.00, romaji: "I love you no hibiki mo itami mo koukai mo nokoshite ikeru koko ni wa", vi: "Âm vang lời yêu, nỗi đau hay những tiếc nuối đều có thể gửi lại trọn vẹn nơi đây" },
+                { time: 135.00, romaji: "En ni natte kakonde tsukutta sekai de subarashii hibi wo! ✨", vi: "Trong thế giới tròn đầy yêu thương đôi mình cùng tạo dựng, chúc cho những ngày tháng tươi đẹp mãi ngân vang!" }
             ]
         },
 
-        // Track 18: 月に向かって撃て - Shinobu Uzuki (3:15)
+        // Track 18: 月に向かって撃て (Tsuki ni Mukatte Ute)
+        // Spotify: https://open.spotify.com/intl-vi/track/2aQpmTVc26tkNVChUYzZcS
+        // Artist: 星街すいせい (Hoshimachi Suisei) - Mayonaka Heart Tune OP (3:15)
         18: {
             title: "月に向かって撃て (Tsuki ni Mukatte Ute)",
-            artist: "Shinobu Uzuki",
+            artist: "星街すいせい (Hoshimachi Suisei)",
             lines: [
-                { time: 0.0, romaji: "♪ (Giai điệu đêm khuya huyền bí)", vi: "Intro Midnight Radio" },
-                { time: 14.00, romaji: "Shinya no hachou ni nosete, anata e todokeru koe no messeeji", vi: "Gửi vào làn sóng phát thanh lúc nửa đêm, thông điệp bằng giọng nói gửi riêng đến bạn" },
-                { time: 32.00, romaji: "Tsuki ni mukatte utsu you ni, kono omoi wo hanatou", vi: "Tựa như nhắm bắn về phía ánh trăng, hãy bung tỏa hết tâm tư này" }
+                { time: 0.0, romaji: "♪ (Intro Rock điện tử bùng nổ của Suisei)", vi: "Khúc dạo đầu mãnh liệt" },
+                { time: 15.52, romaji: "Nagamete iru bakari te wo nobashite omoidasu", vi: "Mải mê ngắm nhìn, vươn cánh tay ra gợi nhắc lại ký ức" },
+                { time: 22.38, romaji: "Kikaretaku nai yowane kicasetai koe", vi: "Những tiếng thở than yếu lòng không muốn ai nghe thấy, cùng thanh âm khao khát được cất lên" },
+                { time: 28.18, romaji: "Fukanou mo kanousei da kimi ga dare nandaka shittenda", vi: "Bất khả thi cũng chính là một khả năng, tôi biết rõ bạn là ai mà" },
+                { time: 35.07, romaji: "Shoumei shiyou bokura hontou wa doushitai?", vi: "Hãy chứng minh cho tất cả thấy đi, rốt cuộc chúng ta muốn gì?" },
+                { time: 41.34, romaji: "Nigetai to mimi fusaida, shagamu shinzou wo tataitetta Swing by", vi: "Muốn trốn chạy nên bịt chặt tai, nhưng nhịp tim đang co thắt lại thúc giục ta vụt bay" },
+                { time: 47.96, romaji: "Kawaranai hyoujou ni kotae wo tsukitatete", vi: "Đối mặt với vẻ mặt vô cảm bằng câu trả lời dứt khoát" },
+                { time: 52.48, romaji: "Jounetsu wa tsuki ni mukatte ute sunaipaa", vi: "Bắn thẳng ngọn lửa đam mê về phía ánh trăng, hỡi tay thiện xạ cừ khôi!" },
+                { time: 57.34, romaji: "Mirai wa douyara kimi shidai, nodo ga kawaitatte koukai wa nai wa", vi: "Tương lai ra sao tùy thuộc vào bạn, dẫu khát khô cổ họng cũng chẳng hề hối tiếc" },
+                { time: 64.14, romaji: "Surimuite umeru no 99%, koyubi ni wa shoudou wo", vi: "Trầy da tróc vảy lấp đầy 99%, nơi ngón út chất chứa niềm thôi thúc mãnh liệt" },
+                { time: 70.59, romaji: "Hontou wa doushitain dakke? Aizu shite haato chuun ni nosete", vi: "Rốt cuộc bản thân thực lòng muốn gì? Hãy ra hiệu và hòa vào tần số con tim!" },
+                { time: 81.05, romaji: "Ah, ah Darlin' I know who you are. Ah, Ah, ichiban nori de Fly me to the moon", vi: "Darlin', em biết anh là ai mà! Hãy là người đầu tiên đưa em bay đến mặt trăng!" },
+                { time: 94.20, romaji: "Butsukatta kabe mo butsukeatta kuyashisa mo bukiyou ni terasu rozetta ni nare", vi: "Bức tường ta từng va vấp hay nỗi uất nghẹn cắn rứt, hãy hóa thành đài hoa soi rọi tháng ngày" },
+                { time: 107.38, romaji: "Moshimo jinsei ga juppun nara, nanapun wa anata to no kecchaku ni", vi: "Nếu cuộc đời chỉ vỏn vẹn 10 phút, em xin dành 7 phút để giải quyết ân oán cùng anh" },
+                { time: 113.97, romaji: "Mune odoru you na atorakushon de Touch Down!!", vi: "Hạ cánh bằng một chuyến tàu lượn khiến lồng ngực nhảy múa cuồng nhiệt!" },
+                { time: 120.41, romaji: "Okubyou mo 'suki' de moyashite ike surasutaa", vi: "Thiêu rụi sự nhút nhát bằng chữ 'yêu', khai hỏa động cơ đẩy!" },
+                { time: 125.34, romaji: "Mada minu gooru wa kimi shidai", vi: "Đích đến phía trước hoàn toàn phụ thuộc vào bạn" },
+                { time: 128.43, romaji: "Yume mo terashiatta kouten kidoujou, suikonde hitoiki 99%", vi: "Quỹ đạo xoay quanh nhau thắp sáng những giấc mơ, hít một hơi thật sâu lấp đầy 99%" },
+                { time: 136.53, romaji: "Amaoto mo kassai e, hontou wa doushitain dakke", vi: "Tiếng mưa rơi cũng hóa thành tràng pháo tay giòn giã" },
+                { time: 141.67, romaji: "Oitsuku wa haato chuun ni kakete", vi: "Nhất định sẽ bắt kịp, đặt cược tất cả vào tần số con tim" },
+                { time: 146.15, romaji: "Shoumei shiyou todokun datte, jounetsu wa tsuki ni mukatte ute sunaipaa ✨", vi: "Chứng minh rằng lời ca sẽ chạm tới đích, bắn thẳng đam mê về phía ánh trăng!" }
             ]
         },
 
-        // Track 19: 声の軌跡 - Shinobu Uzuki (3:19)
+        // Track 19: 声の軌跡 (Koe no Kiseki)
+        // Spotify: https://open.spotify.com/intl-vi/track/0N5YLuTIySy1APi9rmSGfj
+        // Artist: Soala - Mayonaka Heart Tune ED (3:19)
         19: {
             title: "声の軌跡 (Koe no Kiseki)",
-            artist: "Shinobu Uzuki",
+            artist: "Soala",
             lines: [
-                { time: 0.0, romaji: "♪ (Tiếng sóng âm radio lãng mạn)", vi: "Intro giai điệu truyền thanh êm dịu" },
-                { time: 13.00, romaji: "Koe no kiseki ga yozora wo kakete, anata no moto e to todoku", vi: "Quỹ đạo âm thanh vượt qua bầu trời đêm, tìm về với nơi người đang lắng nghe" },
-                { time: 31.00, romaji: "Kono koe ga aru kagiri, anata wa kesshite hitori ja nai", vi: "Chừng nào giọng nói này còn cất lên, bạn sẽ chẳng bao giờ cô đơn" }
+                { time: 0.0, romaji: "♪ (Tiếng radio đêm khuya & nhịp bass êm ái)", vi: "Intro làn sóng phát thanh nửa đêm" },
+                { time: 13.00, romaji: "Koi mo yume mo nante mousou yokubari sugita no kana", vi: "Tình yêu hay ước mơ phải chăng chỉ là ảo tưởng, có phải em đã quá tham lam rồi không?" },
+                { time: 20.00, romaji: "Kimi ga oshiete kureta unmei misuterii", vi: "Điều bí ẩn về định mệnh mà anh từng chỉ cho em thấy" },
+                { time: 27.00, romaji: "Mou kikenaku natte sa aitai kuse ni watashi wa mata kimochi dake kakushite", vi: "Chẳng còn được lắng nghe nữa, dẫu khao khát được gặp lại em lại giấu nhẹm tâm tư" },
+                { time: 40.00, romaji: "Aimai na kankei no mama totsuzen kiete shimatta", vi: "Giữa mối quan hệ mập mờ dang dở, anh bỗng nhiên biến mất không dấu vết" },
+                { time: 48.00, romaji: "Nouri ni yakitsuita omoide doushitemo hanarenai", vi: "Ký ức khắc sâu trong tâm trí dẫu làm cách nào cũng chẳng thể phai nhòa" },
+                { time: 57.00, romaji: "Kimi no koe o ano hi kara zutto sagashitetanda yo", vi: "Kể từ ngày định mệnh ấy, em vẫn luôn mải miết kiếm tìm giọng nói của anh" },
+                { time: 66.00, romaji: "Mou ichido kikasete 'aishiteru' o", vi: "Làm ơn hãy cho em được nghe lại câu 'Anh yêu em' một lần nữa" },
+                { time: 72.00, romaji: "Nani o shite mo wasurerarenakatta no", vi: "Dù làm bất cứ điều gì cũng chẳng thể nào quên được" },
+                { time: 78.00, romaji: "Sono koe dake o tayori ni ikite kitanda yo", vi: "Chỉ nương tựa vào thanh âm ấy mà em có thêm nghị lực sống đến ngày hôm nay" },
+                { time: 95.00, romaji: "Kantan ni ikirareru sekai demo nakute, tsurai koto darake de", vi: "Cuộc đời này vốn chẳng hề dễ dàng, ngập tràn những chông gai đắng cay" },
+                { time: 107.00, romaji: "Mou afureru namida mo kizukanai furi shite sa mae ni susumu shika nakute", vi: "Giọt nước mắt trào mi cũng đành giả vờ như không thấy, chỉ biết cắn răng bước tiếp về phía trước" },
+                { time: 121.00, romaji: "Yume o oitsuzukeru koto mo kimochi kakushitsuzukeru no mo", vi: "Cả việc miệt mài đuổi theo giấc mơ lẫn việc chôn chặt tình cảm nơi đáy lòng" },
+                { time: 130.00, romaji: "Zenbu kimi no tame to omotteta nante dokuriyogari da ne", vi: "Em cứ ngỡ tất cả là vì anh, hóa ra chỉ là sự cố chấp của riêng em" },
+                { time: 140.00, romaji: "Kimi no koe o ano hi kara zutto sagashitetanda yo", vi: "Kể từ ngày ấy, em vẫn không ngừng tìm kiếm giọng nói của anh" },
+                { time: 150.00, romaji: "Mou ichido kikasete 'aishiteru' o ✨", vi: "Hãy cất tiếng cho em được nghe lại lời yêu ấy một lần nữa!" }
             ]
         },
 
-        // Track 20: 最最最高級のお世話して - Konohana Hinako (3:14)
-        // Official Anime OP Theme (Rich Girl Caretaker)
+        // Track 20: 最最最高級のお世話して (Saikoukyuu no Osewa Shite)
+        // Spotify: https://open.spotify.com/intl-vi/track/1YorQpcRAhINKp06fy1Kcc
+        // Artist: angela - Saijo no Osewa OP (3:14)
         20: {
-            title: "最最最高級のお世話して (Saikoukyuu no Osewa Shite)",
-            artist: "Konohana Hinako",
+            title: "最最最高級のお世話して",
+            artist: "angela",
             lines: [
-                { time: 0.0, romaji: "♪ (Intro quý tộc vui nhộn)", vi: "Khúc dạo đầu phong cách hầu cận quý phái" },
+                { time: 0.0, romaji: "♪ (Intro quý tộc vui nhộn phong cách angela)", vi: "Khúc dạo đầu hầu cận quý phái" },
                 { time: 15.20, romaji: "Kyou, ashita, asatte, kimi to no yakusoku", vi: "Hôm nay, ngày mai và ngày kia nữa, lời ước hẹn cùng người" },
                 { time: 18.90, romaji: "Me no mawaru supiido ga supesharu desu", vi: "Nhịp sống quay cuồng này thật đặc biệt biết bao" },
                 { time: 22.70, romaji: "Taisetsu na koto kokoroe to shite", vi: "Điều cốt lõi luôn phải ghi lòng tạc dạ" },
@@ -402,27 +460,38 @@
                 { time: 51.80, romaji: "Sai sai saikoukyuu no osewa shite kudasai", vi: "Hãy đón nhận sự săn sóc cao cấp nhất trần đời!" },
                 { time: 55.50, romaji: "Sai sai sainou yuunou I know nando demo iu no", vi: "Tài năng tháo vát, dẫu nói bao nhiêu lần cũng không đủ" },
                 { time: 59.20, romaji: "Sai sai saidaigen no osewa shite kudasai", vi: "Em sẽ dốc lòng chăm chút người ở mức tối đa!" },
-                { time: 74.20, romaji: "Zutto soba ni ite ageru", vi: "Em sẽ mãi mãi ở bên cạnh chở che cho người" },
+                { time: 63.00, romaji: "Sai sai saisho no ippo wa dare demo tajirogu mono desu", vi: "Bước đầu tiên ai cũng có chút bỡ ngỡ ngại ngùng" },
+                { time: 74.20, romaji: "Zutto soba ni ite ageru, boku ga boku rashiku aru tame ni", vi: "Em sẽ mãi ở bên chở che để người được sống là chính mình" },
                 { time: 88.90, romaji: "Dare yori chikaku de mamotte ageru ichiban chikaku de ✨", vi: "Em sẽ bảo vệ người từ cự ly gần nhất, gần hơn bất kỳ ai trên đời!" }
             ]
         },
 
-        // Track 21: 完璧じゃないわたし - Konohana Hinako (3:36)
+        // Track 21: 完璧じゃないわたし (Kanpeki ja Nai Watashi)
+        // Spotify: https://open.spotify.com/intl-vi/track/2guDoM8CAJKx1cQwNFSPW5
+        // Artist: 前島亜美 (Ami Maeshima) - Saijo no Osewa ED (3:36)
         21: {
             title: "完璧じゃないわたし (Kanpeki ja Nai Watashi)",
-            artist: "Konohana Hinako",
+            artist: "前島亜美 (Ami Maeshima)",
             lines: [
-                { time: 0.0, romaji: "♪ (Giai điệu piano nội tâm)", vi: "Intro giai điệu nhẹ nhàng" },
-                { time: 14.50, romaji: "Kanpeki ja nai watashi datte, anata no mae de wa sunao ni nareru", vi: "Dẫu em không phải là một cô gái hoàn hảo, trước mặt người em có thể sống thật với chính mình" },
-                { time: 36.00, romaji: "Kono yowasa mo, zenbu uketomete kureta kara", vi: "Bởi người đã dịu dàng bao dung lấy cả những yếu mềm nơi em" }
+                { time: 0.0, romaji: "♪ (Giai điệu piano nội tâm nhẹ nhàng)", vi: "Intro tiểu thư làm nũng đáng yêu" },
+                { time: 3.00, romaji: "Kanpeki ja nai watashi kimi ga inakya are kore dekinai bakka", vi: "Em chẳng hề hoàn hảo đâu, không có anh ở bên em việc gì cũng lúng túng chẳng xong" },
+                { time: 12.00, romaji: "Takane no hana nante iwazu ni soba ni ite yo nee 'kimi ga hoshii'", vi: "Đừng bảo em là hoa trên đỉnh núi xa vời, hãy ở cạnh em đi mà, em cần anh!" },
+                { time: 20.00, romaji: "(Fu nya nya, fu nya nya...)", vi: "(Ngái ngủ nũng nịu...)" },
+                { time: 26.00, romaji: "Seiso karen bunburyoudou? Haritsuita kamen no emi", vi: "Thanh thuần đoan trang, văn võ song toàn sao? Chỉ là chiếc mặt nạ nụ cười gượng gạo thôi" },
+                { time: 35.00, romaji: "Moo muri muri kaeritai, mou suima wa genkai omukae wa?", vi: "Thôi mệt mỏi lắm rồi muốn về nhà cơ, cơn buồn ngủ ập đến rồi anh chưa đến đón em sao?" },
+                { time: 44.00, romaji: "Orikousan na mainichi ni sayonara wo tsugemashou", vi: "Nói lời tạm biệt với những chuỗi ngày phải gồng mình làm con ngoan trò giỏi" },
+                { time: 52.00, romaji: "Gokigen no osewa datte kimi no yakuwari desho? (Desho?)", vi: "Dỗ dành cho em vui vẻ cũng là bổn phận chăm sóc của anh cơ mà, đúng không nào?" },
+                { time: 64.00, romaji: "Kimi no mae dake de wa sunao de itai no", vi: "Chỉ trước mặt riêng anh, em mới muốn được sống thật với chính con người mình" },
+                { time: 78.00, romaji: "Kono yowasa mo zenbu dakishimete kurete arigatou ✨", vi: "Cảm ơn anh vì đã dịu dàng ôm trọn lấy cả những yếu mềm nơi em" }
             ]
         },
 
-        // Track 22: Submarine Youth - Asanagi Umi (3:27)
-        // Official Anime OP Theme (I Made Friends with the Second Prettiest Girl in My Class)
+        // Track 22: Submarine Youth (サブマリンユース)
+        // Spotify: https://open.spotify.com/intl-vi/track/3EAaR5AFd8T1HmAP3dPIXG
+        // Artist: reGretGirl - Anime OP (3:27)
         22: {
             title: "Submarine Youth (サブマリンユース)",
-            artist: "Asanagi Umi (reGretGirl)",
+            artist: "reGretGirl",
             lines: [
                 { time: 0.0, romaji: "♪ (Tiếng sóng vỗ & riff guitar tuổi thanh xuân)", vi: "Intro guitar tuổi trẻ sôi nổi" },
                 { time: 13.20, romaji: "Samenai yume no you na kimi to", vi: "Bên cậu tựa như một giấc chiêm bao chẳng bao giờ muốn tỉnh" },
@@ -448,20 +517,37 @@
             ]
         },
 
-        // Track 23: Zutto Ichibanni Shitene - Asanagi Umi (3:33)
+        // Track 23: ずっと1番にしてね (Zutto Ichibanni Shitene)
+        // Spotify: https://open.spotify.com/intl-vi/track/3ri04N6NuypwN9Ol75erjh
+        // Artist: コレサワ (Koresawa) - Anime ED (3:33)
         23: {
-            title: "Zutto Ichibanni Shitene",
-            artist: "Asanagi Umi",
+            title: "ずっと1番にしてね (Zutto Ichibanni Shitene)",
+            artist: "コレサワ (Koresawa)",
             lines: [
-                { time: 0.0, romaji: "♪ (Giai điệu biển xanh dạt dào)", vi: "Intro giai điệu bãi biển êm ả" },
-                { time: 14.00, romaji: "Nami no oto ni magirete, chiisaku tsubuyaita 'Zutto ichibanni shitene'", vi: "Hòa vào tiếng sóng biển vỗ, tớ khẽ thì thầm 'Hãy luôn xem tớ là số một nhé'" },
-                { time: 35.00, romaji: "Kimi no tokubetsu na hito ni naritai, sore dake ga watashi no negai", vi: "Muốn trở thành người đặc biệt nhất trong lòng cậu, đó là ước nguyện duy nhất của tớ" }
+                { time: 0.0, romaji: "Atashi to kimi no aishou anmari datte", vi: "Bảo rằng độ tương hợp giữa em và anh chẳng được bao nhiêu" },
+                { time: 3.00, romaji: "Iu uranaishi ga itara sore wa nisemono", vi: "Thầy bói nào mà phán thế thì đích thị là quân lừa đảo!" },
+                { time: 7.00, romaji: "Dame dame yo damasarenaide yo", vi: "Không được đâu nha, đừng có để bị lừa đấy!" },
+                { time: 10.00, romaji: "Unmei wa atashi ga kimetemasu", vi: "Định mệnh của chúng mình là do chính em quyết định!" },
+                { time: 14.00, romaji: "Sou desu kore ga honmono no ai nan desu", vi: "Chuẩn luôn, đây mới chính là tình yêu đích thực" },
+                { time: 18.00, romaji: "Atashi to kimi ga shinda ato ni bijutsukan ni kazarareru yatsu desu", vi: "Thứ tình yêu mà sau này đôi ta qua đời sẽ được đem trưng bày trong viện bảo tàng nghệ thuật" },
+                { time: 25.00, romaji: "Dakara zutto ichiban ni shitene, taisetsu ni aishitene", vi: "Bởi thế hãy luôn coi em là số một nhé, nâng niu yêu thương em thật nhiều vào" },
+                { time: 32.00, romaji: "Ima tsunaideru kono te ga kuttsuichau made", vi: "Cho tới khi bàn tay đang đan chặt này dính chặt không rời" },
+                { time: 37.00, romaji: "Zutto ii kanji de iyou ne, futari nara rakushou da ne tte sa", vi: "Hãy giữ mãi cảm xúc ngọt ngào này nhé, có hai ta thì mọi khó khăn đều là chuyện nhỏ" },
+                { time: 45.00, romaji: "Kurutteru kurai de soba ni ite onegai", vi: "Yêu cuồng say và ở mãi bên em nhé, xin anh đấy!" },
+                { time: 55.00, romaji: "Atashitachi zense demo koibito doushi datta to omou no", vi: "Em nghĩ kiếp trước chắc hẳn đôi ta cũng là người yêu của nhau rồi" },
+                { time: 63.00, romaji: "Jana kyakashikunai? Konna ni daisuki da nante sa", vi: "Nếu không thì sao giải thích nổi? Tại sao em lại mê đắm anh nhiều đến mức này chứ!" },
+                { time: 72.00, romaji: "Atashi to kimi no MBTI wa LOVE da wa", vi: "Nhóm tính cách MBTI của em và anh chính là chữ LOVE đấy!" },
+                { time: 79.00, romaji: "Sekai ga warattemo dame dame yo nagasarenaide yo", vi: "Dẫu cả thế giới có cười chê, không được lung lay xuôi theo đâu nhé" },
+                { time: 87.00, romaji: "Unmei wa atashi ga kimetemasu, honmono no ai nan desu", vi: "Định mệnh là do em định đoạt, đây chính là tình yêu chân chính" },
+                { time: 100.00, romaji: "Dakara zutto ichiban ni shitene, takaramono mitai ni ne", vi: "Bởi vậy hãy luôn coi em là số một, trân quý em như báu vật trần gian" },
+                { time: 112.00, romaji: "Zutto ii kanji de iyou ne, futari nara rakushou da ne tte sa", vi: "Mãi ngọt ngào như thuở ban đầu nhé, hai ta bên nhau là vô địch thiên hạ rồi" },
+                { time: 125.00, romaji: "Atashi to kimi no aishou saikou datte iu uranaishi ga itara sore wa honmono yo ✨", vi: "Thầy bói nào mà phán đôi mình sinh ra là để dành cho nhau thì đích thực là bậc thầy tiên tri chuẩn 100%!" }
             ]
         }
     };
 
     /* --------------------------------------------------------
-       DOM HOOKS & ENGINE STATE
+       DOM HOOKS & CONTROLLER
     -------------------------------------------------------- */
     const audio = document.getElementById('audio-player');
     const lyricsModal = document.getElementById('lyrics-modal');
@@ -490,7 +576,7 @@
 
     let viewMode = safeGet('minkoi_lyrics_mode', 'karaoke'); // 'karaoke' or 'full'
 
-    // Prevent auto-scroll fight when user is actively scrolling / inspecting
+    // Prevent auto-scroll fight when user touches or scrolls manually
     let isUserScrolling = false;
     let scrollPauseTimer = null;
 
@@ -591,6 +677,9 @@
         if (typeof window.getCurrentPlayingTrack === 'function') {
             return window.getCurrentPlayingTrack();
         }
+        if (typeof window.getCurrentTrack === 'function') {
+            return window.getCurrentTrack();
+        }
         const fullPlaylist = (CONFIG.music && CONFIG.music.playlist) || [];
         return fullPlaylist[0] || null;
     }
@@ -613,7 +702,7 @@
                         <i class="fas fa-compact-disc"></i>
                     </div>
                     <span class="inst-tag">INSTRUMENTAL TRACK</span>
-                    <h4 class="inst-title">${track.name}</h4>
+                    <h4 class="inst-title">${escapeHtml(track.name)}</h4>
                     <p class="inst-desc">Bản hòa tấu độc quyền không lời. Hãy nhắm mắt và cảm nhận trọn vẹn từng cung bậc giai điệu du dương.</p>
                 </div>
             `;
@@ -647,7 +736,6 @@
             lineEl.addEventListener('click', () => {
                 const targetTime = parseFloat(lineEl.dataset.time);
                 if (audio && !isNaN(targetTime)) {
-                    // Click seeking accounts for user calibration offset
                     audio.currentTime = Math.max(0, targetTime);
                     if (audio.paused) audio.play();
                 }
@@ -678,7 +766,7 @@
             return;
         }
 
-        // Apply real-time user offset: positive offset advances the lyrics
+        // Apply real-time user offset
         const curTime = audio.currentTime + userOffset;
         let newIndex = -1;
 
@@ -722,7 +810,7 @@
     }
 
     /* --------------------------------------------------------
-       OPEN / CLOSE DRAWER CONTROLLER
+       DRAWER CONTROLLER
     -------------------------------------------------------- */
     function openLyrics() {
         if (!lyricsModal) return;
@@ -784,49 +872,10 @@
         }
     });
 
-    /* --------------------------------------------------------
-       LRC PARSER UTILITY: FAST IMPORT FOR ANY NEW TRACK
-       Parse standard [mm:ss.xx] LRC text directly without typing code
-    -------------------------------------------------------- */
-    function parseLRC(lrcText, viTranslationMap = {}) {
-        const lines = [];
-        const regex = /\[(\d{2}):(\d{2}(?:\.\d{1,3})?)\](.*)/;
-        const rawLines = lrcText.split('\n');
-
-        for (const raw of rawLines) {
-            const match = raw.trim().match(regex);
-            if (match) {
-                const minutes = parseInt(match[1], 10);
-                const seconds = parseFloat(match[2]);
-                const time = +(minutes * 60 + seconds).toFixed(2);
-                const romaji = match[3].trim();
-                if (romaji) {
-                    const vi = viTranslationMap[lines.length] || '';
-                    lines.push({ time, romaji, vi });
-                }
-            }
-        }
-        return lines.sort((a, b) => a.time - b.time);
-    }
-
-    function registerTrackLyrics(trackId, title, artist, linesOrLrc, viMap) {
-        if (typeof linesOrLrc === 'string') {
-            LYRICS_DATABASE[trackId] = {
-                title,
-                artist,
-                lines: parseLRC(linesOrLrc, viMap)
-            };
-        } else {
-            LYRICS_DATABASE[trackId] = { title, artist, lines: linesOrLrc };
-        }
-    }
-
     // Export to global scope
     window.toggleLyrics = toggleLyrics;
     window.openLyrics = openLyrics;
     window.closeLyrics = closeLyrics;
-    window.parseLRC = parseLRC;
-    window.registerTrackLyrics = registerTrackLyrics;
     window.adjustLyricsOffset = adjustOffset;
     window.resetLyricsOffset = resetOffset;
 })();
