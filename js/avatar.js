@@ -128,7 +128,7 @@
                 btn.setAttribute('title', `${persona.name} · ${persona.role}`);
                 btn.innerHTML = `
                     <span class="persona-avatar-preview">
-                        <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="36" height="36">
+                        <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
                     </span>
                     <span class="persona-meta">
                         <span class="persona-name">${persona.name}</span>

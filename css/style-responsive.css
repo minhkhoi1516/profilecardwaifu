@@ -293,10 +293,17 @@
    & FONT SIZE READABILITY (min 12px, .cat-count 11px)
 ======================================================== */
 @media (max-width: 768px) {
-    /* 1. TOUCH TARGETS (>= 44px) */
+    /* [BỔ SUNG BUG TỪ ẢNH CHỤP MOBILE]: Ẩn hoàn toàn bong bóng thoại danh ngôn bị cắt cụt trên đầu avatar */
+    .waifu-quote-bubble {
+        display: none !important;
+    }
+
+    /* [BUG 1] TOUCH TARGETS (>= 44px) */
     .row-fav-btn {
         min-width: 44px;
         min-height: 44px;
+        width: 44px;
+        height: 44px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -311,6 +318,7 @@
     .offset-nudge-btn {
         min-width: 44px;
         min-height: 44px;
+        height: 44px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -330,7 +338,45 @@
     .suite-badge-btn,
     .speed-toggle-btn {
         min-height: 44px;
-        padding: 0.5rem 0.85rem;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 0.85rem;
+    }
+
+    .top-action-btn,
+    .ctrl-btn,
+    .zen-ctrl-btn,
+    .lyrics-close-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+
+    .cat-tab,
+    .lyrics-mode-btn {
+        min-height: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.85rem;
+    }
+
+    .volume-slider-dock {
+        min-height: 44px;
+    }
+
+    .volume-slider {
+        height: 32px;
+        min-height: 32px;
+        padding: 8px 0;
+        box-sizing: border-box;
     }
 
     .eq-band-col {
@@ -341,90 +387,86 @@
     .eq-slider {
         writing-mode: vertical-lr;
         direction: rtl;
-        min-width: 44px;
+        width: 24px;
+        min-width: 24px;
         min-height: 64px;
-        padding: 0 14px;
+        padding: 0 5px;
         box-sizing: border-box;
     }
 
-    .volume-slider-dock {
-        min-height: 44px;
-    }
-
-    .volume-slider {
-        min-height: 44px;
-        padding: 14px 0;
-        box-sizing: border-box;
-    }
-
-    .top-action-btn,
-    .ctrl-btn,
-    .zen-ctrl-btn {
-        min-width: 44px;
-        min-height: 44px;
-        width: 44px;
-        height: 44px;
-        font-size: 0.95rem;
-    }
-
-    .cat-tab {
-        min-height: 44px;
-        padding: 0.6rem 0.85rem;
-    }
-
-    .lyrics-close-btn {
-        min-width: 44px;
-        min-height: 44px;
-        width: 44px;
-        height: 44px;
-    }
-
-    /* 2. FONT SIZES (>= 12px, .cat-count 11px) */
+    /* [BUG 2] FONT SIZES (>= 12px, .cat-count 11px) */
     .cat-count {
-        font-size: 11px;
+        font-size: 11px !important;
     }
 
     .persona-name {
-        font-size: 12px;
+        font-size: 12px !important;
     }
 
     .persona-tag {
-        font-size: 11px;
+        font-size: 11px !important;
     }
 
     .eq-band-label,
     .eq-freq-label,
     .eq-band-val {
-        font-size: 12px;
+        font-size: 12px !important;
     }
 
     .live-clock-pill .clock-tz,
     .timezone-label,
     .clock-tz {
-        font-size: 12px;
+        font-size: 12px !important;
     }
 
-    .fx-meta small,
-    .preset-desc,
-    .crossfade-desc {
-        font-size: 12px;
-    }
-
-    .speed-label {
-        font-size: 12px;
-    }
-
+    .track-duration,
     .row-duration {
-        font-size: 12px;
+        font-size: 12px !important;
+    }
+
+    .time-current,
+    .time-total,
+    #current-time,
+    #total-time,
+    .time-display,
+    .time-sep {
+        font-size: 12px !important;
+    }
+
+    .preset-desc,
+    .fx-meta small {
+        font-size: 12px !important;
+    }
+
+    .footer-text,
+    .footer-copy,
+    .footer-meta,
+    .lyrics-footer {
+        font-size: 12px !important;
+    }
+
+    .status-label {
+        font-size: 12px !important;
+    }
+
+    .speed-label,
+    .crossfade-desc,
+    .offset-nudge-btn,
+    .offset-val-badge {
+        font-size: 12px !important;
+    }
+
+    /* [BUG 5] CAT-TAB OVERFLOW */
+    .audio-category-nav,
+    .cat-tabs {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
     }
 
     .cat-tab {
-        font-size: 12px;
-    }
-
-    .offset-nudge-btn,
-    .offset-val-badge {
-        font-size: 12px;
+        flex-shrink: 0 !important;
+        font-size: 12px !important;
     }
 }
 
