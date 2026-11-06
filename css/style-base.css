@@ -1,4 +1,4 @@
-﻿/* ========================================================
+/* ========================================================
    MAHIKARI · DESIGN TOKENS & BASE ARCHITECTURE
    Luxury Minimal Editorial System · Native CSS Custom Properties
 ======================================================== */
@@ -98,7 +98,7 @@ html {
 
 body {
     min-height: 100vh;
-    min-height: 100svh;
+    min-height: 100dvh;
     font-family: var(--font-body);
     color: var(--color-text);
     background-color: var(--surface-0);

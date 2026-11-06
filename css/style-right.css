@@ -842,8 +842,10 @@
 }
 
 .eq-slider {
-    -webkit-appearance: slider-vertical;
-    writing-mode: bt-lr;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    -webkit-appearance: none;
+    appearance: none;
     width: 14px;
     height: 64px;
     background: transparent;

@@ -245,7 +245,7 @@
 
     .cat-tab {
         flex: 0 0 auto;
-        font-size: 0.65rem;
+        font-size: 12px;
     }
 
     .cat-tab:first-child {
@@ -285,6 +285,146 @@
     .play-hero-btn {
         width: 40px;
         height: 40px;
+    }
+}
+
+/* ========================================================
+   MOBILE TOUCH TARGET ERGONOMICS (min 44px for WCAG 2.5.5)
+   & FONT SIZE READABILITY (min 12px, .cat-count 11px)
+======================================================== */
+@media (max-width: 768px) {
+    /* 1. TOUCH TARGETS (>= 44px) */
+    .row-fav-btn {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .lyrics-offset-controls {
+        min-height: 44px;
+        padding: 2px 6px;
+    }
+
+    .offset-nudge-btn {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.5rem;
+    }
+
+    .crossfade-toggle {
+        min-width: 48px;
+        min-height: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+    }
+
+    .suite-badge-btn,
+    .speed-toggle-btn {
+        min-height: 44px;
+        padding: 0.5rem 0.85rem;
+    }
+
+    .eq-band-col {
+        min-width: 44px;
+        align-items: center;
+    }
+
+    .eq-slider {
+        writing-mode: vertical-lr;
+        direction: rtl;
+        min-width: 44px;
+        min-height: 64px;
+        padding: 0 14px;
+        box-sizing: border-box;
+    }
+
+    .volume-slider-dock {
+        min-height: 44px;
+    }
+
+    .volume-slider {
+        min-height: 44px;
+        padding: 14px 0;
+        box-sizing: border-box;
+    }
+
+    .top-action-btn,
+    .ctrl-btn,
+    .zen-ctrl-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+        font-size: 0.95rem;
+    }
+
+    .cat-tab {
+        min-height: 44px;
+        padding: 0.6rem 0.85rem;
+    }
+
+    .lyrics-close-btn {
+        min-width: 44px;
+        min-height: 44px;
+        width: 44px;
+        height: 44px;
+    }
+
+    /* 2. FONT SIZES (>= 12px, .cat-count 11px) */
+    .cat-count {
+        font-size: 11px;
+    }
+
+    .persona-name {
+        font-size: 12px;
+    }
+
+    .persona-tag {
+        font-size: 11px;
+    }
+
+    .eq-band-label,
+    .eq-freq-label,
+    .eq-band-val {
+        font-size: 12px;
+    }
+
+    .live-clock-pill .clock-tz,
+    .timezone-label,
+    .clock-tz {
+        font-size: 12px;
+    }
+
+    .fx-meta small,
+    .preset-desc,
+    .crossfade-desc {
+        font-size: 12px;
+    }
+
+    .speed-label {
+        font-size: 12px;
+    }
+
+    .row-duration {
+        font-size: 12px;
+    }
+
+    .cat-tab {
+        font-size: 12px;
+    }
+
+    .offset-nudge-btn,
+    .offset-val-badge {
+        font-size: 12px;
     }
 }
 
