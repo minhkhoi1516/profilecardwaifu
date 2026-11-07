@@ -340,6 +340,21 @@
     overflow: visible;
 }
 
+.seek-loop-range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    background: linear-gradient(90deg, rgba(56, 189, 248, 0.45), rgba(129, 140, 248, 0.45));
+    border-left: 2px solid var(--color-accent);
+    border-right: 2px solid var(--color-accent);
+    border-radius: 2px;
+    pointer-events: none;
+    display: none;
+    z-index: 2;
+}
+
 .seek-fill-bar {
     width: 0%;
     height: 100%;
@@ -839,6 +854,14 @@
     font-family: var(--font-mono);
     font-size: 0.62rem;
     color: var(--color-text-muted);
+}
+
+.eq-band {
+    padding: 8px 10px;
+    touch-action: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .eq-slider {

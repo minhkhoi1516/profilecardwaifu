@@ -127,17 +127,27 @@
     // Auto-Sync Waifu Theme with Music State
     let autoSyncTheme = safeGet('minkoi_auto_theme_sync', 'true') === 'true';
 
-    // Playback Speed State (1.0x, 1.25x Nightcore, 1.5x, 0.85x Lo-Fi Slowed)
+    // Playback Speed State: 7 presets [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
     const SPEED_PRESETS = [
+        { rate: 0.5, label: '0.5x', toast: 'Tốc độ: 0.5x (Super Slowed)' },
+        { rate: 0.75, label: '0.75x', toast: 'Tốc độ: 0.75x (Lo-Fi Slowed)' },
         { rate: 1.0, label: '1.0x', toast: 'Tốc độ: 1.0x (Bình thường)' },
         { rate: 1.25, label: '1.25x', toast: 'Tốc độ: 1.25x (Nightcore Mode)' },
         { rate: 1.5, label: '1.5x', toast: 'Tốc độ: 1.5x (Super Fast)' },
-        { rate: 0.85, label: '0.85x', toast: 'Tốc độ: 0.85x (Lo-Fi Slowed)' }
+        { rate: 1.75, label: '1.75x', toast: 'Tốc độ: 1.75x (Hyper Pop)' },
+        { rate: 2.0, label: '2.0x', toast: 'Tốc độ: 2.0x (Max Speed)' }
     ];
-    let currentSpeedIndex = parseInt(safeGet('minkoi_player_speed_idx', '0'), 10);
+    let currentSpeedIndex = parseInt(safeGet('minkoi_player_speed_idx', '2'), 10);
     if (isNaN(currentSpeedIndex) || currentSpeedIndex < 0 || currentSpeedIndex >= SPEED_PRESETS.length) {
-        currentSpeedIndex = 0;
+        currentSpeedIndex = 2; // Default 1.0x
     }
+
+    // A-B Loop State
+    let loopA = null; // seconds
+    let loopB = null; // seconds
+    const loopAbBtn = document.getElementById('loop-ab-btn');
+    const loopAbText = document.getElementById('loop-ab-text');
+    const seekLoopRange = document.getElementById('seek-loop-range');
 
     // Sleep Timer State
     let sleepTimerInterval = null;
@@ -197,7 +207,7 @@
             eqBands.air.frequency.value = 12000;
 
             analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 64; // 32 frequency bins
+            analyser.fftSize = 256; // 128 frequency bins (64 bars sampling)
             analyser.smoothingTimeConstant = 0.8;
             visualizerData = new Uint8Array(analyser.frequencyBinCount);
 
@@ -288,31 +298,40 @@
                 charAvatar.style.transform = `translateX(-50%) scale(${(1 + bass * 0.022).toFixed(3)})`;
             }
 
-            // Canvas Circular Audio Waves behind Waifu
+            // [TÍNH NĂNG 2] 64 Radial Bars Visualizer with Dynamic HSL Colors
             if (waifuCtx && waifuCanvas) {
                 waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
                 const centerX = waifuCanvas.width / 2;
                 const centerY = waifuCanvas.height / 2;
-                const baseRadius = 66;
-                const points = 24;
+                const baseRadius = 68; // Just outside the 136px avatar circle
+                const maxBarLength = 32;
+                const numBars = 64;
 
-                waifuCtx.beginPath();
-                for (let p = 0; p < points; p++) {
-                    const angle = (p / points) * Math.PI * 2;
-                    const bin = Math.min(p + 1, visualizerData.length - 1);
-                    const amp = (visualizerData[bin] / 255) * 22;
-                    const r = baseRadius + amp;
-                    const x = centerX + Math.cos(angle) * r;
-                    const y = centerY + Math.sin(angle) * r;
-                    if (p === 0) waifuCtx.moveTo(x, y);
-                    else waifuCtx.lineTo(x, y);
+                for (let i = 0; i < numBars; i++) {
+                    const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
+                    const bin = Math.min(i * 2, visualizerData.length - 1);
+                    const val = visualizerData[bin] || 0;
+                    const amp = (val / 255);
+                    const barLen = Math.max(2, amp * maxBarLength);
+
+                    // Dynamic HSL color according to frequency & audio intensity
+                    const hue = Math.floor((i / numBars) * 360 + amp * 60) % 360;
+
+                    const x1 = centerX + Math.cos(angle) * baseRadius;
+                    const y1 = centerY + Math.sin(angle) * baseRadius;
+                    const x2 = centerX + Math.cos(angle) * (baseRadius + barLen);
+                    const y2 = centerY + Math.sin(angle) * (baseRadius + barLen);
+
+                    waifuCtx.beginPath();
+                    waifuCtx.moveTo(x1, y1);
+                    waifuCtx.lineTo(x2, y2);
+                    waifuCtx.strokeStyle = `hsla(${hue}, 90%, 65%, ${0.4 + amp * 0.6})`;
+                    waifuCtx.lineWidth = 2.4;
+                    waifuCtx.lineCap = 'round';
+                    waifuCtx.shadowColor = `hsla(${hue}, 95%, 60%, 0.8)`;
+                    waifuCtx.shadowBlur = amp > 0.4 ? 6 : 2;
+                    waifuCtx.stroke();
                 }
-                waifuCtx.closePath();
-                waifuCtx.strokeStyle = 'rgba(56, 189, 248, 0.5)';
-                waifuCtx.lineWidth = 2.0;
-                waifuCtx.shadowColor = 'rgba(56, 189, 248, 0.8)';
-                waifuCtx.shadowBlur = 8;
-                waifuCtx.stroke();
             }
         }
         visualizerFrameId = requestAnimationFrame(loop);
@@ -367,20 +386,53 @@
 
     function updateMediaSession(track) {
         if (!('mediaSession' in navigator)) return;
+        if (!track) return;
         const persona = personaOf(track);
-        navigator.mediaSession.metadata = new MediaMetadata({
-            title: track.name,
-            artist: track.artist,
-            album: persona ? `${persona.name} · MinKoi Studio` : 'MinKoi Studio Collection',
-            artwork: [
-                { src: (persona && persona.avatar) ? persona.avatar : 'assets/avatar_alya.png', sizes: '512x512', type: 'image/png' }
-            ]
+        const artworkSrc = (persona && persona.avatar) ? persona.avatar : 'assets/avatar_alya.png';
+        const absArtwork = new URL(artworkSrc, window.location.href).href;
+
+        // Đăng ký MediaMetadata đầy đủ nếu chưa có hoặc track thay đổi
+        if (!navigator.mediaSession.metadata || navigator.mediaSession.metadata.title !== track.name) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.name,
+                artist: track.artist,
+                album: persona ? `${persona.name} · MinKoi Studio` : 'MinKoi Studio Collection',
+                artwork: [
+                    { src: absArtwork, sizes: '96x96', type: 'image/png' },
+                    { src: absArtwork, sizes: '128x128', type: 'image/png' },
+                    { src: absArtwork, sizes: '256x256', type: 'image/png' },
+                    { src: absArtwork, sizes: '512x512', type: 'image/png' }
+                ]
+            });
+        }
+
+        const safeSetAction = (action, handler) => {
+            try {
+                navigator.mediaSession.setActionHandler(action, handler);
+            } catch (_) {}
+        };
+
+        safeSetAction('play', () => playAudio());
+        safeSetAction('pause', () => pauseAudio());
+        safeSetAction('previoustrack', () => prevTrack());
+        safeSetAction('nexttrack', () => nextTrack());
+        safeSetAction('seekto', (details) => {
+            if (details.fastSeek && 'fastSeek' in audio) {
+                audio.fastSeek(details.seekTime);
+            } else if (details.seekTime !== undefined) {
+                audio.currentTime = details.seekTime;
+            }
         });
 
-        navigator.mediaSession.setActionHandler('play', playAudio);
-        navigator.mediaSession.setActionHandler('pause', pauseAudio);
-        navigator.mediaSession.setActionHandler('previoustrack', prevTrack);
-        navigator.mediaSession.setActionHandler('nexttrack', nextTrack);
+        if ('setPositionState' in navigator.mediaSession && audio.duration && !isNaN(audio.duration)) {
+            try {
+                navigator.mediaSession.setPositionState({
+                    duration: audio.duration,
+                    playbackRate: audio.playbackRate || 1.0,
+                    position: Math.min(audio.currentTime, audio.duration)
+                });
+            } catch (_) {}
+        }
     }
 
     function updateCategoryTag() {
@@ -431,6 +483,7 @@
         safeSet('minkoi_player_track_idx', currentTrackIndex.toString());
         hasPreloadedNext = false;
         hasRetriedCurrentTrack = false;
+        if (typeof clearLoop === 'function') clearLoop(true);
 
         // Clean reload to free previous decode buffer completely
         audio.pause();
@@ -769,8 +822,100 @@
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
 
+    /* ========================================================
+       [TÍNH NĂNG 1] A-B LOOP CONTROLLER
+    ======================================================== */
+    function updateLoopUI() {
+        if (!loopAbBtn || !seekLoopRange) return;
+        if (loopA !== null && loopB !== null) {
+            loopAbBtn.classList.add('active');
+            if (loopAbText) loopAbText.textContent = `${formatTime(loopA)}⇄${formatTime(loopB)}`;
+            loopAbBtn.title = `Đang lặp đoạn A-B: [${formatTime(loopA)} - ${formatTime(loopB)}] (Nhấp hoặc bấm \\ để hủy)`;
+            if (audio.duration) {
+                const leftPct = (loopA / audio.duration) * 100;
+                const widthPct = Math.max(0.5, ((loopB - loopA) / audio.duration) * 100);
+                seekLoopRange.style.display = 'block';
+                seekLoopRange.style.left = `${leftPct}%`;
+                seekLoopRange.style.width = `${widthPct}%`;
+            }
+        } else if (loopA !== null) {
+            loopAbBtn.classList.add('active');
+            if (loopAbText) loopAbText.textContent = `A: ${formatTime(loopA)}`;
+            loopAbBtn.title = `Đã đặt điểm A: ${formatTime(loopA)} (Bấm ] hoặc nhấp nút để đặt B)`;
+            if (audio.duration) {
+                const leftPct = (loopA / audio.duration) * 100;
+                seekLoopRange.style.display = 'block';
+                seekLoopRange.style.left = `${leftPct}%`;
+                seekLoopRange.style.width = '3px';
+            }
+        } else {
+            loopAbBtn.classList.remove('active');
+            if (loopAbText) loopAbText.textContent = 'A-B';
+            loopAbBtn.title = 'Lặp đoạn A-B (Phím [ đặt A, ] đặt B, \\ hủy)';
+            seekLoopRange.style.display = 'none';
+        }
+    }
+
+    function setLoopPointA() {
+        loopA = audio.currentTime;
+        loopB = null;
+        updateLoopUI();
+        if (typeof window.showToast === 'function') {
+            window.showToast(`Loop A: Bắt đầu tại ${formatTime(loopA)} (Bấm ] để đặt B)`, 'fa-repeat');
+        }
+    }
+
+    function setLoopPointB() {
+        if (loopA === null) {
+            setLoopPointA();
+            return;
+        }
+        if (audio.currentTime <= loopA) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('Điểm B phải sau điểm A!', 'fa-triangle-exclamation');
+            }
+            return;
+        }
+        loopB = audio.currentTime;
+        updateLoopUI();
+        if (typeof window.showToast === 'function') {
+            window.showToast(`Loop A-B: [${formatTime(loopA)} → ${formatTime(loopB)}]`, 'fa-repeat');
+        }
+    }
+
+    function clearLoop(silent = false) {
+        loopA = null;
+        loopB = null;
+        updateLoopUI();
+        if (!silent && typeof window.showToast === 'function') {
+            window.showToast('Đã xóa đoạn lặp A-B', 'fa-rotate-left');
+        }
+    }
+
+    function handleLoopToggle() {
+        if (loopA === null) {
+            setLoopPointA();
+        } else if (loopB === null) {
+            setLoopPointB();
+        } else {
+            clearLoop();
+        }
+    }
+
+    if (loopAbBtn) {
+        loopAbBtn.addEventListener('click', handleLoopToggle);
+    }
+
     audio.addEventListener('timeupdate', () => {
         if (!audio.duration || isScrubbing) return;
+
+        // [TÍNH NĂNG 1] Loop A-B check
+        if (loopA !== null && loopB !== null && loopB > loopA) {
+            if (audio.currentTime >= loopB) {
+                audio.currentTime = loopA;
+            }
+        }
+
         const pct = (audio.currentTime / audio.duration) * 100;
         if (seekFill) seekFill.style.width = `${pct}%`;
         if (zenSeekFill) zenSeekFill.style.width = `${pct}%`;
@@ -1058,7 +1203,9 @@
                 ${EQ_BAND_NAMES.map((name, idx) => `
                     <div class="eq-band-col">
                         <span class="eq-band-val" id="eq-val-${idx}">${eqBandGains[idx] > 0 ? '+' : ''}${eqBandGains[idx]}dB</span>
-                        <input type="range" class="eq-slider" min="-12" max="12" step="1" value="${eqBandGains[idx]}" data-band="${idx}" aria-label="Band ${name}">
+                        <div class="eq-band">
+                            <input type="range" class="eq-slider" min="-12" max="12" step="1" value="${eqBandGains[idx]}" data-band="${idx}" aria-label="Band ${name}">
+                        </div>
                         <span class="eq-band-label">${name}</span>
                     </div>
                 `).join('')}
@@ -1106,6 +1253,9 @@
 
         // Bind 5-band slider input
         audioFxMenu.querySelectorAll('.eq-slider').forEach(slider => {
+            slider.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+            }, { passive: true });
             slider.addEventListener('input', (e) => {
                 const bandIdx = parseInt(slider.dataset.band, 10);
                 const val = parseInt(e.target.value, 10);
@@ -1161,6 +1311,34 @@
         renderSleepTimerMenu();
     }
 
+    function fadeOutAndPause(durationSec = 5) {
+        if (gainNode && audioCtx && audioCtx.state === 'running') {
+            const now = audioCtx.currentTime;
+            const currentGain = gainNode.gain.value;
+            gainNode.gain.setValueAtTime(currentGain, now);
+            gainNode.gain.linearRampToValueAtTime(0.0001, now + durationSec);
+            setTimeout(() => {
+                pauseAudio();
+                const curVol = parseInt(volumeCtrl?.value || '45', 10);
+                gainNode.gain.setValueAtTime(curVol / 100, audioCtx.currentTime);
+            }, (durationSec * 1000) + 150);
+        } else {
+            const originalVol = audio.volume;
+            const steps = 25;
+            const stepInterval = (durationSec * 1000) / steps;
+            let currentStep = 0;
+            const fader = setInterval(() => {
+                currentStep++;
+                audio.volume = Math.max(0, originalVol * (1 - currentStep / steps));
+                if (currentStep >= steps) {
+                    clearInterval(fader);
+                    pauseAudio();
+                    audio.volume = originalVol;
+                }
+            }, stepInterval);
+        }
+    }
+
     function setSleepTimer(optionId) {
         stopSleepTimer();
         if (optionId === 'off') {
@@ -1188,20 +1366,10 @@
             const leftMs = sleepTimerTargetTime - Date.now();
             if (leftMs <= 0) {
                 stopSleepTimer();
-                // Gentle fade out over 3s
-                if (gainNode && audioCtx) {
-                    const now = audioCtx.currentTime;
-                    gainNode.gain.setValueAtTime(gainNode.gain.value, now);
-                    gainNode.gain.linearRampToValueAtTime(0.001, now + 3);
-                    setTimeout(() => {
-                        pauseAudio();
-                        setVolume(lastVolume || 45);
-                    }, 3100);
-                } else {
-                    pauseAudio();
-                }
+                // [BUG 8] Gentle fade out 5s cuối thay vì pause đột ngột
+                fadeOutAndPause(5);
                 if (typeof window.showToast === 'function') {
-                    window.showToast('Hẹn giờ: Đã tắt nhạc', 'fa-moon');
+                    window.showToast('Hẹn giờ: Đang giảm dần âm lượng và tắt nhạc', 'fa-moon');
                 }
             } else if (sleepTimerBtn) {
                 const leftMins = Math.ceil(leftMs / 60000);
@@ -1419,6 +1587,12 @@
                 audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
                 if (typeof window.showToast === 'function') window.showToast('+5s', 'fa-forward');
             }
+        } else if (e.key === '[') {
+            setLoopPointA();
+        } else if (e.key === ']') {
+            setLoopPointB();
+        } else if (e.key === '\\') {
+            clearLoop();
         }
     });
 

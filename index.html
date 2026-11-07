@@ -120,7 +120,7 @@
                             <span class="quote-tail"></span>
                         </div>
                         <div class="ripple-ground" aria-hidden="true"><span></span><span></span><span></span></div>
-                        <canvas id="waifu-visualizer-canvas" class="waifu-viz-canvas" width="220" height="220" aria-hidden="true"></canvas>
+                        <canvas id="waifu-visualizer-canvas" class="waifu-viz-canvas" width="240" height="240" aria-hidden="true"></canvas>
                         <div class="avatar-backdrop-disc" aria-hidden="true"></div>
                         <div class="halo-rotate" aria-hidden="true"></div>
                         <div class="halo-rotate outer" aria-hidden="true"></div>
@@ -229,6 +229,7 @@
                                 <span id="total-time">3:35</span>
                             </div>
                             <div class="seek-bar-track" id="seek-container" role="slider" aria-label="Audio progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
+                                <div class="seek-loop-range" id="seek-loop-range"></div>
                                 <div class="seek-fill-bar" id="seek-fill"></div>
                                 <div class="seek-hover-tooltip" id="seek-tip">0:00</div>
                             </div>
@@ -251,6 +252,9 @@
                                 </button>
                                 <button class="ctrl-btn repeat-btn active" id="repeat-btn" type="button" title="Lặp lại (R)" aria-label="Lặp lại">
                                     <i class="fas fa-repeat" aria-hidden="true"></i>
+                                </button>
+                                <button class="ctrl-btn loop-marker-btn" id="loop-ab-btn" type="button" title="Lặp đoạn A-B (Phím [ đặt A, ] đặt B, \ hủy)" aria-label="Lặp đoạn A-B">
+                                    <span class="loop-ab-text" id="loop-ab-text">A-B</span>
                                 </button>
                             </div>
 
@@ -385,9 +389,11 @@
             </div>
             <div class="lyrics-header-actions">
                 <div class="lyrics-offset-pill" title="Tinh chỉnh độ lệch thời gian (sớm / trễ)">
-                    <button class="offset-nudge-btn" id="offset-minus-btn" type="button" title="Lời chạy sớm hơn (-0.2s)">-0.2s</button>
+                    <button class="offset-nudge-btn" data-delta="-1" type="button" title="Lời chạy sớm hơn (-1s)">-1s</button>
+                    <button class="offset-nudge-btn" id="offset-minus-btn" data-delta="-0.2" type="button" title="Lời chạy sớm hơn (-0.2s)">-0.2s</button>
                     <span class="offset-val-badge" id="offset-val-text" title="Nhấp để đặt lại về 0.0s">0.0s</span>
-                    <button class="offset-nudge-btn" id="offset-plus-btn" type="button" title="Lời chạy trễ hơn (+0.2s)">+0.2s</button>
+                    <button class="offset-nudge-btn" id="offset-plus-btn" data-delta="+0.2" type="button" title="Lời chạy trễ hơn (+0.2s)">+0.2s</button>
+                    <button class="offset-nudge-btn" data-delta="+1" type="button" title="Lời chạy trễ hơn (+1s)">+1s</button>
                 </div>
                 <button class="lyrics-close-btn" id="lyrics-close-btn" type="button" title="Đóng lời bài hát (Esc)" aria-label="Đóng lời bài hát">
                     <i class="fas fa-xmark"></i>

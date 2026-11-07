@@ -97,52 +97,35 @@
         root.style.setProperty('--color-accent-glow', persona.accentGlow);
     }
 
-    // Render persona selector buttons (placeholder slot included, disabled)
+    // Render persona selector buttons (Filter placeholders without avatar)
     function renderPersonaSelector() {
         if (!personaContainer) return;
         personaContainer.innerHTML = '';
 
-        personas.forEach((persona, idx) => {
+        const validPersonas = personas.filter(p => p.avatar && p.available !== false);
+        validPersonas.forEach((persona, idx) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `persona-chip ${idx === currentIndex ? 'active' : ''}${persona.available ? '' : ' soon'}`;
+            btn.className = `persona-chip ${idx === currentIndex ? 'active' : ''}`;
             btn.dataset.index = idx;
             btn.dataset.key = persona.key;
-
-            if (!persona.available) {
-                btn.disabled = true;
-                btn.setAttribute('aria-disabled', 'true');
-                btn.setAttribute('aria-label', 'Slot waifu tiếp theo — Coming Soon');
-                btn.setAttribute('title', 'Coming Soon');
-                btn.innerHTML = `
-                    <span class="persona-avatar-preview soon-preview">
-                        <i class="fas fa-sparkles" aria-hidden="true"></i>
-                    </span>
-                    <span class="persona-meta">
-                        <span class="persona-name">Coming Soon</span>
-                        <span class="persona-tag">New Persona</span>
-                    </span>
-                `;
-            } else {
-                btn.setAttribute('aria-label', `Select visual persona: ${persona.name}`);
-                btn.setAttribute('title', `${persona.name} · ${persona.role}`);
-                btn.innerHTML = `
-                    <span class="persona-avatar-preview">
-                        <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
-                    </span>
-                    <span class="persona-meta">
-                        <span class="persona-name">${persona.name}</span>
-                        <span class="persona-tag">${persona.role}</span>
-                    </span>
-                `;
-                btn.addEventListener('click', () => setPersona(idx, true));
-            }
-
+            btn.setAttribute('aria-label', `Select visual persona: ${persona.name}`);
+            btn.setAttribute('title', `${persona.name} · ${persona.role}`);
+            btn.innerHTML = `
+                <span class="persona-avatar-preview">
+                    <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
+                </span>
+                <span class="persona-meta">
+                    <span class="persona-name">${persona.name}</span>
+                    <span class="persona-tag">${persona.role}</span>
+                </span>
+            `;
+            btn.addEventListener('click', () => setPersona(idx, true));
             personaContainer.appendChild(btn);
         });
 
         if (personaCountEl) {
-            personaCountEl.textContent = `${playablePersonas.length} PERSONAS · CLICK TO EQUIP`;
+            personaCountEl.textContent = `${validPersonas.length} PERSONAS · CLICK TO EQUIP`;
         }
     }
 

@@ -633,13 +633,13 @@
     }
 
     function adjustOffset(delta) {
-        userOffset = Math.max(-5.0, Math.min(5.0, userOffset + delta));
+        userOffset = Math.max(-10.0, Math.min(10.0, Math.round((userOffset + delta) * 10) / 10));
         safeSet('minkoi_lyrics_offset', userOffset.toString());
         updateOffsetDisplay();
         syncLyricsPlayback();
 
         if (typeof window.showToast === 'function') {
-            const dir = delta > 0 ? 'Trễ hơn (+0.2s)' : 'Sớm hơn (-0.2s)';
+            const dir = delta > 0 ? `Trễ hơn (+${delta}s)` : `Sớm hơn (${delta}s)`;
             window.showToast(`Lời đồng bộ: ${dir} → ${userOffset > 0 ? '+' : ''}${userOffset.toFixed(1)}s`, 'fa-clock');
         }
     }
@@ -654,8 +654,12 @@
         }
     }
 
-    if (offsetMinusBtn) offsetMinusBtn.addEventListener('click', () => adjustOffset(-0.2));
-    if (offsetPlusBtn) offsetPlusBtn.addEventListener('click', () => adjustOffset(0.2));
+    document.querySelectorAll('.offset-nudge-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const delta = btn.dataset.delta ? parseFloat(btn.dataset.delta) : (btn.id === 'offset-minus-btn' ? -0.2 : 0.2);
+            if (!isNaN(delta)) adjustOffset(delta);
+        });
+    });
     if (offsetValText) offsetValText.addEventListener('click', resetOffset);
     updateOffsetDisplay();
 
