@@ -45,7 +45,6 @@
     const zenNextBtn = document.getElementById('zen-next-track');
 
     // Extended Utility Elements
-    const themeSyncBtn = document.getElementById('theme-sync-btn');
     const speedBtn = document.getElementById('playback-speed-btn');
     const speedLabel = document.getElementById('playback-speed-label');
 
@@ -124,8 +123,8 @@
     let isScrubbing = false;
     let hasPreloadedNext = false;
 
-    // Auto-Sync Waifu Theme with Music State
-    let autoSyncTheme = safeGet('minkoi_auto_theme_sync', 'true') === 'true';
+    // Auto-Sync Waifu Theme with Music State (Disabled)
+    let autoSyncTheme = false;
 
     // Playback Speed State: 7 presets [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
     const SPEED_PRESETS = [
@@ -1003,30 +1002,6 @@
         zenPlayBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             togglePlay();
-        });
-    }
-
-    // Auto-Sync Waifu Theme with Music Button
-    if (themeSyncBtn) {
-        themeSyncBtn.classList.toggle('active', autoSyncTheme);
-        themeSyncBtn.title = autoSyncTheme ? 'Tự đổi Waifu theo bài hát (Đang BẬT)' : 'Tự đổi Waifu theo bài hát (Đang TẮT)';
-        themeSyncBtn.addEventListener('click', () => {
-            autoSyncTheme = !autoSyncTheme;
-            safeSet('minkoi_auto_theme_sync', autoSyncTheme.toString());
-            themeSyncBtn.classList.toggle('active', autoSyncTheme);
-            themeSyncBtn.title = autoSyncTheme ? 'Tự đổi Waifu theo bài hát (Đang BẬT)' : 'Tự đổi Waifu theo bài hát (Đang TẮT)';
-            if (typeof window.showToast === 'function') {
-                window.showToast(autoSyncTheme ? 'Tự đổi Waifu theo bài hát: BẬT' : 'Tự đổi Waifu theo bài hát: TẮT', 'fa-wand-magic-sparkles');
-            }
-            if (autoSyncTheme) {
-                const track = fullPlaylist[currentTrackIndex];
-                if (track && track.persona) {
-                    const pIdx = CONFIG.personas.findIndex(p => p.key === track.persona && p.available);
-                    if (pIdx >= 0 && typeof window.setPersona === 'function') {
-                        window.setPersona(pIdx, false);
-                    }
-                }
-            }
         });
     }
 

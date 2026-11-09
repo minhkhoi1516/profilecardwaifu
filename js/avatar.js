@@ -216,26 +216,8 @@
         }, 120);
     }
 
-    // Quote Bubble Engine
-    const quoteBubble = document.getElementById('waifu-quote-bubble');
-    const quoteText = document.getElementById('waifu-quote-text');
-    let quoteTimer = null;
-
-    function showWaifuQuote(customText) {
-        if (!quoteBubble || !quoteText) return;
-        const persona = personas[currentIndex];
-        const quotes = persona?.quotes || [];
-        const text = customText || (quotes.length > 0 ? quotes[Math.floor(Math.random() * quotes.length)] : "✨");
-
-        quoteText.textContent = text;
-        quoteBubble.classList.add('visible');
-
-        if (quoteTimer) clearTimeout(quoteTimer);
-        quoteTimer = setTimeout(() => {
-            quoteBubble.classList.remove('visible');
-        }, 4500);
-    }
-    window.showWaifuQuote = showWaifuQuote;
+    // Quote Bubble Engine removed permanently
+    window.showWaifuQuote = () => {};
 
     let currentPersona = null;
 

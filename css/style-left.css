@@ -29,67 +29,6 @@
     user-select: none;
 }
 
-/* ========================================================
-   WAIFU INTERACTIVE QUOTE BUBBLE
-======================================================== */
-.waifu-quote-bubble {
-    position: absolute;
-    bottom: calc(100% + 14px);
-    left: 50%;
-    transform: translateX(-50%) translateY(8px) scale(0.9);
-    opacity: 0;
-    pointer-events: none;
-    background: rgba(15, 23, 42, 0.94);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--color-border-active);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px var(--color-accent-glow);
-    padding: 0.55rem 0.95rem;
-    border-radius: var(--radius-md);
-    white-space: normal;
-    min-width: 160px;
-    max-width: 250px;
-    text-align: center;
-    z-index: 50;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.waifu-quote-bubble.visible {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-    pointer-events: auto;
-}
-
-.waifu-quote-bubble .quote-text {
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1.45;
-    color: var(--color-text);
-    display: block;
-}
-
-.waifu-quote-bubble .quote-tail {
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-top: 7px solid rgba(15, 23, 42, 0.94);
-}
-
-body.light-mode .waifu-quote-bubble {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(0, 0, 0, 0.12);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-}
-
-body.light-mode .waifu-quote-bubble .quote-tail {
-    border-top-color: rgba(255, 255, 255, 0.95);
-}
-
 /* Pulsing Ethereal Ripple Waves */
 .ripple-ground {
     position: absolute;
