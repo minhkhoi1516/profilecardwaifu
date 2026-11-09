@@ -373,10 +373,41 @@
         }
     });
 
+    // 9. IQOO / ORIGINOS AUDIO NOTICE CONTROLLER
+    function initIqooNotice() {
+        const noticeEl = document.getElementById('audio-iqoo-notice');
+        const closeBtn = document.getElementById('audio-iqoo-close');
+        if (!noticeEl) return;
+
+        try {
+            if (localStorage.getItem('minkoi_hide_iqoo_tip') === 'true') {
+                noticeEl.classList.add('hidden');
+                return;
+            }
+        } catch (_) {}
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                noticeEl.style.opacity = '0';
+                noticeEl.style.transform = 'translateY(6px)';
+                setTimeout(() => {
+                    noticeEl.classList.add('hidden');
+                }, 240);
+                try {
+                    localStorage.setItem('minkoi_hide_iqoo_tip', 'true');
+                } catch (_) {}
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Đã đóng hướng dẫn iQOO', 'fa-circle-check');
+                }
+            });
+        }
+    }
+
     // Boot
     initTheme();
     initActionButtons();
     initLiveClock();
     initZenMode();
     initDiscordStatus();
+    initIqooNotice();
 })();

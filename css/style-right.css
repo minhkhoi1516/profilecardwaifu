@@ -1036,9 +1036,11 @@ body.light-mode .fx-preset-btn.active {
 .audio-iqoo-notice {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.85rem;
-    margin-bottom: 0.75rem;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    margin-top: 1.1rem;
+    margin-bottom: 0.4rem;
     border-radius: var(--radius-sm);
     background: rgba(56, 189, 248, 0.08);
     border: 1px solid rgba(56, 189, 248, 0.22);
@@ -1046,15 +1048,60 @@ body.light-mode .fx-preset-btn.active {
     font-size: 0.75rem;
     line-height: 1.4;
     text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }
 
-.audio-iqoo-notice i {
+.audio-iqoo-notice.hidden {
+    display: none !important;
+}
+
+.audio-iqoo-content {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex: 1;
+}
+
+.audio-iqoo-content i {
     color: var(--color-accent);
     flex-shrink: 0;
     font-size: 0.9rem;
 }
 
-.audio-iqoo-notice strong {
+.audio-iqoo-content strong {
     color: var(--text-primary);
     font-weight: 600;
 }
+
+.audio-iqoo-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    padding: 0;
+    transition: all var(--transition-fast);
+}
+
+.audio-iqoo-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+/* Ẩn hoàn toàn trên màn hình Desktop máy tính vì iQOO là điện thoại Android */
+@media (min-width: 861px) {
+    .audio-iqoo-notice {
+        display: none !important;
+    }
+}
+
