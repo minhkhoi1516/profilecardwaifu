@@ -359,7 +359,8 @@
     }
 
     .cat-tab,
-    .lyrics-mode-btn {
+    .lyrics-mode-btn,
+    .tap-sync-toggle-btn {
         min-height: 44px;
         height: 44px;
         display: inline-flex;
@@ -441,7 +442,8 @@
     .footer-text,
     .footer-copy,
     .footer-meta,
-    .lyrics-footer {
+    .lyrics-footer,
+    .audio-iqoo-notice {
         font-size: 12px !important;
     }
 

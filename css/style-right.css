@@ -340,21 +340,6 @@
     overflow: visible;
 }
 
-.seek-loop-range {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    background: linear-gradient(90deg, rgba(56, 189, 248, 0.45), rgba(129, 140, 248, 0.45));
-    border-left: 2px solid var(--color-accent);
-    border-right: 2px solid var(--color-accent);
-    border-radius: 2px;
-    pointer-events: none;
-    display: none;
-    z-index: 2;
-}
-
 .seek-fill-bar {
     width: 0%;
     height: 100%;
@@ -1045,4 +1030,31 @@ body.light-mode .fx-preset-btn:hover {
 body.light-mode .fx-preset-btn.active {
     background: rgba(15, 23, 42, 0.08);
     border-color: var(--color-accent);
+}
+
+/* Audio Optimization Tip (iQOO / OriginOS / Battery Saver) */
+.audio-iqoo-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    margin-bottom: 0.75rem;
+    border-radius: var(--radius-sm);
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.audio-iqoo-notice i {
+    color: var(--color-accent);
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.audio-iqoo-notice strong {
+    color: var(--text-primary);
+    font-weight: 600;
 }

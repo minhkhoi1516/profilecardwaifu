@@ -664,6 +664,45 @@
     updateOffsetDisplay();
 
     /* --------------------------------------------------------
+       LRC FORMAT PARSER ([offset: +/-XXX])
+    -------------------------------------------------------- */
+    function parseLrcOffset(text) {
+        if (!text || typeof text !== 'string') return 0;
+        const m = text.match(/\[offset:\s*([+-]?\d+)\]/i);
+        return m ? parseInt(m[1], 10) : 0;
+    }
+
+    /* --------------------------------------------------------
+       TAP TO SYNC CONTROLLER
+    -------------------------------------------------------- */
+    let isTapToSyncActive = false;
+    const tapSyncToggleBtn = document.getElementById('tap-sync-toggle-btn');
+
+    function setTapSyncActive(active) {
+        isTapToSyncActive = active;
+        if (tapSyncToggleBtn) {
+            tapSyncToggleBtn.classList.toggle('active', isTapToSyncActive);
+        }
+        if (lyricsBody) {
+            lyricsBody.classList.toggle('tap-sync-mode', isTapToSyncActive);
+        }
+    }
+
+    if (tapSyncToggleBtn) {
+        tapSyncToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setTapSyncActive(!isTapToSyncActive);
+            if (typeof window.showToast === 'function') {
+                if (isTapToSyncActive) {
+                    window.showToast('🎯 Tap to Sync: Nhấp vào câu waifu đang hát để cân chỉnh ngay!', 'fa-bullseye');
+                } else {
+                    window.showToast('Đã tắt chế độ Tap to Sync', 'fa-rotate-left');
+                }
+            }
+        });
+    }
+
+    /* --------------------------------------------------------
        DUAL VIEW MODE (KARAOKE vs FULL TEXT)
     -------------------------------------------------------- */
     function updateModeButtonUI() {
@@ -773,8 +812,29 @@
         `).join('');
 
         lyricsBody.querySelectorAll('.lyric-line').forEach(lineEl => {
-            lineEl.addEventListener('click', () => {
+            lineEl.addEventListener('click', (e) => {
                 const targetTime = parseFloat(lineEl.dataset.time);
+                if (isTapToSyncActive || e.altKey) {
+                    if (audio && !isNaN(targetTime)) {
+                        // Tap to Sync: offset = currentTime*1000 - lineTime
+                        const curTimeMs = audio.currentTime * 1000;
+                        const lineTimeMs = targetTime * 1000;
+                        const lrcOffsetMs = data.offset || (data.lrcRaw ? parseLrcOffset(data.lrcRaw) : 0);
+                        const diffMs = curTimeMs - lineTimeMs - lrcOffsetMs;
+                        const calculatedOffsetSec = Math.round((diffMs / 1000) * 10) / 10;
+                        userOffset = Math.max(-10.0, Math.min(10.0, calculatedOffsetSec));
+                        safeSet('minkoi_lyrics_offset', userOffset.toString());
+                        updateOffsetDisplay();
+                        syncLyricsPlayback();
+                        setTapSyncActive(false);
+                        if (typeof window.showToast === 'function') {
+                            const sign = userOffset > 0 ? '+' : '';
+                            window.showToast(`🎯 Tap to Sync: Đã đồng bộ ${sign}${userOffset.toFixed(1)}s cho toàn bài`, 'fa-bullseye');
+                        }
+                    }
+                    return;
+                }
+
                 if (audio && !isNaN(targetTime)) {
                     audio.currentTime = Math.max(0, targetTime);
                     if (audio.paused) audio.play();
@@ -806,12 +866,14 @@
             return;
         }
 
-        // Apply real-time user offset
-        const curTime = audio.currentTime + userOffset;
+        // Apply real-time user offset (ms) + LRC [offset: +/-XXX] (ms)
+        const lrcOffsetMs = data.offset || (data.lrcRaw ? parseLrcOffset(data.lrcRaw) : 0);
+        const curTimeMs = (audio.currentTime * 1000) + (userOffset * 1000) + lrcOffsetMs;
         let newIndex = -1;
 
         for (let i = 0; i < data.lines.length; i++) {
-            if (curTime >= data.lines[i].time) {
+            const lineTimeMs = data.lines[i].time * 1000;
+            if (curTimeMs >= lineTimeMs) {
                 newIndex = i;
             } else {
                 break;
@@ -888,11 +950,46 @@
         lyricsCloseBtn.addEventListener('click', closeLyrics);
     }
 
-    if (audio) {
-        audio.addEventListener('timeupdate', syncLyricsPlayback);
-        audio.addEventListener('play', syncLyricsPlayback);
-        audio.addEventListener('seeked', syncLyricsPlayback);
+    let lyricsRafId = null;
+
+    function startLyricsLoop() {
+        if (lyricsRafId) cancelAnimationFrame(lyricsRafId);
+        function loop() {
+            if (!audio.paused && !document.hidden) {
+                syncLyricsPlayback();
+                lyricsRafId = requestAnimationFrame(loop);
+            } else {
+                lyricsRafId = null;
+            }
+        }
+        lyricsRafId = requestAnimationFrame(loop);
     }
+
+    function stopLyricsLoop() {
+        if (lyricsRafId) {
+            cancelAnimationFrame(lyricsRafId);
+            lyricsRafId = null;
+        }
+    }
+
+    if (audio) {
+        audio.addEventListener('play', () => {
+            syncLyricsPlayback();
+            startLyricsLoop();
+        });
+        audio.addEventListener('pause', stopLyricsLoop);
+        audio.addEventListener('ended', stopLyricsLoop);
+        audio.addEventListener('seeked', syncLyricsPlayback);
+        audio.addEventListener('timeupdate', syncLyricsPlayback);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopLyricsLoop();
+        } else if (audio && !audio.paused) {
+            startLyricsLoop();
+        }
+    });
 
     // Auto-update lyrics when track changes
     window.addEventListener('minkoi:trackchange', (e) => {

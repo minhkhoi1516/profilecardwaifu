@@ -5,7 +5,8 @@
 
 .banner-stage,
 .banner-layer,
-.starry-bg {
+.starry-bg,
+.fluid-bg-canvas {
     position: fixed;
     top: 0;
     left: 0;
@@ -67,5 +68,18 @@ body.light-mode .banner-stage::after {
 
 body.light-mode .starry-bg {
     opacity: 0.22;
+    mix-blend-mode: multiply;
+}
+
+/* WebGL Audio-Reactive Fluid Atmosphere */
+.fluid-bg-canvas {
+    z-index: 1;
+    mix-blend-mode: screen;
+    opacity: 0.42;
+    transition: opacity 0.8s var(--ease-out-quint);
+}
+
+body.light-mode .fluid-bg-canvas {
+    opacity: 0.18;
     mix-blend-mode: multiply;
 }

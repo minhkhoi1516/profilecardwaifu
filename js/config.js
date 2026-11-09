@@ -180,13 +180,15 @@ const CONFIG = {
             available: true
         },
         {
-            // Slot trống: hiện chip mờ "Coming Soon", bấm vào không làm gì.
-            id: 7,
-            key: "coming",
-            name: "Coming Soon",
-            role: "New Persona",
-            title: "Slot đang chờ waifu tiếp theo",
-            avatar: "",
+            // Placeholder slot: Add your waifu
+            id: 'new-persona',
+            key: "new-persona",
+            name: "New Persona",
+            role: "Waifu Slot",
+            title: "Add your waifu",
+            avatar: null,
+            tracks: [],
+            isPlaceholder: true,
             banners: { pc: [], phone: [] },
             accent: "#94a3b8",
             accentSecondary: "#64748b",

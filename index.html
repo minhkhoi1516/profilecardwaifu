@@ -56,6 +56,9 @@
         <div class="banner-layer" data-index="6"></div>
     </div>
 
+    <!-- WEBGL AUDIO-REACTIVE FLUID BACKGROUND -->
+    <canvas id="fluid-bg-canvas" class="fluid-bg-canvas" aria-hidden="true"></canvas>
+
     <!-- AMBIENT PARTICLES CANVAS -->
     <canvas id="starry-canvas" class="starry-bg" aria-hidden="true"></canvas>
 
@@ -229,7 +232,6 @@
                                 <span id="total-time">3:35</span>
                             </div>
                             <div class="seek-bar-track" id="seek-container" role="slider" aria-label="Audio progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
-                                <div class="seek-loop-range" id="seek-loop-range"></div>
                                 <div class="seek-fill-bar" id="seek-fill"></div>
                                 <div class="seek-hover-tooltip" id="seek-tip">0:00</div>
                             </div>
@@ -252,9 +254,6 @@
                                 </button>
                                 <button class="ctrl-btn repeat-btn active" id="repeat-btn" type="button" title="Lặp lại (R)" aria-label="Lặp lại">
                                     <i class="fas fa-repeat" aria-hidden="true"></i>
-                                </button>
-                                <button class="ctrl-btn loop-marker-btn" id="loop-ab-btn" type="button" title="Lặp đoạn A-B (Phím [ đặt A, ] đặt B, \ hủy)" aria-label="Lặp đoạn A-B">
-                                    <span class="loop-ab-text" id="loop-ab-text">A-B</span>
                                 </button>
                             </div>
 
@@ -322,6 +321,10 @@
 
                     <!-- MINIMAL FOOTER CREDITS -->
                     <footer class="studio-card-footer">
+                        <div class="audio-iqoo-notice" id="audio-iqoo-notice">
+                            <i class="fas fa-circle-info" aria-hidden="true"></i>
+                            <span>Nếu nhạc bị rè/ngắt trên iQOO, hãy vào <strong>Cài đặt &gt; Ứng dụng &gt; Trình duyệt &gt; Pin &gt; Không hạn chế</strong>.</span>
+                        </div>
                         <span class="footer-copy">© 2026 MINKOI STUDIO · ALL RIGHTS RESERVED</span>
                         <span class="footer-meta">VIETNAM · BESPOKE DIGITAL IDENTITY</span>
                     </footer>
@@ -404,7 +407,10 @@
             <!-- Populated dynamically via js/lyrics.js -->
         </div>
         <div class="lyrics-footer">
-            <i class="fas fa-arrow-pointer"></i> Nhấp vào câu bất kỳ để tua nhanh tới đoạn đó
+            <span class="lyrics-footer-hint"><i class="fas fa-arrow-pointer"></i> Nhấp câu để tua nhanh</span>
+            <button class="tap-sync-toggle-btn" id="tap-sync-toggle-btn" type="button" title="Chạm câu đang hát để tự động đồng bộ thời gian (Tap to Sync)">
+                <i class="fas fa-bullseye"></i> <span>Tap to Sync</span>
+            </button>
         </div>
     </aside>
 
@@ -418,6 +424,7 @@
     <!-- CLEAN JAVASCRIPT MODULES -->
     <script src="js/config.js?v=14.0"></script>
     <script src="js/stars.js?v=14.0"></script>
+    <script src="js/fluid-bg.js?v=14.0"></script>
     <script src="js/avatar.js?v=14.0"></script>
     <script src="js/music.js?v=14.0"></script>
     <script src="js/lyrics.js?v=14.0"></script>

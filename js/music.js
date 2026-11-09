@@ -142,13 +142,6 @@
         currentSpeedIndex = 2; // Default 1.0x
     }
 
-    // A-B Loop State
-    let loopA = null; // seconds
-    let loopB = null; // seconds
-    const loopAbBtn = document.getElementById('loop-ab-btn');
-    const loopAbText = document.getElementById('loop-ab-text');
-    const seekLoopRange = document.getElementById('seek-loop-range');
-
     // Sleep Timer State
     let sleepTimerInterval = null;
     let sleepTimerTargetTime = null;
@@ -173,9 +166,15 @@
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
             if (!AudioContextClass) return;
 
-            // Shared singleton to save hardware audio resources
-            audioCtx = window.__minkoiAudioCtx || new AudioContextClass();
-            window.__minkoiAudioCtx = audioCtx;
+            // Shared singleton with 'playback' latencyHint to maximize buffer & eliminate crackling on Android/iQOO/OriginOS
+            if (!window.__minkoiAudioCtx) {
+                try {
+                    window.__minkoiAudioCtx = new AudioContextClass({ latencyHint: 'playback' });
+                } catch (_) {
+                    window.__minkoiAudioCtx = new AudioContextClass();
+                }
+            }
+            audioCtx = window.__minkoiAudioCtx;
 
             gainNode = audioCtx.createGain();
 
@@ -227,6 +226,7 @@
             gainNode.gain.setValueAtTime(currentVol / 100, audioCtx.currentTime);
 
             applyEqPreset(currentAudioFx);
+            window.__minkoiAnalyser = analyser;
             isContextReady = true;
         } catch (_) {}
     }
@@ -483,7 +483,6 @@
         safeSet('minkoi_player_track_idx', currentTrackIndex.toString());
         hasPreloadedNext = false;
         hasRetriedCurrentTrack = false;
-        if (typeof clearLoop === 'function') clearLoop(true);
 
         // Clean reload to free previous decode buffer completely
         audio.pause();
@@ -603,6 +602,9 @@
         }
 
         audio.play().then(() => {
+            if ('mediaSession' in navigator) {
+                try { navigator.mediaSession.playbackState = 'playing'; } catch (_) {}
+            }
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
             if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
             if (vinylDisc) vinylDisc.classList.add('spinning');
@@ -614,6 +616,9 @@
             }
             startVisualizerLoop();
         }).catch((err) => {
+            if ('mediaSession' in navigator) {
+                try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
+            }
             if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (vinylDisc) vinylDisc.classList.remove('spinning');
@@ -623,6 +628,9 @@
 
     function pauseAudio() {
         audio.pause();
+        if ('mediaSession' in navigator) {
+            try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
+        }
         if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (vinylDisc) vinylDisc.classList.remove('spinning');
@@ -822,99 +830,8 @@
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
 
-    /* ========================================================
-       [TÍNH NĂNG 1] A-B LOOP CONTROLLER
-    ======================================================== */
-    function updateLoopUI() {
-        if (!loopAbBtn || !seekLoopRange) return;
-        if (loopA !== null && loopB !== null) {
-            loopAbBtn.classList.add('active');
-            if (loopAbText) loopAbText.textContent = `${formatTime(loopA)}⇄${formatTime(loopB)}`;
-            loopAbBtn.title = `Đang lặp đoạn A-B: [${formatTime(loopA)} - ${formatTime(loopB)}] (Nhấp hoặc bấm \\ để hủy)`;
-            if (audio.duration) {
-                const leftPct = (loopA / audio.duration) * 100;
-                const widthPct = Math.max(0.5, ((loopB - loopA) / audio.duration) * 100);
-                seekLoopRange.style.display = 'block';
-                seekLoopRange.style.left = `${leftPct}%`;
-                seekLoopRange.style.width = `${widthPct}%`;
-            }
-        } else if (loopA !== null) {
-            loopAbBtn.classList.add('active');
-            if (loopAbText) loopAbText.textContent = `A: ${formatTime(loopA)}`;
-            loopAbBtn.title = `Đã đặt điểm A: ${formatTime(loopA)} (Bấm ] hoặc nhấp nút để đặt B)`;
-            if (audio.duration) {
-                const leftPct = (loopA / audio.duration) * 100;
-                seekLoopRange.style.display = 'block';
-                seekLoopRange.style.left = `${leftPct}%`;
-                seekLoopRange.style.width = '3px';
-            }
-        } else {
-            loopAbBtn.classList.remove('active');
-            if (loopAbText) loopAbText.textContent = 'A-B';
-            loopAbBtn.title = 'Lặp đoạn A-B (Phím [ đặt A, ] đặt B, \\ hủy)';
-            seekLoopRange.style.display = 'none';
-        }
-    }
-
-    function setLoopPointA() {
-        loopA = audio.currentTime;
-        loopB = null;
-        updateLoopUI();
-        if (typeof window.showToast === 'function') {
-            window.showToast(`Loop A: Bắt đầu tại ${formatTime(loopA)} (Bấm ] để đặt B)`, 'fa-repeat');
-        }
-    }
-
-    function setLoopPointB() {
-        if (loopA === null) {
-            setLoopPointA();
-            return;
-        }
-        if (audio.currentTime <= loopA) {
-            if (typeof window.showToast === 'function') {
-                window.showToast('Điểm B phải sau điểm A!', 'fa-triangle-exclamation');
-            }
-            return;
-        }
-        loopB = audio.currentTime;
-        updateLoopUI();
-        if (typeof window.showToast === 'function') {
-            window.showToast(`Loop A-B: [${formatTime(loopA)} → ${formatTime(loopB)}]`, 'fa-repeat');
-        }
-    }
-
-    function clearLoop(silent = false) {
-        loopA = null;
-        loopB = null;
-        updateLoopUI();
-        if (!silent && typeof window.showToast === 'function') {
-            window.showToast('Đã xóa đoạn lặp A-B', 'fa-rotate-left');
-        }
-    }
-
-    function handleLoopToggle() {
-        if (loopA === null) {
-            setLoopPointA();
-        } else if (loopB === null) {
-            setLoopPointB();
-        } else {
-            clearLoop();
-        }
-    }
-
-    if (loopAbBtn) {
-        loopAbBtn.addEventListener('click', handleLoopToggle);
-    }
-
     audio.addEventListener('timeupdate', () => {
         if (!audio.duration || isScrubbing) return;
-
-        // [TÍNH NĂNG 1] Loop A-B check
-        if (loopA !== null && loopB !== null && loopB > loopA) {
-            if (audio.currentTime >= loopB) {
-                audio.currentTime = loopA;
-            }
-        }
 
         const pct = (audio.currentTime / audio.duration) * 100;
         if (seekFill) seekFill.style.width = `${pct}%`;
@@ -1587,18 +1504,17 @@
                 audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
                 if (typeof window.showToast === 'function') window.showToast('+5s', 'fa-forward');
             }
-        } else if (e.key === '[') {
-            setLoopPointA();
-        } else if (e.key === ']') {
-            setLoopPointB();
-        } else if (e.key === '\\') {
-            clearLoop();
         }
     });
 
-    // Visibility change: pause visualizer when tab is hidden
+    // Visibility change: pause visualizer immediately when tab is hidden, resume when visible
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !audio.paused) {
+        if (document.hidden) {
+            if (visualizerFrameId) {
+                cancelAnimationFrame(visualizerFrameId);
+                visualizerFrameId = null;
+            }
+        } else if (!audio.paused) {
             startVisualizerLoop();
         }
     });

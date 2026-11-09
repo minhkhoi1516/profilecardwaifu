@@ -97,35 +97,54 @@
         root.style.setProperty('--color-accent-glow', persona.accentGlow);
     }
 
-    // Render persona selector buttons (Filter placeholders without avatar)
+    // Render persona selector buttons (including New Persona placeholder slot)
     function renderPersonaSelector() {
         if (!personaContainer) return;
         personaContainer.innerHTML = '';
 
-        const validPersonas = personas.filter(p => p.avatar && p.available !== false);
-        validPersonas.forEach((persona, idx) => {
+        personas.forEach((persona, idx) => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = `persona-chip ${idx === currentIndex ? 'active' : ''}`;
+            const isPlaceholder = persona.isPlaceholder || !persona.avatar;
+            btn.className = `persona-chip ${isPlaceholder ? 'persona-chip-placeholder' : (idx === currentIndex ? 'active' : '')}`;
             btn.dataset.index = idx;
             btn.dataset.key = persona.key;
-            btn.setAttribute('aria-label', `Select visual persona: ${persona.name}`);
-            btn.setAttribute('title', `${persona.name} · ${persona.role}`);
-            btn.innerHTML = `
-                <span class="persona-avatar-preview">
-                    <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
-                </span>
-                <span class="persona-meta">
-                    <span class="persona-name">${persona.name}</span>
-                    <span class="persona-tag">${persona.role}</span>
-                </span>
-            `;
-            btn.addEventListener('click', () => setPersona(idx, true));
+            btn.setAttribute('aria-label', `Persona: ${persona.name}`);
+            btn.setAttribute('title', `${persona.name} · ${persona.title || persona.role}`);
+
+            if (isPlaceholder) {
+                btn.innerHTML = `
+                    <span class="persona-avatar-preview placeholder-preview">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                    </span>
+                    <span class="persona-meta">
+                        <span class="persona-name">${persona.name}</span>
+                        <span class="persona-tag">${persona.title || 'Add your waifu'}</span>
+                    </span>
+                `;
+                btn.addEventListener('click', () => {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Coming soon ✨ Khe cắm Waifu mới!', 'fa-sparkles');
+                    }
+                });
+            } else {
+                btn.innerHTML = `
+                    <span class="persona-avatar-preview">
+                        <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
+                    </span>
+                    <span class="persona-meta">
+                        <span class="persona-name">${persona.name}</span>
+                        <span class="persona-tag">${persona.role}</span>
+                    </span>
+                `;
+                btn.addEventListener('click', () => setPersona(idx, true));
+            }
             personaContainer.appendChild(btn);
         });
 
         if (personaCountEl) {
-            personaCountEl.textContent = `${validPersonas.length} PERSONAS · CLICK TO EQUIP`;
+            const activeCount = personas.filter(p => p.available).length;
+            personaCountEl.textContent = `${activeCount} PERSONAS · CLICK TO EQUIP`;
         }
     }
 

@@ -557,30 +557,36 @@ body.light-mode .persona-avatar-preview {
 /* ========================================================
    EMPTY PERSONA SLOT ("Coming Soon") & AVATAR FALLBACK
 ======================================================== */
-.persona-chip.soon {
-    opacity: 0.55;
-    cursor: not-allowed;
+.persona-chip.soon,
+.persona-chip-placeholder {
+    opacity: 0.68;
+    cursor: pointer;
     border-style: dashed;
-    background: transparent;
+    background: rgba(255, 255, 255, 0.02);
+    transition: all var(--transition-fast);
 }
 
-.persona-chip.soon:hover {
-    transform: none;
-    border-color: var(--color-border);
-    background: transparent;
+.persona-chip.soon:hover,
+.persona-chip-placeholder:hover {
+    opacity: 0.95;
+    transform: translateY(-1px);
+    border-color: var(--color-accent);
+    background: rgba(56, 189, 248, 0.06);
 }
 
-.soon-preview {
+.soon-preview,
+.placeholder-preview {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-muted);
-    font-size: 0.7rem;
+    color: var(--color-accent);
+    font-size: 0.75rem;
     border-style: dashed;
 }
 
-.persona-chip.soon .persona-name {
-    color: var(--color-text-muted);
+.persona-chip.soon .persona-name,
+.persona-chip-placeholder .persona-name {
+    color: var(--color-text-secondary);
     font-weight: 500;
 }
 
