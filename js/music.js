@@ -608,6 +608,8 @@
             if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
             if (vinylDisc) vinylDisc.classList.add('spinning');
             if (zenDisc) zenDisc.classList.add('spinning');
+            const avatarZone = document.getElementById('avatar-zone-wrap');
+            if (avatarZone) avatarZone.classList.add('playing');
             if (audioAlert) audioAlert.classList.add('hidden');
             const track = fullPlaylist[currentTrackIndex];
             if (track) {
@@ -622,6 +624,8 @@
             if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
             if (vinylDisc) vinylDisc.classList.remove('spinning');
             if (zenDisc) zenDisc.classList.remove('spinning');
+            const avatarZone = document.getElementById('avatar-zone-wrap');
+            if (avatarZone) avatarZone.classList.remove('playing');
         });
     }
 
@@ -634,6 +638,8 @@
         if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
         if (vinylDisc) vinylDisc.classList.remove('spinning');
         if (zenDisc) zenDisc.classList.remove('spinning');
+        const avatarZone = document.getElementById('avatar-zone-wrap');
+        if (avatarZone) avatarZone.classList.remove('playing');
         document.title = `${CONFIG.name} · Waifu & Music Studio`;
         if (visualizerFrameId) {
             cancelAnimationFrame(visualizerFrameId);
