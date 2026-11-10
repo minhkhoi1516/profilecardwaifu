@@ -1091,11 +1091,54 @@
     // Audio FX Equalizer Menu & Crossfade Controller
     const EQ_BAND_NAMES = ['60Hz', '250Hz', '1kHz', '4kHz', '12kHz'];
 
+    function mountFlyoutForViewport() {
+        const isMobile = window.innerWidth <= 860;
+        const flyoutConfigs = [
+            { menu: audioFxMenu, btn: audioFxBtn },
+            { menu: sleepTimerMenu, btn: sleepTimerBtn },
+            { menu: playlistMenu, btn: playlistToggleBtn }
+        ];
+        flyoutConfigs.forEach(({ menu, btn }) => {
+            if (!menu || !btn) return;
+            const wrapper = btn.closest('.dropdown-wrapper');
+            if (isMobile) {
+                if (menu.parentElement !== document.body) {
+                    document.body.appendChild(menu);
+                }
+            } else {
+                if (wrapper && menu.parentElement !== wrapper) {
+                    wrapper.appendChild(menu);
+                }
+            }
+        });
+    }
+
+    function ensureFlyoutMounted(menu) {
+        if (!menu) return;
+        if (window.innerWidth <= 860) {
+            if (menu.parentElement !== document.body) {
+                document.body.appendChild(menu);
+            }
+        }
+    }
+
+    function syncFlyoutBackdrop() {
+        const backdrop = document.getElementById('mobile-flyout-backdrop');
+        if (!backdrop) return;
+        const hasOpen = !!(
+            playlistMenu?.classList.contains('open') ||
+            audioFxMenu?.classList.contains('open') ||
+            sleepTimerMenu?.classList.contains('open')
+        );
+        backdrop.classList.toggle('active', hasOpen && window.innerWidth <= 860);
+    }
+
     function renderFxMenu() {
         if (!audioFxMenu) return;
         audioFxMenu.innerHTML = `
             <div class="menu-header">
                 <span><i class="fas fa-sliders"></i> STUDIO 5-BAND EQUALIZER</span>
+                <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
             </div>
 
             <!-- 5-Band Interactive Sliders -->
@@ -1139,6 +1182,11 @@
                 </button>
             </div>
         `;
+
+        audioFxMenu.querySelector('.flyout-close-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllFlyouts();
+        });
 
         // Bind preset click
         audioFxMenu.querySelectorAll('.fx-option').forEach(btn => {
@@ -1184,8 +1232,11 @@
     if (audioFxBtn && audioFxMenu) {
         audioFxBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            ensureFlyoutMounted(audioFxMenu);
+            const willOpen = !audioFxMenu.classList.contains('open');
             closeAllFlyouts(audioFxMenu);
-            audioFxMenu.classList.toggle('open');
+            audioFxMenu.classList.toggle('open', willOpen);
+            syncFlyoutBackdrop();
         });
     }
 
@@ -1284,7 +1335,8 @@
         if (!sleepTimerMenu) return;
         sleepTimerMenu.innerHTML = `
             <div class="menu-header">
-                <span>HẸN GIỜ TẮT NHẠC</span>
+                <span><i class="far fa-clock"></i> HẸN GIỜ TẮT NHẠC</span>
+                <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
             </div>
             <div class="menu-items">
                 ${SLEEP_OPTIONS.map(opt => `
@@ -1299,10 +1351,16 @@
             </div>
         `;
 
+        sleepTimerMenu.querySelector('.flyout-close-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllFlyouts();
+        });
+
         sleepTimerMenu.querySelectorAll('.fx-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 setSleepTimer(btn.dataset.sleep);
                 sleepTimerMenu.classList.remove('open');
+                syncFlyoutBackdrop();
             });
         });
     }
@@ -1310,8 +1368,11 @@
     if (sleepTimerBtn && sleepTimerMenu) {
         sleepTimerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            ensureFlyoutMounted(sleepTimerMenu);
+            const willOpen = !sleepTimerMenu.classList.contains('open');
             closeAllFlyouts(sleepTimerMenu);
-            sleepTimerMenu.classList.toggle('open');
+            sleepTimerMenu.classList.toggle('open', willOpen);
+            syncFlyoutBackdrop();
         });
     }
 
@@ -1320,7 +1381,10 @@
         if (!playlistMenu) return;
         playlistMenu.innerHTML = `
             <div class="playlist-header">
-                <span id="playlist-title-header">ALL TRACKS</span>
+                <div class="playlist-header-top">
+                    <span id="playlist-title-header">ALL TRACKS</span>
+                    <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
+                </div>
                 <div class="search-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
                     <input type="text" id="playlist-search-input" placeholder="Search track or artist..." value="${searchQuery}" autocomplete="off" spellcheck="false">
@@ -1328,6 +1392,11 @@
             </div>
             <div class="playlist-items-scroll" id="playlist-items-scroll"></div>
         `;
+
+        playlistMenu.querySelector('.flyout-close-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllFlyouts();
+        });
 
         const searchInput = document.getElementById('playlist-search-input');
         if (searchInput) {
@@ -1398,6 +1467,7 @@
                 const idx = parseInt(row.dataset.idx, 10);
                 loadTrack(idx, true);
                 playlistMenu.classList.remove('open');
+                syncFlyoutBackdrop();
             });
         });
 
@@ -1420,13 +1490,17 @@
         if (playlistMenu && playlistMenu !== exceptThisOne) playlistMenu.classList.remove('open');
         if (audioFxMenu && audioFxMenu !== exceptThisOne) audioFxMenu.classList.remove('open');
         if (sleepTimerMenu && sleepTimerMenu !== exceptThisOne) sleepTimerMenu.classList.remove('open');
+        syncFlyoutBackdrop();
     }
 
     if (playlistToggleBtn && playlistMenu) {
         playlistToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            ensureFlyoutMounted(playlistMenu);
+            const willOpen = !playlistMenu.classList.contains('open');
             closeAllFlyouts(playlistMenu);
-            playlistMenu.classList.toggle('open');
+            playlistMenu.classList.toggle('open', willOpen);
+            syncFlyoutBackdrop();
             if (playlistMenu.classList.contains('open')) {
                 updatePlaylistItems();
                 const input = document.getElementById('playlist-search-input');
@@ -1440,16 +1514,28 @@
 
     // Close open menus when clicking outside
     document.addEventListener('click', (e) => {
-        if (audioFxMenu && !audioFxMenu.contains(e.target) && e.target !== audioFxBtn) {
+        let changed = false;
+        if (audioFxMenu && audioFxMenu.classList.contains('open') && !audioFxMenu.contains(e.target) && !audioFxBtn?.contains(e.target)) {
             audioFxMenu.classList.remove('open');
+            changed = true;
         }
-        if (playlistMenu && !playlistMenu.contains(e.target) && e.target !== playlistToggleBtn) {
+        if (playlistMenu && playlistMenu.classList.contains('open') && !playlistMenu.contains(e.target) && !playlistToggleBtn?.contains(e.target)) {
             playlistMenu.classList.remove('open');
+            changed = true;
         }
-        if (sleepTimerMenu && !sleepTimerMenu.contains(e.target) && e.target !== sleepTimerBtn) {
+        if (sleepTimerMenu && sleepTimerMenu.classList.contains('open') && !sleepTimerMenu.contains(e.target) && !sleepTimerBtn?.contains(e.target)) {
             sleepTimerMenu.classList.remove('open');
+            changed = true;
         }
+        if (changed) syncFlyoutBackdrop();
     });
+
+    const mobileFlyoutBackdrop = document.getElementById('mobile-flyout-backdrop');
+    if (mobileFlyoutBackdrop) {
+        mobileFlyoutBackdrop.addEventListener('click', () => {
+            closeAllFlyouts();
+        });
+    }
 
     // Global keyboard shortcuts (Space, J, K, M, S, R, Left/Right Seek, Esc)
     window.addEventListener('keydown', (e) => {
@@ -1511,11 +1597,17 @@
         }
     });
 
+    window.addEventListener('resize', () => {
+        mountFlyoutForViewport();
+        syncFlyoutBackdrop();
+    });
+
     // Initial boot
     buildPlaylistShell();
     renderCategoryTabs();
     renderFxMenu();
     renderSleepTimerMenu();
+    mountFlyoutForViewport();
 
     let savedVol = parseInt(safeGet('minkoi_player_volume', CONFIG.music?.defaultVolume || 45), 10);
     let savedIdx = parseInt(safeGet('minkoi_player_track_idx', '0'), 10);

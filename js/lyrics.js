@@ -950,6 +950,15 @@
         lyricsCloseBtn.addEventListener('click', closeLyrics);
     }
 
+    // Đóng lời bài hát khi chạm bên ngoài modal
+    document.addEventListener('click', (e) => {
+        if (lyricsModal && lyricsModal.classList.contains('open')) {
+            if (!lyricsModal.contains(e.target) && e.target !== lyricsToggleBtn && !lyricsToggleBtn?.contains(e.target)) {
+                closeLyrics();
+            }
+        }
+    });
+
     let lyricsRafId = null;
 
     function startLyricsLoop() {

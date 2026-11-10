@@ -34,12 +34,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=17.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=17.0">
-    <link rel="stylesheet" href="css/style-card.css?v=17.0">
-    <link rel="stylesheet" href="css/style-left.css?v=17.0">
-    <link rel="stylesheet" href="css/style-right.css?v=17.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=17.0">
+    <link rel="stylesheet" href="css/style-base.css?v=18.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=18.0">
+    <link rel="stylesheet" href="css/style-card.css?v=18.0">
+    <link rel="stylesheet" href="css/style-left.css?v=18.0">
+    <link rel="stylesheet" href="css/style-right.css?v=18.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=18.0">
 </head>
 <body>
 
@@ -342,6 +342,9 @@
         </div>
     </main>
 
+    <!-- MOBILE FLYOUT BACKDROP OVERLAY -->
+    <div class="mobile-flyout-backdrop" id="mobile-flyout-backdrop" aria-hidden="true"></div>
+
     <!-- AMBIENT ZEN FLOATING ENTRY POINT (mobile friendly) -->
     <button class="zen-fab" id="zen-fab" type="button" title="Chế độ Màn hình chờ" aria-label="Chế độ Màn hình chờ">
         <i class="fas fa-expand" aria-hidden="true"></i>
@@ -430,14 +433,14 @@
     </noscript>
 
     <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=17.0"></script>
-    <script src="js/stars.js?v=17.0"></script>
-    <script src="js/fluid-bg.js?v=17.0"></script>
-    <script src="js/avatar.js?v=17.0"></script>
-    <script src="js/music.js?v=17.0"></script>
-    <script src="js/lyrics.js?v=17.0"></script>
-    <script src="js/snapshot.js?v=17.0"></script>
-    <script src="js/features.js?v=17.0"></script>
+    <script src="js/config.js?v=18.0"></script>
+    <script src="js/stars.js?v=18.0"></script>
+    <script src="js/fluid-bg.js?v=18.0"></script>
+    <script src="js/avatar.js?v=18.0"></script>
+    <script src="js/music.js?v=18.0"></script>
+    <script src="js/lyrics.js?v=18.0"></script>
+    <script src="js/snapshot.js?v=18.0"></script>
+    <script src="js/features.js?v=18.0"></script>
     <script>
         // Top More Dropdown Toggle Handler
         (function() {
@@ -457,8 +460,10 @@
                 });
                 moreWrap.querySelectorAll('.top-more-item').forEach(function(item) {
                     item.addEventListener('click', function() {
-                        moreWrap.classList.remove('open');
-                        moreBtn.setAttribute('aria-expanded', 'false');
+                        setTimeout(function() {
+                            moreWrap.classList.remove('open');
+                            moreBtn.setAttribute('aria-expanded', 'false');
+                        }, 120);
                     });
                 });
             }

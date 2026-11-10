@@ -77,9 +77,12 @@
         const ta = document.createElement('textarea');
         ta.value = text;
         ta.style.position = 'fixed';
-        ta.style.opacity = '0';
+        ta.style.left = '-9999px';
+        ta.style.top = '-9999px';
+        ta.setAttribute('readonly', '');
         document.body.appendChild(ta);
         ta.select();
+        ta.setSelectionRange(0, 99999);
         try {
             document.execCommand('copy');
             ta.remove();

@@ -696,7 +696,9 @@ body.zen-mode .zen-hint-toast {
     }
 }
 
-body.zen-mode .zen-fab {
+body.zen-mode .zen-fab,
+body:has(.dropdown-flyout.open) .zen-fab,
+body:has(.lyrics-drawer-modal.open) .zen-fab {
     opacity: 0;
     pointer-events: none;
     transform: translateY(20px) scale(0.9);
