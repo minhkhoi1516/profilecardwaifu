@@ -753,8 +753,10 @@
                 tab.setAttribute('aria-selected', active ? 'true' : 'false');
             });
             const activeTab = categoryNav.querySelector('.cat-tab.active');
-            if (activeTab && typeof activeTab.scrollIntoView === 'function') {
-                activeTab.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+            if (activeTab) {
+                // Cuộn mượt CHỈ bên trong thanh tab (trục ngang), TUYỆT ĐỐI KHÔNG làm nhảy/cuộn màn hình chính (trục dọc)
+                const targetLeft = activeTab.offsetLeft - (categoryNav.clientWidth / 2) + (activeTab.offsetWidth / 2);
+                categoryNav.scrollTo({ left: targetLeft, behavior: 'smooth' });
             }
         }
 
@@ -1406,6 +1408,12 @@
                 toggleFavorite(songId);
             });
         });
+
+        // Tự động cuộn nội bộ danh sách tới bài đang phát (chỉ cuộn hộp danh sách, tuyệt đối không chạm cuộn trang)
+        const activeRow = scrollBox.querySelector('.playlist-row.active');
+        if (activeRow) {
+            scrollBox.scrollTop = activeRow.offsetTop - (scrollBox.clientHeight / 2) + (activeRow.clientHeight / 2);
+        }
     }
 
     function closeAllFlyouts(exceptThisOne) {
@@ -1422,7 +1430,10 @@
             if (playlistMenu.classList.contains('open')) {
                 updatePlaylistItems();
                 const input = document.getElementById('playlist-search-input');
-                if (input) setTimeout(() => input.focus(), 80);
+                // Chỉ auto-focus trên Desktop để tránh bật bàn phím ảo đẩy trôi màn hình trên điện thoại
+                if (input && window.innerWidth > 768) {
+                    setTimeout(() => input.focus({ preventScroll: true }), 80);
+                }
             }
         });
     }

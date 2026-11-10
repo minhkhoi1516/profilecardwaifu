@@ -203,6 +203,18 @@
         width: auto;
         max-width: none;
         border-radius: var(--radius-md);
+        max-height: 80vh;
+        max-height: 80dvh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        z-index: 1000;
+    }
+
+    .playlist-items-scroll {
+        max-height: 52vh !important;
+        max-height: 52dvh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
     }
 
     .studio-card-footer {
