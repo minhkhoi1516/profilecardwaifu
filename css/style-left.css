@@ -101,10 +101,26 @@
     box-shadow: 
         0 12px 28px -4px rgba(0, 0, 0, 0.7),
         inset 0 1px 2px rgba(255, 255, 255, 0.2),
-        0 0 24px var(--color-accent-glow);
+        0 0 28px var(--color-accent-glow),
+        0 0 52px rgba(56, 189, 248, 0.2);
     z-index: 2;
     pointer-events: none;
-    transition: box-shadow 0.08s ease, transform 0.08s ease, border-color var(--transition-normal);
+    transition: box-shadow 0.2s ease, transform 0.2s ease, border-color var(--transition-normal);
+}
+
+/* Glowing Dynamic Accent Halo Ring */
+.avatar-backdrop-disc::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg, var(--color-accent) 0%, rgba(255, 255, 255, 0.35) 50%, var(--color-accent-secondary, #f43f5e) 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    box-shadow: 0 0 20px var(--color-accent-glow);
+    pointer-events: none;
 }
 
 body.light-mode .avatar-backdrop-disc {

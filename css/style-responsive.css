@@ -165,29 +165,33 @@
 
     /* Mobile Controls Ergonomics */
     .audio-controls-dock {
-        flex-direction: column;
-        gap: 0.85rem;
-        align-items: stretch;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0.25rem 0;
     }
 
     .controls-playback-group {
         justify-content: center;
         gap: 0.85rem;
-    }
-
-    .controls-utility-group {
-        justify-content: space-between;
         width: 100%;
     }
 
     .volume-slider-dock {
-        flex: 1;
-        justify-content: flex-end;
+        width: 100%;
+        min-height: 44px;
+        padding: 0.4rem 0.85rem;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
-    .volume-slider {
+    .volume-slider-dock .volume-slider {
+        flex: 1;
         width: 100%;
-        max-width: 100px;
+        max-width: none;
     }
 
     /* Responsive Dropdowns */
@@ -335,11 +339,12 @@
         flex-wrap: nowrap !important;
     }
 
-    #copy-profile,
-    #share-profile,
-    #snapshot-card-btn,
     .status-indicator-pill {
         display: none !important;
+    }
+
+    .top-more-dropdown .top-more-item {
+        display: flex !important;
     }
 
     .live-clock-pill {
@@ -355,6 +360,7 @@
     }
 
     #zen-mode-toggle,
+    #top-more-btn,
     #theme-toggle {
         width: 36px !important;
         height: 36px !important;
@@ -483,7 +489,8 @@
     #next-track,
     #prev-track,
     #volume-icon,
-    .volume-mute-btn {
+    .volume-mute-btn,
+    .mute-btn {
         min-width: 44px !important;
         min-height: 44px !important;
         padding: 10px !important;
@@ -491,6 +498,24 @@
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+    }
+
+    /* Track actions bar (EQ, Lyrics, Playlist, Sleep Timer ngang hàng dưới tên bài) */
+    .track-actions-bar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.85rem !important;
+        width: 100% !important;
+        padding: 0.25rem 0 !important;
+    }
+
+    .track-actions-bar .ctrl-btn {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        font-size: 1rem !important;
     }
 
     .cat-tab,
@@ -505,14 +530,30 @@
     }
 
     .volume-slider-dock {
-        min-height: 44px;
+        width: 100% !important;
+        min-height: 44px !important;
+        padding: 0.35rem 0.75rem !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
     }
 
-    .volume-slider {
-        height: 32px;
-        min-height: 32px;
-        padding: 8px 0;
-        box-sizing: border-box;
+    .volume-slider-dock .mute-btn {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    .volume-slider-dock .volume-slider {
+        flex: 1 !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: 32px !important;
+        min-height: 44px !important;
+        padding: 8px 0 !important;
+        box-sizing: border-box !important;
     }
 
     .eq-band-col {
@@ -580,6 +621,17 @@
     .lyrics-footer,
     .audio-iqoo-notice {
         font-size: 12px !important;
+    }
+
+    .audio-iqoo-close {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 1rem !important;
     }
 
     .status-label {

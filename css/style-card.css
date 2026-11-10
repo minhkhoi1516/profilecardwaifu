@@ -243,6 +243,91 @@ body.light-mode .top-action-btn:hover {
     transform: translateY(0);
 }
 
+/* More Options (3-dots) Dropdown Menu */
+.top-more-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.top-more-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 195px;
+    background: var(--surface-2);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.45rem;
+    box-shadow: var(--shadow-deep);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.96);
+    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+    pointer-events: none;
+}
+
+.top-more-menu-wrap.open .top-more-dropdown,
+.top-more-menu-wrap:focus-within .top-more-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.top-more-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.6rem 0.85rem;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.top-more-item i {
+    font-size: 0.9rem;
+    width: 18px;
+    text-align: center;
+    color: var(--color-accent);
+}
+
+.top-more-item:hover,
+.top-more-item:focus-visible {
+    background: var(--surface-hover);
+    color: var(--color-text);
+}
+
+body.light-mode .top-more-dropdown {
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.12);
+    box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.15);
+}
+
+body.light-mode .top-more-item {
+    color: #475569;
+}
+
+body.light-mode .top-more-item:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
 /* Theme Toggle Icons */
 .theme-toggle-btn .icon-sun {
     display: none;

@@ -128,7 +128,7 @@
     box-shadow: var(--shadow-soft);
 }
 
-/* 8 persona tabs: scroll ngang thay vì bóp chữ + mask gradient mép phải */
+/* 8 persona tabs: scroll ngang thay vì bóp chữ + mask gradient ở hai mép */
 .audio-category-nav {
     overflow-x: auto;
     overflow-y: hidden;
@@ -138,8 +138,8 @@
     -webkit-overflow-scrolling: touch;
     min-width: 0;
     max-width: 100%;
-    -webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%);
-    mask-image: linear-gradient(to right, #000 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
 }
 
 .col-right,
@@ -310,6 +310,63 @@
 }
 
 /* ========================================================
+   TRACK QUICK ACTIONS BAR (EQ, LYRICS, PLAYLIST, SLEEP TIMER)
+======================================================== */
+.track-actions-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    width: 100%;
+}
+
+.track-actions-bar .ctrl-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--surface-2);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+}
+
+.track-actions-bar .ctrl-btn:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-active);
+    background: var(--surface-hover);
+    transform: translateY(-1px);
+}
+
+.track-actions-bar .ctrl-btn.active {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 12px var(--color-accent-glow);
+}
+
+.track-actions-bar .dropdown-flyout {
+    top: calc(100% + 10px);
+    bottom: auto;
+}
+
+.track-actions-bar .dropdown-wrapper:first-child .dropdown-flyout {
+    left: 0;
+    right: auto;
+}
+
+.track-actions-bar .dropdown-wrapper:last-child .dropdown-flyout {
+    right: 0;
+    left: auto;
+}
+
+/* ========================================================
    SEEK BAR & TIME PROGRESS
 ======================================================== */
 .playback-progress-wrap {
@@ -387,22 +444,22 @@
 }
 
 /* ========================================================
-   CONTROLS DOCK
+   CONTROLS DOCK (PLAYBACK BUTTONS)
 ======================================================== */
 .audio-controls-dock {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0.25rem 0;
-    gap: 0.35rem;
-    flex-wrap: nowrap;
+    justify-content: center;
+    padding: 0.35rem 0;
+    width: 100%;
 }
 
 .controls-playback-group {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    flex-shrink: 0;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
 }
 
 .controls-utility-group {
@@ -451,8 +508,8 @@
 }
 
 .play-hero-btn {
-    width: 48px;
-    height: 48px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: var(--color-accent);
     border: none;
@@ -460,14 +517,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     cursor: pointer;
     box-shadow: 0 4px 18px var(--color-accent-glow);
     transition: all var(--transition-fast);
 }
 
 .play-hero-btn:hover {
-    transform: scale(1.04);
+    transform: scale(1.05);
     box-shadow: 0 6px 24px var(--color-accent-glow);
 }
 
@@ -475,20 +532,39 @@
     transform: scale(0.96);
 }
 
-/* Volume Slider Dock */
+/* Full-Width Volume Slider Dock (Dưới nút Play/Pause) */
 .volume-slider-dock {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
+    gap: 0.75rem;
     background: var(--surface-2);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 0 0.4rem 0 0.2rem;
+    padding: 0.45rem 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.volume-slider-dock:hover,
+.volume-slider-dock:focus-within {
+    border-color: var(--color-border-active);
+    background: var(--surface-3);
+}
+
+.volume-slider-dock .mute-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
     flex-shrink: 0;
 }
 
-.volume-slider {
-    width: 44px;
+.volume-slider-dock .volume-slider {
+    flex: 1;
+    width: 100%;
+    height: 6px;
+    border-radius: var(--radius-full);
     accent-color: var(--color-accent);
     cursor: pointer;
 }

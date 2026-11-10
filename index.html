@@ -25,21 +25,21 @@
     <link rel="preload" as="image" href="assets/avatar_alya.png" fetchpriority="high">
     <link rel="preload" as="image" href="assets/banner_alya_pc.jpg" fetchpriority="high">
 
-    <!-- Premium Google Fonts: Space Grotesk & Outfit (Brand/Headings), Inter (Body), Fira Code (Technical labels) -->
+    <!-- Premium Google Fonts: Space Grotesk (Brand/Headings), Plus Jakarta Sans (Body), Fira Code (Technical labels) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=15.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=15.0">
-    <link rel="stylesheet" href="css/style-card.css?v=15.0">
-    <link rel="stylesheet" href="css/style-left.css?v=15.0">
-    <link rel="stylesheet" href="css/style-right.css?v=15.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=15.0">
+    <link rel="stylesheet" href="css/style-base.css?v=16.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=16.0">
+    <link rel="stylesheet" href="css/style-card.css?v=16.0">
+    <link rel="stylesheet" href="css/style-left.css?v=16.0">
+    <link rel="stylesheet" href="css/style-right.css?v=16.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=16.0">
 </head>
 <body>
 
@@ -88,17 +88,26 @@
                 <i class="fas fa-expand" aria-hidden="true"></i>
             </button>
 
-            <button class="top-action-btn" id="copy-profile" type="button" title="Sao chép liên kết hồ sơ" aria-label="Sao chép liên kết hồ sơ">
-                <i class="fas fa-link" aria-hidden="true"></i>
-            </button>
-
-            <button class="top-action-btn" id="share-profile" type="button" title="Chia sẻ hồ sơ" aria-label="Chia sẻ hồ sơ">
-                <i class="fas fa-arrow-up-from-bracket" aria-hidden="true"></i>
-            </button>
-
-            <button class="top-action-btn" id="snapshot-card-btn" type="button" title="Chụp & Tải ảnh thẻ hồ sơ" aria-label="Chụp & Tải ảnh thẻ hồ sơ">
-                <i class="fas fa-camera" aria-hidden="true"></i>
-            </button>
+            <!-- MORE OPTIONS MENU (Chứa Share, Link, Camera) -->
+            <div class="top-more-menu-wrap" id="top-more-menu-wrap">
+                <button class="top-action-btn" id="top-more-btn" type="button" title="Thêm tùy chọn" aria-label="Thêm tùy chọn" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
+                </button>
+                <div class="top-more-dropdown" id="top-more-dropdown" role="menu" aria-label="Tùy chọn bổ sung">
+                    <button class="top-more-item" id="copy-profile" type="button" role="menuitem" title="Sao chép liên kết hồ sơ">
+                        <i class="fas fa-link" aria-hidden="true"></i>
+                        <span>Sao chép liên kết</span>
+                    </button>
+                    <button class="top-more-item" id="share-profile" type="button" role="menuitem" title="Chia sẻ hồ sơ">
+                        <i class="fas fa-arrow-up-from-bracket" aria-hidden="true"></i>
+                        <span>Chia sẻ hồ sơ</span>
+                    </button>
+                    <button class="top-more-item" id="snapshot-card-btn" type="button" role="menuitem" title="Chụp & Tải ảnh thẻ hồ sơ">
+                        <i class="fas fa-camera" aria-hidden="true"></i>
+                        <span>Chụp ảnh thẻ</span>
+                    </button>
+                </div>
+            </div>
 
             <button class="top-action-btn theme-toggle-btn" id="theme-toggle" type="button" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối">
                 <i class="fas fa-sun icon-sun" aria-hidden="true"></i>
@@ -215,6 +224,44 @@
                             </div>
                         </div>
 
+                        <!-- TRACK ACTION BUTTONS (EQ, LYRICS, PLAYLIST, SLEEP TIMER - NGANG HÀNG DƯỚI TÊN BÀI HÁT) -->
+                        <div class="track-actions-bar" aria-label="Tùy chọn bài hát">
+                            <!-- Sleep Timer -->
+                            <div class="dropdown-wrapper">
+                                <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
+                                    <i class="far fa-clock" aria-hidden="true"></i>
+                                </button>
+                                <div class="dropdown-flyout sleep-timer-menu" id="sleep-timer-menu">
+                                    <!-- Populated dynamically via js/music.js -->
+                                </div>
+                            </div>
+
+                            <!-- Equalizer Selector -->
+                            <div class="dropdown-wrapper">
+                                <button class="ctrl-btn" id="audio-fx-btn" type="button" title="Studio Equalizer" aria-label="Bộ lọc âm thanh">
+                                    <i class="fas fa-sliders" aria-hidden="true"></i>
+                                </button>
+                                <div class="dropdown-flyout audio-fx-menu" id="audio-fx-menu">
+                                    <!-- Populated dynamically via js/music.js -->
+                                </div>
+                            </div>
+
+                            <!-- Lyrics / Karaoke View -->
+                            <button class="ctrl-btn" id="lyrics-toggle-btn" type="button" title="Xem lời bài hát (Lyrics)" aria-label="Xem lời bài hát">
+                                <i class="fas fa-quote-right" aria-hidden="true"></i>
+                            </button>
+
+                            <!-- Playlist Selector -->
+                            <div class="dropdown-wrapper">
+                                <button class="ctrl-btn" id="playlist-toggle-btn" type="button" title="Danh sách phát & Tìm kiếm" aria-label="Danh sách phát">
+                                    <i class="fas fa-list-ul" aria-hidden="true"></i>
+                                </button>
+                                <div class="dropdown-flyout playlist-menu" id="playlist-menu">
+                                    <!-- Populated dynamically via js/music.js -->
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- TIME & SCRUBBABLE SEEK BAR -->
                         <div class="playback-progress-wrap">
                             <div class="time-display">
@@ -228,7 +275,7 @@
                             </div>
                         </div>
 
-                        <!-- CONTROLS DOCK -->
+                        <!-- CONTROLS DOCK (PLAYBACK BUTTONS) -->
                         <div class="audio-controls-dock">
                             <div class="controls-playback-group">
                                 <button class="ctrl-btn shuffle-btn" id="shuffle-btn" type="button" title="Phát ngẫu nhiên (S)" aria-label="Phát ngẫu nhiên">
@@ -247,51 +294,14 @@
                                     <i class="fas fa-repeat" aria-hidden="true"></i>
                                 </button>
                             </div>
+                        </div>
 
-                            <div class="controls-utility-group">
-                                <!-- Sleep Timer -->
-                                <div class="dropdown-wrapper">
-                                    <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
-                                        <i class="far fa-clock" aria-hidden="true"></i>
-                                    </button>
-                                    <div class="dropdown-flyout sleep-timer-menu" id="sleep-timer-menu">
-                                        <!-- Populated dynamically via js/music.js -->
-                                    </div>
-                                </div>
-
-                                <!-- Equalizer Selector -->
-                                <div class="dropdown-wrapper">
-                                    <button class="ctrl-btn" id="audio-fx-btn" type="button" title="Studio Equalizer" aria-label="Bộ lọc âm thanh">
-                                        <i class="fas fa-sliders" aria-hidden="true"></i>
-                                    </button>
-                                    <div class="dropdown-flyout audio-fx-menu" id="audio-fx-menu">
-                                        <!-- Populated dynamically via js/music.js -->
-                                    </div>
-                                </div>
-
-                                <!-- Lyrics / Karaoke View -->
-                                <button class="ctrl-btn" id="lyrics-toggle-btn" type="button" title="Xem lời bài hát (Lyrics)" aria-label="Xem lời bài hát">
-                                    <i class="fas fa-quote-right" aria-hidden="true"></i>
-                                </button>
-
-                                <!-- Playlist Selector -->
-                                <div class="dropdown-wrapper">
-                                    <button class="ctrl-btn" id="playlist-toggle-btn" type="button" title="Danh sách phát & Tìm kiếm" aria-label="Danh sách phát">
-                                        <i class="fas fa-list-ul" aria-hidden="true"></i>
-                                    </button>
-                                    <div class="dropdown-flyout playlist-menu" id="playlist-menu">
-                                        <!-- Populated dynamically via js/music.js -->
-                                    </div>
-                                </div>
-
-                                <!-- Volume Control -->
-                                <div class="volume-slider-dock">
-                                    <button class="ctrl-btn mute-btn" id="mute-btn" type="button" title="Bật / Tắt tiếng (M)" aria-label="Bật / Tắt tiếng">
-                                        <i class="fas fa-volume-high" aria-hidden="true"></i>
-                                    </button>
-                                    <input type="range" id="volume-control" min="0" max="100" value="45" aria-label="Âm lượng" class="volume-slider">
-                                </div>
-                            </div>
+                        <!-- FULL-WIDTH VOLUME ROW (DƯỚI CỤM NÚT PLAY/PAUSE) -->
+                        <div class="volume-slider-dock" aria-label="Điều chỉnh âm lượng">
+                            <button class="ctrl-btn mute-btn" id="mute-btn" type="button" title="Bật / Tắt tiếng (M)" aria-label="Bật / Tắt tiếng">
+                                <i class="fas fa-volume-high" aria-hidden="true"></i>
+                            </button>
+                            <input type="range" id="volume-control" min="0" max="100" value="45" aria-label="Âm lượng" class="volume-slider">
                         </div>
 
                         <!-- NATIVE AUDIO ELEMENT -->
@@ -420,13 +430,39 @@
     </noscript>
 
     <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=15.0"></script>
-    <script src="js/stars.js?v=15.0"></script>
-    <script src="js/fluid-bg.js?v=15.0"></script>
-    <script src="js/avatar.js?v=15.0"></script>
-    <script src="js/music.js?v=15.0"></script>
-    <script src="js/lyrics.js?v=15.0"></script>
-    <script src="js/snapshot.js?v=15.0"></script>
-    <script src="js/features.js?v=15.0"></script>
+    <script src="js/config.js?v=16.0"></script>
+    <script src="js/stars.js?v=16.0"></script>
+    <script src="js/fluid-bg.js?v=16.0"></script>
+    <script src="js/avatar.js?v=16.0"></script>
+    <script src="js/music.js?v=16.0"></script>
+    <script src="js/lyrics.js?v=16.0"></script>
+    <script src="js/snapshot.js?v=16.0"></script>
+    <script src="js/features.js?v=16.0"></script>
+    <script>
+        // Top More Dropdown Toggle Handler
+        (function() {
+            const moreWrap = document.getElementById('top-more-menu-wrap');
+            const moreBtn = document.getElementById('top-more-btn');
+            if (moreWrap && moreBtn) {
+                moreBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isOpen = moreWrap.classList.toggle('open');
+                    moreBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+                document.addEventListener('click', function(e) {
+                    if (!moreWrap.contains(e.target)) {
+                        moreWrap.classList.remove('open');
+                        moreBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+                moreWrap.querySelectorAll('.top-more-item').forEach(function(item) {
+                    item.addEventListener('click', function() {
+                        moreWrap.classList.remove('open');
+                        moreBtn.setAttribute('aria-expanded', 'false');
+                    });
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
