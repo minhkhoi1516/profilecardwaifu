@@ -725,3 +725,198 @@
         font-size: 2rem;
     }
 }
+
+/* ==========================================================================
+   XIAOMI HYPEROS 4 (LIQUID GLASS) & MIUIX DESIGN SYSTEM OVERRIDE
+   Squircle Geometry · Optical Glass Depth · Spring Physics Motion
+   ========================================================================== */
+
+/* --- 1. BIẾN HỆ THỐNG LIQUID GLASS & SPRING MOTION --- */
+:root {
+    --h-glass-bg: rgba(18, 20, 27, 0.65);
+    --h-glass-card: rgba(28, 31, 42, 0.52);
+    --h-glass-pill: rgba(255, 255, 255, 0.07);
+    --h-glass-border: rgba(255, 255, 255, 0.12);
+    --h-glass-highlight: inset 0 1px 1px 0 rgba(255, 255, 255, 0.22);
+    --h-spring-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --h-fluid-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- 2. BO GÓC SQUIRCLE & HIỆU ỨNG KÍNH KHỐI CHÍNH --- */
+.card-container {
+    border-radius: 36px !important;
+    background: var(--h-glass-bg) !important;
+    backdrop-filter: blur(28px) saturate(190%) contrast(102%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(190%) contrast(102%) !important;
+    border: 1px solid var(--h-glass-border) !important;
+    box-shadow: 
+        var(--h-glass-highlight),
+        inset 0 -1px 1px 0 rgba(0, 0, 0, 0.4),
+        0 24px 60px -15px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Thẻ phát nhạc trung tâm (Inner Island) */
+.music-player-card {
+    border-radius: 28px !important;
+    background: var(--h-glass-card) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 12px 32px -8px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Top bar kính nổi */
+.card-top-bar {
+    border-radius: 32px 32px 20px 20px !important;
+    background: rgba(22, 24, 33, 0.45) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+}
+
+/* --- 3. AVATAR SQUIRCLE & ÁNH SÁNG ĐỘNG (DYNAMIC LIGHT) --- */
+.avatar-frame {
+    border-radius: 28% !important; /* Chuẩn squircle HyperOS app icon */
+    border: 1px solid rgba(255, 255, 255, 0.22) !important;
+    box-shadow: 
+        inset 0 1px 2px rgba(255, 255, 255, 0.4),
+        0 14px 30px -8px var(--color-accent-glow, rgba(56, 189, 248, 0.35)) !important;
+    transition: transform 0.4s var(--h-spring-ease) !important;
+}
+.avatar-frame img {
+    border-radius: 28% !important;
+}
+
+/* --- 4. CÁC NÚT BẤM DẠNG PILL / CAPSULE & SPRING FEEDBACK --- */
+.ctrl-btn,
+.top-action-btn,
+.suite-badge-btn,
+.social-pill,
+.cat-tab,
+.persona-chip {
+    border-radius: 20px !important;
+    background: var(--h-glass-pill) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+    transition: transform 0.35s var(--h-spring-ease), background 0.2s ease, box-shadow 0.25s ease !important;
+    touch-action: manipulation;
+}
+
+/* Hiệu ứng nảy lò xo khi nhấn (HyperOS Micro-Interaction) */
+.ctrl-btn:active,
+.top-action-btn:active,
+.cat-tab:active,
+.persona-chip:active,
+.social-pill:active {
+    transform: scale(0.92) !important;
+    transition-duration: 0.12s !important;
+}
+
+/* Nút Play Hero (Liquid Glass Accent Pebble) */
+.play-hero-btn {
+    border-radius: 24px !important;
+    background: linear-gradient(135deg, var(--color-accent, #38bdf8), var(--color-accent-secondary, #f43f5e)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.35) !important;
+    box-shadow: 
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+        0 10px 28px -4px var(--color-accent-glow, rgba(56, 189, 248, 0.45)) !important;
+    transition: transform 0.4s var(--h-spring-ease), box-shadow 0.3s ease !important;
+}
+.play-hero-btn:active {
+    transform: scale(0.88) !important;
+    box-shadow: 0 4px 14px -2px var(--color-accent-glow, rgba(56, 189, 248, 0.3)) !important;
+}
+
+/* Pill đồng hồ và trạng thái */
+.live-clock-pill,
+.status-indicator-pill,
+.suite-badge-pill {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Tab Waifu đang hoạt động */
+.cat-tab.active {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 4px 16px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Persona Chips */
+.persona-chip {
+    border-radius: 22px !important;
+}
+.persona-chip.active {
+    border-color: var(--color-accent, #38bdf8) !important;
+    box-shadow: 0 8px 24px -6px var(--color-accent-glow, rgba(56, 189, 248, 0.35)), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* --- 5. THANH SEEK BAR & VOLUME DẠNG VIÊN THUỐC SIÊU MƯỢT --- */
+.seek-bar-track,
+.volume-slider-dock input[type="range"] {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+.seek-fill-bar {
+    border-radius: 9999px !important;
+    background: linear-gradient(90deg, var(--color-accent, #38bdf8), var(--color-accent-secondary, #f43f5e)) !important;
+    box-shadow: 0 0 12px var(--color-accent-glow, rgba(56, 189, 248, 0.4)) !important;
+}
+
+/* --- 6. FLOATING DRAWERS & MODALS (BOTTOM SHEET HYPEROS) --- */
+.dropdown-flyout,
+.lyrics-drawer-modal,
+.top-more-dropdown {
+    border-radius: 30px !important;
+    background: rgba(20, 22, 30, 0.82) !important;
+    backdrop-filter: blur(30px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(30px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 
+        var(--h-glass-highlight),
+        0 24px 64px -12px rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Hover mượt mà chỉ kích hoạt trên thiết bị có chuột (Tránh lag cảm ứng) */
+@media (hover: hover) and (pointer: fine) {
+    .ctrl-btn:hover,
+    .top-action-btn:hover,
+    .social-pill:hover,
+    .cat-tab:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+    }
+    .avatar-frame:hover {
+        transform: scale(1.04) rotate(1deg) !important;
+    }
+}
+
+/* --- 7. TỐI ƯU HIỆU NĂNG CHO MOBILE (< 768px) --- */
+@media (max-width: 768px) {
+    .card-container,
+    .music-player-card,
+    .dropdown-flyout,
+    .lyrics-drawer-modal {
+        /* Giảm tải GPU mobile: hạ blur & tăng độ đặc của nền */
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        background: rgba(16, 18, 25, 0.92) !important;
+    }
+    
+    .card-container {
+        border-radius: 28px !important;
+    }
+    
+    .ctrl-btn,
+    .top-action-btn,
+    .cat-tab {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+}
