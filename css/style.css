@@ -188,3 +188,65 @@
     }
 }
 
+/* ==========================================================================
+   8. TỰ ĐỘNG TỐI ƯU CHO THIẾT BỊ CẤU HÌNH YẾU (.low-end)
+   Tắt kính mờ GPU · Chuyển nền đặc · Tắt animation/shadow nặng · Tắt hover
+   ========================================================================== */
+body.low-end,
+body.low-end * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+body.low-end .card-container {
+    background: #0f1118 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.low-end .music-player-card {
+    background: #171922 !important;
+    box-shadow: none !important;
+}
+
+body.low-end .card-top-bar {
+    background: #13151e !important;
+}
+
+body.low-end .dropdown-flyout,
+body.low-end .lyrics-drawer-modal,
+body.low-end .top-more-dropdown {
+    background: #141620 !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75) !important;
+}
+
+body.low-end .mobile-flyout-backdrop {
+    background: rgba(0, 0, 0, 0.85) !important;
+}
+
+body.low-end .ctrl-btn,
+body.low-end .top-action-btn,
+body.low-end .suite-badge-btn,
+body.low-end .social-pill,
+body.low-end .cat-tab,
+body.low-end .persona-chip {
+    background: #1b1e2a !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+
+body.low-end .play-hero-btn {
+    box-shadow: 0 4px 12px var(--color-accent-glow, rgba(56, 189, 248, 0.35)) !important;
+}
+
+/* Tắt toàn bộ hover & scale trên máy yếu */
+body.low-end *:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+body.low-end .ambient-stars-canvas,
+body.low-end .ambient-fluid-canvas {
+    opacity: 0.25 !important;
+}
+
+

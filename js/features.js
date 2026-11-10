@@ -406,7 +406,20 @@
         }
     }
 
+    // 7. HARDWARE PROFILER & LOW-END AUTO-OPTIMIZER
+    function initHardwareProfiler() {
+        const cores = navigator.hardwareConcurrency || 4;
+        const memory = navigator.deviceMemory || 4;
+        const isLowEnd = cores <= 4 || memory <= 4;
+        if (isLowEnd) {
+            document.body.classList.add('low-end');
+            document.documentElement.classList.add('low-end-device');
+            console.info(`[HyperOS Perf] Chế độ máy yếu được kích hoạt (Cores: ${cores}, RAM: ~${memory}GB). Đã tắt kính mờ và giảm tải GPU.`);
+        }
+    }
+
     // Boot
+    initHardwareProfiler();
     initTheme();
     initActionButtons();
     initLiveClock();
