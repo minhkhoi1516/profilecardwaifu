@@ -228,10 +228,16 @@
                         </div>
                     </div>
                 `;
-                this.dom.body.querySelector('.lyrics-open-editor-cta')?.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (typeof this.callbacks.onOpenEditor === 'function') this.callbacks.onOpenEditor();
-                });
+                if (!this._ctaDelegationBound) {
+                    this._ctaDelegationBound = true;
+                    this.dom.body.addEventListener('click', (e) => {
+                        const cta = e.target && e.target.closest ? e.target.closest('.lyrics-open-editor-cta') : null;
+                        if (cta) {
+                            e.stopPropagation();
+                            if (typeof this.callbacks.onOpenEditor === 'function') this.callbacks.onOpenEditor();
+                        }
+                    });
+                }
                 return;
             }
 

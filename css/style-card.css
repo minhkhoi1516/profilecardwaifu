@@ -1207,6 +1207,7 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
    Continuous word/syllable sweep, Japanese typography,
    multi-singer alignments, interludes, recenter & editor
    ======================================================== */
+body.light-mode .lyrics-drawer-modal,
 body.light-theme .lyrics-drawer-modal {
     --color-text: #f8fafc;
     --color-text-secondary: #cbd5e1;

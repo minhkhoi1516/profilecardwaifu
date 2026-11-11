@@ -7,16 +7,17 @@
 
     function initHardwareProfiler() {
         // Kiểm tra số luồng xử lý CPU (logical cores) và dung lượng RAM (GB)
-        const cores = navigator.hardwareConcurrency || 4;
-        const memory = navigator.deviceMemory || 4;
+        // Tránh gắn nhầm low-end nếu trình duyệt ẩn navigator.deviceMemory (Safari/Firefox)
+        const cores = navigator.hardwareConcurrency || 8;
+        const memory = navigator.deviceMemory;
 
-        // Nếu máy yếu: CPU <= 4 luồng HOẶC RAM <= 4GB
-        const isLowEnd = cores <= 4 || memory <= 4;
+        // Nếu máy yếu: CPU <= 4 luồng HOẶC trình duyệt báo RAM <= 4GB
+        const isLowEnd = cores <= 4 || (typeof memory === 'number' && memory <= 4);
 
         if (isLowEnd) {
             document.body.classList.add('low-end');
             document.documentElement.classList.add('low-end-device');
-            console.info(`[HyperOS Perf] Chế độ máy yếu được kích hoạt (Cores: ${cores}, RAM: ~${memory}GB). Đã tắt kính mờ và giảm tải GPU.`);
+            console.info(`[HyperOS Perf] Chế độ máy yếu được kích hoạt (Cores: ${cores}, RAM: ~${memory ?? 'N/A'}GB). Đã tắt kính mờ và giảm tải GPU.`);
         }
     }
 

@@ -971,10 +971,44 @@ body.low-end .play-hero-btn {
     box-shadow: 0 4px 12px var(--color-accent-glow, rgba(56, 189, 248, 0.35)) !important;
 }
 
-/* Tắt toàn bộ hover & scale trên máy yếu */
-body.low-end *:hover {
+/* Tắt hiệu ứng hover/scale nặng trên máy yếu (CHỈ nhắm vào các nút bấm tương tác; KHÔNG reset transform định vị modal/flyout) */
+body.low-end .ctrl-btn:hover,
+body.low-end .top-action-btn:hover,
+body.low-end .suite-badge-btn:hover,
+body.low-end .social-pill:hover,
+body.low-end .social-link-pill:hover,
+body.low-end .cat-tab:hover,
+body.low-end .persona-chip:hover,
+body.low-end .avatar-frame:hover,
+body.low-end .lyrics-close-btn:hover,
+body.low-end .lyrics-mode-btn:hover,
+body.low-end .lyrics-editor-btn:hover,
+body.low-end .lyrics-open-editor-cta:hover,
+body.low-end .lyrics-spotify-ref:hover {
     transform: none !important;
     box-shadow: none !important;
+}
+
+body.low-end .lyrics-drawer-modal.open,
+body.low-end .lyrics-drawer-modal.open:hover {
+    transform: translate(-50%, -50%) scale(1) !important;
+    transition: opacity 0.12s ease !important;
+}
+
+body.low-end .lyrics-editor-panel.open,
+body.low-end .lyrics-editor-panel.open:hover {
+    transform: translateY(0) !important;
+    transition: opacity 0.12s ease !important;
+}
+
+body.low-end .lyrics-recenter-btn.visible,
+body.low-end .lyrics-recenter-btn.visible:hover {
+    transform: translate(-50%, 0) scale(1) !important;
+}
+
+body.low-end.zen-mode .zen-mini-dock,
+body.low-end.zen-mode .zen-mini-dock:hover {
+    transform: translateX(-50%) translateY(0) scale(1) !important;
 }
 
 body.low-end .ambient-stars-canvas,

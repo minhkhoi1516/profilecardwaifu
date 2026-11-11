@@ -284,6 +284,16 @@
             });
         }
 
+        if (lyricsBody) {
+            lyricsBody.addEventListener('click', (e) => {
+                const cta = e.target && e.target.closest ? e.target.closest('.lyrics-open-editor-cta') : null;
+                if (cta) {
+                    e.stopPropagation();
+                    if (!editor.isOpen) editor.open();
+                }
+            });
+        }
+
         if (lyricsEditorBtn) {
             lyricsEditorBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -304,7 +314,10 @@
 
         document.addEventListener('click', (e) => {
             if (lyricsModal && lyricsModal.classList.contains('open')) {
-                if (!lyricsModal.contains(e.target) && e.target !== lyricsToggleBtn && !lyricsToggleBtn?.contains(e.target)) {
+                const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+                const insideModal = path.includes(lyricsModal) || lyricsModal.contains(e.target);
+                const onToggleBtn = e.target === lyricsToggleBtn || Boolean(lyricsToggleBtn?.contains(e.target)) || path.includes(lyricsToggleBtn);
+                if (!insideModal && !onToggleBtn) {
                     closeLyrics();
                 }
             }
