@@ -173,7 +173,7 @@ body.light-mode .avatar-status-badge {
     100% { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
-/* Unclipped Character Artwork Pop-Out */
+/* Unclipped Character Artwork Pop-Out with Natural Rim-Light & Feathered Pedestal Blend */
 .avatar-img,
 .avatar-portrait {
     position: absolute;
@@ -183,8 +183,10 @@ body.light-mode .avatar-status-badge {
     max-height: 124%;
     width: auto;
     max-width: 116%;
-    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.65)) drop-shadow(0 0 16px var(--color-accent-glow));
-    transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.35s ease, opacity 0.25s ease;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 14px var(--color-accent-glow)) contrast(0.98) saturate(0.96);
+    -webkit-mask-image: linear-gradient(to bottom, #000000 0%, #000000 90%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000000 0%, #000000 90%, transparent 100%);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease, opacity 0.3s ease;
     z-index: 5;
     user-select: none;
     pointer-events: none;

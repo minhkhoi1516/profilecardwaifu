@@ -889,10 +889,11 @@
         // Tự động thử lại 1 lần với URL gốc nếu chưa thử
         if (!hasRetriedCurrentTrack && track) {
             hasRetriedCurrentTrack = true;
+            const wasPlaying = !audio.paused;
             console.warn(`[Audio Retry] Đang thử tải lại bài hát lần 1 với URL gốc: "${track.file}"`);
             audio.src = track.file;
             audio.load();
-            if (isPlaying) {
+            if (wasPlaying) {
                 audio.play().catch(err => console.debug('[Audio Retry Play Deferred]', err));
             }
             return;

@@ -143,6 +143,8 @@
                 notes = [783.99, 987.77, 1396.91];  // Sakura Blossom G5, B5, F6
             } else if (personaKey === 'umi') {
                 notes = [587.33, 880.00, 1174.66];  // Ocean Tide D5, A5, D6
+            } else if (personaKey === 'nakanomiku') {
+                notes = [659.25, 987.77, 1318.51];  // Soft Cobalt E5, B5, E6
             } else if (personaKey === 'shinobu' || personaKey === 'hinako') {
                 notes = [739.99, 932.33, 1318.51];  // Midnight Twilight F#5, A#5, E6
             }
@@ -253,10 +255,13 @@
                 document.body.classList.remove('zen-idle');
                 requestWakeLock();
                 wakeZenDock();
+                if (typeof window.randomizeCurrentBanner === 'function') {
+                    window.randomizeCurrentBanner();
+                }
                 if (typeof window.syncZenPlayer === 'function') {
                     window.syncZenPlayer();
                 }
-                showToast('Chế độ màn hình chờ. Nhấn phím Z hoặc chạm nền để quay lại.', 'fa-sparkles');
+                showToast('Chế độ màn hình chờ · Đã đổi hình nền ngẫu nhiên', 'fa-sparkles');
                 playChimeSFX();
             } else {
                 releaseWakeLock();

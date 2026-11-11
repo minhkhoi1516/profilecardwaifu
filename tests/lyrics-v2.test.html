@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MinKoi Lyrics Engine V2 · Automated Test Suite</title>
+    <style>
+        body { font-family: system-ui, monospace; background: #0f172a; color: #e2e8f0; padding: 20px; }
+        .pass { color: #34d399; }
+        .fail { color: #fb7185; font-weight: bold; }
+        pre { background: #1e293b; padding: 12px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>MinKoi Lyrics Engine V2 · Automated Test Suite</h1>
+    <div id="test-summary">Running...</div>
+    <pre id="test-output"></pre>
+
+    <!-- Minimal Hidden Host DOM for SyncEngine + Renderer + Editor integration tests -->
+    <div id="test-stage" style="position:fixed; left:-9999px; width:460px; height:520px; visibility:hidden;">
+        <audio id="audio-player"></audio>
+        <aside id="lyrics-modal" class="lyrics-drawer-modal open">
+            <span id="lyrics-sync-badge"></span>
+            <h3 id="lyrics-title"></h3>
+            <span id="lyrics-artist"></span>
+            <button id="lyrics-mode-toggle" type="button"><span id="lyrics-mode-label">Toàn bài</span></button>
+            <button id="lyrics-close-btn" type="button"></button>
+            <button id="lyrics-toggle-btn" type="button"></button>
+            <span id="offset-val-text">0.0s</span>
+            <div id="lyrics-body" class="lyrics-body" style="height:360px; overflow-y:auto;"></div>
+            <button id="lyrics-recenter-btn" type="button"></button>
+            <button id="lyrics-editor-btn" type="button"></button>
+            <button id="tap-sync-toggle-btn" type="button"></button>
+            <div id="lyrics-editor-panel"></div>
+        </aside>
+        <div id="zen-ambient-lyric">
+            <p id="zen-lyric-romaji"></p>
+            <p id="zen-lyric-vi"></p>
+        </div>
+    </div>
+
+    <script src="../js/config.js"></script>
+    <script src="../js/lyrics/normalizer.js"></script>
+    <script src="../js/lyrics/parser.js"></script>
+    <script src="../js/lyrics/matcher.js"></script>
+    <script src="../js/lyrics/cache.js"></script>
+    <script src="../js/lyrics/diagnostics.js"></script>
+    <script src="../js/lyrics/repository.js"></script>
+    <script src="../js/lyrics/provider.js"></script>
+    <script src="../js/lyrics/sync-engine.js"></script>
+    <script src="../js/lyrics/renderer.js"></script>
+    <script src="../js/lyrics/editor.js"></script>
+    <script src="../js/lyrics/index.js"></script>
+
+    <script>
+    (function() {
+        const NS = window.MinkoiLyrics;
+        const results = [];
+
+        function assert(cond, msg) {
+            if (!cond) throw new Error('Assertion failed: ' + msg);
+        }
+
+        function assertApprox(actual, expected, eps, msg) {
+            if (Math.abs(actual - expected) > eps) {
+                throw new Error(`${msg}: expected ${expected} (+/-${eps}), got ${actual}`);
+            }
+        }
+
+        async function runCase(id, name, fn) {
+            try {
+                await fn();
+                results.push({ id, name, pass: true, error: null });
+            } catch (err) {
+                results.push({ id, name, pass: false, error: err && err.stack ? err.stack : String(err) });
+            }
+        }
+
+        function makeFakeAudio() {
+            const listeners = new Map();
+            return {
+                currentTime: 0,
+                duration: 240,
+                playbackRate: 1,
+                paused: true,
+                addEventListener(type, fn) {
+                    if (!listeners.has(type)) listeners.set(type, []);
+                    listeners.get(type).push(fn);
+                },
+                removeEventListener(type, fn) {
+                    const arr = listeners.get(type);
+                    if (!arr) return;
+                    const idx = arr.indexOf(fn);
+                    if (idx >= 0) arr.splice(idx, 1);
+                },
+                emit(type) {
+                    (listeners.get(type) || []).forEach(fn => fn({ type }));
+                },
+                play() {
+                    this.paused = false;
+                    this.emit('play');
+                    return Promise.resolve();
+                },
+                pause() {
+                    this.paused = true;
+                    this.emit('pause');
+                }
+            };
+        }
+
+        async function runAll() {
+            localStorage.clear();
+
+            // 1. TTML word/syllable continuous sweep + formula exactness
+            await runCase(1, 'Word/Syllable TTML Parsing & Continuous Fill Formula', async () => {
+                const ttml = `<?xml version="1.0" encoding="UTF-8"?>
+<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata">
+  <body><div>
+    <p begin="12.0s" end="14.0s" ttm:agent="v1">
+      <span begin="12.5s" end="13.2s">Kawaikute</span>
+      <span begin="13.2s" end="13.9s">gomen</span>
+    </p>
+  </div></body>
+</tt>`;
+                const doc = NS.Parser.parse(ttml, { source: 'test-ttml' });
+                assert(doc.syncLevel === 'syllable' || doc.syncLevel === 'word', 'Expected word/syllable level, got ' + doc.syncLevel);
+                assertApprox(NS.SyncMath.computeTokenProgress({ startMs: 12500, endMs: 13200 }, 12850), 0.5, 1e-6, 'Halfway progress formula');
+
+                const snap = NS.SyncMath.computeSnapshot(doc, 12850, false);
+                assert(snap.activeLineIndex === 0, 'Active line should be 0');
+                const tokArr = snap.tokenProgressByLine.get(0);
+                assert(tokArr && tokArr.length > 0, 'Token progress vector should exist');
+                assertApprox(tokArr[0], 0.5, 1e-6, 'First word progress at 12850ms');
+
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({
+                    modal: document.getElementById('lyrics-modal'),
+                    title: document.getElementById('lyrics-title'),
+                    artist: document.getElementById('lyrics-artist'),
+                    body,
+                    syncBadge: document.getElementById('lyrics-sync-badge')
+                });
+                renderer.mountDocument({ name: 'Test', artist: 'Artist' }, doc, NS.Diagnostics.analyze(doc, { durationMs: 240000 }));
+                renderer.updateFrame(snap, { drawerOpen: true, zenOpen: false });
+                const firstWord = body.querySelector('.lyric-word');
+                assert(firstWord, 'First .lyric-word must mount');
+                assert(firstWord.style.getPropertyValue('--word-progress') === '0.5000', 'Expected --word-progress 0.5000, got ' + firstWord.style.getPropertyValue('--word-progress'));
+                assert(firstWord.style.getPropertyValue('--word-pct') === '50.00%', 'Expected --word-pct 50.00%');
+                assert(firstWord.classList.contains('is-active-word'), 'Active word must have .is-active-word');
+            });
+
+            // 2. Enhanced LRC (<mm:ss.xx>) + closing timestamp + [offset:]
+            await runCase(2, 'Enhanced LRC Parsing + Closing Tag + [offset:]', async () => {
+                const elrc = `[ti:Test Song]\n[offset:+500]\n[00:10.00]<00:10.00>Kimi <00:10.50>no <00:11.00>na<00:11.80>\n[00:13.00]<00:13.00>wa<00:13.60>`;
+                const doc = NS.Parser.parse(elrc, { source: 'test-elrc' });
+                assert(doc.syncLevel === 'word', 'ELRC must normalize to syncLevel word');
+                assert(doc.offsetMs === 500, 'Expected offsetMs 500, got ' + doc.offsetMs);
+                const timed = doc.lines[0].tokens.filter(t => !t.isWhitespace);
+                assert(timed.length === 3, 'Expected 3 word tokens, got ' + timed.length);
+                assert(timed[2].startMs === 11000 && timed[2].endMs === 11800, 'Closing timestamp must bound last token cleanly');
+            });
+
+            // 3. Line-synced fallback (NO fake per-word sweep)
+            await runCase(3, 'Line-Synced Fallback Must NOT Fake Per-Word Sweep', async () => {
+                const lrc = `[00:10.00]Line One\n[00:14.00]Line Two`;
+                const doc = NS.Parser.parse(lrc, { source: 'test-lrc' });
+                assert(doc.syncLevel === 'line', 'Standard LRC must be line syncLevel');
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body });
+                renderer.mountDocument({ name: 'Line Track', artist: 'Alya' }, doc, NS.Diagnostics.analyze(doc));
+                assert(body.querySelectorAll('.lyric-word').length === 0, 'Line-synced document must have ZERO .lyric-word elements');
+                assert(body.querySelectorAll('.lyric-line.is-line-synced').length === 2, 'Expected 2 .is-line-synced rows');
+            });
+
+            // 4. Track without verified lyrics (Nakano Miku Track 24)
+            await runCase(4, 'Missing/Unavailable Lyrics Renders Honest Placeholder Without Fake Timestamps', async () => {
+                const mikuTrack = window.CONFIG.music.playlist.find(t => t.id === 24);
+                assert(mikuTrack, 'Track 24 must exist in CONFIG.music.playlist');
+                const res = await NS.Provider.loadForTrack(mikuTrack, { bypassCache: true });
+                assert(res.document.syncLevel === 'unavailable', 'Expected unavailable, got ' + res.document.syncLevel);
+                assert(res.document.lines.length === 0, 'Unavailable track must have 0 fabricated lines');
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body, syncBadge: document.getElementById('lyrics-sync-badge') });
+                renderer.mountDocument(mikuTrack, res.document, res.diagnostics);
+                assert(body.querySelector('.lyrics-open-editor-cta'), 'Editor CTA must appear for unavailable state');
+                assert(body.querySelector('.lyrics-spotify-ref'), 'Spotify reference link must render as metadata reference');
+            });
+
+            // 5. Japanese Unicode without spaces + Emoji surrogate preservation
+            await runCase(5, 'Japanese Unicode Preservation Without Artificial Spaces', async () => {
+                const jaTtml = `<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="1.0s" end="4.0s"><span begin="1.0s" end="1.4s">私</span><span begin="1.4s" end="1.8s">た</span><span begin="1.8s" end="2.2s">ち</span><span begin="2.2s" end="2.8s">！😊</span></p></div></body></tt>`;
+                const doc = NS.Parser.parse(jaTtml, { source: 'test-ja' });
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body });
+                renderer.mountDocument({ name: 'JA', artist: 'Nakano' }, doc, NS.Diagnostics.analyze(doc));
+                const primary = body.querySelector('.lyric-romaji');
+                assert(primary.getAttribute('lang') === 'ja', 'Japanese line must carry lang="ja"');
+                assert(primary.textContent === '私たち！😊', 'Expected exact text without artificial spaces, got: "' + primary.textContent + '"');
+                const glyphs = NS.Normalizer.splitGraphemes('私たち！😊');
+                assert(glyphs.length === 5 && glyphs[4] === '😊', 'Surrogate emoji pair must not split into broken code units');
+            });
+
+            // 6. Long instrumental gap (>= 14s) + Break Progress Indicator
+            await runCase(6, 'Long Instrumental Break Indicator (>=14s Gap)', async () => {
+                const lrc = `[00:05.00]First phrase\n[00:26.00]Second phrase`;
+                const doc = NS.Parser.parse(lrc, { source: 'test-gap' });
+                // Force line 0 endMs = 10000ms so gap is 16000ms (>= 14000ms threshold)
+                doc.lines[0].endMs = 10000;
+                const diag = NS.Diagnostics.analyze(doc, { durationMs: 60000 });
+                assert(diag.longGaps.length === 1, 'Expected 1 longGap, got ' + diag.longGaps.length);
+                const snap = NS.SyncMath.computeSnapshot(doc, 18000, false);
+                assert(snap.activeLineIndex === -1, 'Should have no active singing line during 16s interlude');
+                assert(snap.activeInterlude && Math.abs(snap.activeInterlude.progress - 0.5) < 1e-6, 'Interlude progress must be 0.5 at 18s');
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body });
+                renderer.mountDocument({ name: 'Gap', artist: 'Test' }, doc, diag);
+                renderer.updateFrame(snap, { drawerOpen: true, zenOpen: false });
+                const interlude = body.querySelector('.lyric-interlude-row');
+                assert(interlude && interlude.classList.contains('active'), 'Interlude indicator must mount and become .active');
+            });
+
+            // 7. Sustained vocal (>= 1200ms) detection & monotonic progression
+            await runCase(7, 'Sustained Long Vocal (>=1200ms) Flag & Smooth Monotonic Progress', async () => {
+                const elrc = `[00:20.00]<00:20.00>Hoshi<00:22.40>`;
+                const doc = NS.Parser.parse(elrc, { source: 'test-sustain' });
+                const tok = doc.lines[0].tokens.find(t => !t.isWhitespace);
+                assert(tok.isSustained === true, '2400ms token must flag isSustained: true');
+                const p1 = NS.SyncMath.computeTokenProgress(tok, 20600);
+                const p2 = NS.SyncMath.computeTokenProgress(tok, 21200);
+                const p3 = NS.SyncMath.computeTokenProgress(tok, 21800);
+                assertApprox(p1, 0.25, 1e-6, '25% sustain');
+                assertApprox(p2, 0.50, 1e-6, '50% sustain');
+                assertApprox(p3, 0.75, 1e-6, '75% sustain');
+                assert(p1 < p2 && p2 < p3, 'Sustain fill must be strictly monotonic');
+            });
+
+            // 8. Multi-singer (v1/v2) & Background Vocals (ttm:role="x-bg")
+            await runCase(8, 'Multi-Singer (v1/v2) & Background Vocal Overlap', async () => {
+                const duet = `<tt xmlns="http://www.w3.org/ns/ttml" xmlns:ttm="http://www.w3.org/ns/ttml#metadata">
+  <body><div>
+    <p begin="1.0s" end="4.0s" ttm:agent="v1"><span begin="1.0s" end="4.0s">Main lead</span></p>
+    <p begin="2.0s" end="5.0s" ttm:agent="v2"><span begin="2.0s" end="5.0s">Duet response</span></p>
+    <p begin="2.5s" end="3.8s" ttm:role="x-bg"><span begin="2.5s" end="3.8s">(Ooh harmony)</span></p>
+  </div></body>
+</tt>`;
+                const doc = NS.Parser.parse(duet, { source: 'test-duet' });
+                assert(doc.lines[1].speaker === 'v2', 'Line 1 speaker must be v2');
+                assert(doc.lines[2].isBackground === true, 'Line 2 must flag isBackground: true');
+                const snap = NS.SyncMath.computeSnapshot(doc, 3000, false);
+                assert(snap.overlappingLineIndices.length >= 2, 'Expected overlapping lines active at 3000ms');
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body });
+                renderer.mountDocument({ name: 'Duet', artist: 'Quintuplets' }, doc, NS.Diagnostics.analyze(doc));
+                renderer.updateFrame(snap, { drawerOpen: true, zenOpen: false });
+                assert(body.querySelector('.lyric-line.speaker-v2'), '.speaker-v2 class must render');
+                assert(body.querySelector('.lyric-line.is-bg-vocal'), '.is-bg-vocal class must render');
+                assert(body.querySelectorAll('.lyric-line.is-overlapping').length >= 1, 'Simultaneous overlapping lines must receive .is-overlapping');
+            });
+
+            // 9. Pause & Resume behavior (RAF lifecycle & preserved progress)
+            await runCase(9, 'Pause & Resume Stops Loop & Preserves Exact Progress', async () => {
+                const audio = makeFakeAudio();
+                const ttml = `<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="5.0s" end="8.0s"><span begin="5.0s" end="7.0s">Hold</span></p></div></body></tt>`;
+                const doc = NS.Parser.parse(ttml);
+                let latestSnap = null;
+                const engine = new NS.SyncEngine(audio, {
+                    shouldAnimate: () => true,
+                    onFrame: (s) => { latestSnap = s; }
+                });
+                engine.setDocument(doc);
+                audio.currentTime = 6.0;
+                audio.play();
+                assert(engine.rafId !== null, 'RAF loop must be active while playing');
+                assertApprox(latestSnap.tokenProgressByLine.get(0)[0], 0.5, 0.05, 'Initial sync at 6.0s');
+                audio.pause();
+                assert(engine.rafId === null, 'RAF loop must stop immediately on pause');
+                const pausedProg = latestSnap.tokenProgressByLine.get(0)[0];
+                audio.currentTime = 6.5;
+                audio.play();
+                assert(engine.rafId !== null, 'RAF loop must restart on resume');
+                assertApprox(latestSnap.tokenProgressByLine.get(0)[0], 0.75, 0.05, 'Resumed frame reflects exact clock after resume (was ' + pausedProg + ')');
+                engine.destroy();
+            });
+
+            // 10. Seek forward & backward snaps instantaneously
+            await runCase(10, 'Seek Jump Snaps Forward & Backward Without Lag', async () => {
+                const audio = makeFakeAudio();
+                const doc = NS.Parser.parse(`[00:05.00]Start\n[00:30.00]Middle\n[01:00.00]End`);
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body });
+                renderer.mountDocument({ name: 'Seek', artist: 'Alya' }, doc, NS.Diagnostics.analyze(doc));
+                let snaps = [];
+                const engine = new NS.SyncEngine(audio, {
+                    shouldAnimate: () => true,
+                    onFrame: (s) => { snaps.push(s); renderer.updateFrame(s, { drawerOpen: true }); }
+                });
+                engine.setDocument(doc);
+                audio.currentTime = 35.0;
+                audio.emit('seeked');
+                assert(snaps[snaps.length - 1].activeLineIndex === 1 && snaps[snaps.length - 1].wasSeek === true, 'Seek to 35s must snap directly to line 1');
+                audio.currentTime = 6.0;
+                audio.emit('seeked');
+                assert(snaps[snaps.length - 1].activeLineIndex === 0 && snaps[snaps.length - 1].wasSeek === true, 'Seek backward to 6s must snap back to line 0');
+                assert(body.querySelector('.lyric-line[data-index="0"]').classList.contains('active'), 'DOM line 0 must be active immediately after backward seek');
+                engine.destroy();
+            });
+
+            // 11. Rapid track switch cancels stale async fetch (AbortController race protection)
+            await runCase(11, 'Rapid Next/Previous Cancels Stale Provider Requests', async () => {
+                let firstAborted = false;
+                NS.Provider.registerProvider({
+                    name: 'delayed-mock',
+                    load(track, { signal }) {
+                        const delay = track.id === 901 ? 80 : 10;
+                        return new Promise((resolve, reject) => {
+                            if (signal) {
+                                signal.addEventListener('abort', () => {
+                                    if (track.id === 901) firstAborted = true;
+                                    const e = new Error('Aborted');
+                                    e.name = 'AbortError';
+                                    reject(e);
+                                }, { once: true });
+                            }
+                            setTimeout(() => {
+                                resolve({ format: 'lrc', raw: `[00:01.00]Track ${track.id}`, title: track.name, artist: track.artist });
+                            }, delay);
+                        });
+                    }
+                });
+
+                const tA = { id: 901, name: 'Slow Old Track', artist: 'A', file: 'music/901.mp3' };
+                const tB = { id: 902, name: 'Fast New Track', artist: 'B', file: 'music/902.mp3' };
+                const ctrlA = new AbortController();
+                const pA = NS.Provider.loadForTrack(tA, { signal: ctrlA.signal, bypassCache: true }).catch(e => ({ aborted: e.name === 'AbortError' }));
+                ctrlA.abort();
+                const resB = await NS.Provider.loadForTrack(tB, { bypassCache: true });
+                const resA = await pA;
+                NS.Provider.clearCustomProviders();
+
+                assert(firstAborted && resA.aborted === true, 'Stale track A request must abort cleanly');
+                assert(resB.document.lines[0].text === 'Track 902', 'New track B must load cleanly');
+            });
+
+            // 12. Playback speed changes (0.5x, 1.25x, 2.0x)
+            await runCase(12, 'Playback Speed 0.5x / 1.25x / 2.0x Respects audio.playbackRate', async () => {
+                const audio = makeFakeAudio();
+                audio.paused = false;
+                audio.playbackRate = 2.0;
+                audio.currentTime = 10.0;
+                const doc = NS.Parser.parse(`<tt xmlns="http://www.w3.org/ns/ttml"><body><div><p begin="10.0s" end="12.0s"><span begin="10.0s" end="11.0s">Fast</span></p></div></body></tt>`);
+                const engine = new NS.SyncEngine(audio, { shouldAnimate: () => true });
+                engine.setDocument(doc);
+                engine.lastAudioTimeSec = 10.0;
+                engine.lastSamplePerfMs = performance.now() - 100; // 100ms elapsed wall time at 2.0x = +200ms (clamped <= 140ms safety!)
+                engine.forceHardSnap = false;
+                const estFast = engine.getEffectiveTimeMs();
+                assert(estFast >= 10000 && estFast <= 10145, 'Interpolated time must scale with rate and remain bounded <=140ms from true audio clock, got ' + estFast);
+                audio.playbackRate = 0.5;
+                audio.emit('ratechange');
+                assert(engine.lastRate === 0.5, 'Playback rate change reflected cleanly');
+                engine.destroy();
+            });
+
+            // 13. Browser Tab Visibility Hidden -> Visible Resync
+            await runCase(13, 'Tab Visibility Hidden Suspends RAF & Visible Re-syncs Audio Clock', async () => {
+                const audio = makeFakeAudio();
+                const doc = NS.Parser.parse(`[00:01.00]Visible Line\n[00:10.00]After Return`);
+                let snapAfterReturn = null;
+                const engine = new NS.SyncEngine(audio, {
+                    shouldAnimate: () => true,
+                    onFrame: (s) => { snapAfterReturn = s; }
+                });
+                engine.setDocument(doc);
+                audio.currentTime = 1.5;
+                audio.play();
+                assert(engine.rafId !== null, 'RAF active initially');
+
+                let hiddenVal = true;
+                Object.defineProperty(document, 'hidden', { configurable: true, get: () => hiddenVal });
+                document.dispatchEvent(new Event('visibilitychange'));
+                assert(engine.rafId === null, 'RAF must pause when tab hidden');
+
+                audio.currentTime = 11.2;
+                hiddenVal = false;
+                document.dispatchEvent(new Event('visibilitychange'));
+                assert(snapAfterReturn && snapAfterReturn.activeLineIndex === 1, 'Returning to visible tab must resync immediately to 11.2s (line 1)');
+                assert(engine.rafId !== null, 'RAF must restart when visible again while playing');
+                try { delete document.hidden; } catch (_) {}
+                engine.destroy();
+            });
+
+            // 15. Metadata Matcher Disambiguation (Duplicate Song Title Across Personas / Versions)
+            await runCase(15, 'Metadata Matcher Rejects Wrong Artist/Version/Duration on Duplicate Title', async () => {
+                const alyaTrack = window.CONFIG.music.playlist.find(t => /Chiisana Koi no Uta/i.test(t.name) && t.persona === 'alya');
+                const mahiruTrack = window.CONFIG.music.playlist.find(t => /Chiisana Koi no Uta/i.test(t.name) && t.persona === 'mahiru');
+                assert(alyaTrack && mahiruTrack, 'Alya and Mahiru Chiisana Koi no Uta tracks must both exist');
+                const goodMatch = NS.Matcher.matchTrack(alyaTrack, {
+                    title: alyaTrack.name,
+                    artist: alyaTrack.artist,
+                    durationMs: alyaTrack.durationMs
+                });
+                const crossArtistReject = NS.Matcher.matchTrack(alyaTrack, {
+                    title: mahiruTrack.name,
+                    artist: mahiruTrack.artist,
+                    durationMs: mahiruTrack.durationMs
+                });
+                const liveVersionReject = NS.Matcher.matchTrack(mahiruTrack, {
+                    title: 'Chiisana Koi no Uta (Live at Budokan)',
+                    artist: mahiruTrack.artist,
+                    durationMs: mahiruTrack.durationMs
+                });
+                assert(goodMatch.matched === true && ['metadata-strong', 'track-id', 'spotify-ref-exact', 'isrc-exact'].includes(goodMatch.confidence), 'Exact track match should succeed cleanly');
+                assert(crossArtistReject.matched === false, 'Cross-persona same-title mismatch (>12s + wrong artist) must be rejected');
+                assert(liveVersionReject.matched === false, 'Studio vs Live version tag mismatch must be rejected');
+            });
+
+            // 16. Restricted Spotify Embed Refusal (Policy & Architecture Compliance)
+            await runCase(16, 'Restricted Audio Source Refuses Lyrics Sync Cleanly', async () => {
+                const res = await NS.Provider.loadForTrack({
+                    id: 999,
+                    name: '五等分の気持ち',
+                    artist: '中野家の五つ子',
+                    sourceType: 'spotify-embed',
+                    spotifyTrackId: '1eAA4GuypDccaOjlbt6HbR'
+                }, { bypassCache: true });
+                assert(res.document.syncLevel === 'restricted', 'Expected restricted syncLevel, got ' + res.document.syncLevel);
+                const body = document.getElementById('lyrics-body');
+                const renderer = new NS.Renderer({ body, syncBadge: document.getElementById('lyrics-sync-badge') });
+                renderer.mountDocument({ name: '五等分の気持ち', artist: '中野家の五つ子' }, res.document, res.diagnostics);
+                assert(body.textContent.includes('RESTRICTED'), 'Restricted UI state must display honestly');
+            });
+
+            const passed = results.filter(r => r.pass).length;
+            const total = results.length;
+            window.__TEST_RESULTS__ = { passed, failed: total - passed, total, cases: results };
+
+            const sumEl = document.getElementById('test-summary');
+            const outEl = document.getElementById('test-output');
+            sumEl.innerHTML = `<strong class="${passed === total ? 'pass' : 'fail'}">${passed} / ${total} PASSED</strong>`;
+            outEl.textContent = results.map(r => `[${r.pass ? 'PASS' : 'FAIL'}] #${r.id} ${r.name}${r.error ? '\n  ' + r.error : ''}`).join('\n');
+        }
+
+        runAll();
+    })();
+    </script>
+</body>
+</html>

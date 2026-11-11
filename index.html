@@ -34,12 +34,12 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=19.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=19.0">
-    <link rel="stylesheet" href="css/style-card.css?v=19.0">
-    <link rel="stylesheet" href="css/style-left.css?v=19.0">
-    <link rel="stylesheet" href="css/style-right.css?v=19.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=19.0">
+    <link rel="stylesheet" href="css/style-base.css?v=20.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=20.0">
+    <link rel="stylesheet" href="css/style-card.css?v=20.0">
+    <link rel="stylesheet" href="css/style-left.css?v=20.0">
+    <link rel="stylesheet" href="css/style-right.css?v=20.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=20.0">
 </head>
 <body>
 
@@ -194,7 +194,7 @@
                                     <span class="speed-label" id="playback-speed-label">1.0X</span>
                                 </button>
                                 <div class="track-indicator">
-                                    <span id="current-track-num">1</span> / <span id="total-tracks-num">23</span>
+                                    <span id="current-track-num">1</span> / <span id="total-tracks-num">31</span>
                                 </div>
                             </div>
                         </div>
@@ -313,7 +313,7 @@
                     <div class="persona-section">
                         <div class="section-micro-header">
                             <span class="micro-title"><i class="fas fa-sparkles"></i> WAIFU & THEME COLLECTION</span>
-                            <span class="micro-meta" id="persona-count">7 PERSONAS · CLICK TO EQUIP</span>
+                            <span class="micro-meta" id="persona-count">8 PERSONAS · CLICK TO EQUIP</span>
                         </div>
                         <div class="persona-selector-grid" id="persona-selector">
                             <!-- Populated dynamically via js/avatar.js -->
@@ -394,6 +394,7 @@
             <div class="lyrics-meta">
                 <div class="lyrics-badge-row">
                     <span class="lyrics-badge"><i class="fas fa-sparkles"></i> LIVE LYRICS</span>
+                    <span class="lyrics-sync-badge" id="lyrics-sync-badge" data-sync-level="line">LINE SYNC</span>
                     <button class="lyrics-mode-btn" id="lyrics-mode-toggle" type="button" title="Chuyển chế độ xem lời">
                         <i class="fas fa-align-left" aria-hidden="true"></i> <span id="lyrics-mode-label">Toàn bài</span>
                     </button>
@@ -415,14 +416,23 @@
             </div>
         </div>
         <div class="lyrics-body" id="lyrics-body">
-            <!-- Populated dynamically via js/lyrics.js -->
+            <!-- Populated dynamically via js/lyrics/renderer.js -->
         </div>
+        <button class="lyrics-recenter-btn" id="lyrics-recenter-btn" type="button" title="Quay về câu đang hát">
+            <i class="fas fa-crosshairs" aria-hidden="true"></i> <span>Theo lời</span>
+        </button>
         <div class="lyrics-footer">
             <span class="lyrics-footer-hint"><i class="fas fa-arrow-pointer"></i> Nhấp câu để tua nhanh</span>
-            <button class="tap-sync-toggle-btn" id="tap-sync-toggle-btn" type="button" title="Chạm câu đang hát để tự động đồng bộ thời gian (Tap to Sync)">
-                <i class="fas fa-bullseye"></i> <span>Tap to Sync</span>
-            </button>
+            <div class="lyrics-footer-actions">
+                <button class="lyrics-editor-btn" id="lyrics-editor-btn" type="button" title="Kiểm tra &amp; nhập TTML / ELRC / LRC">
+                    <i class="fas fa-sliders" aria-hidden="true"></i> <span>Editor</span>
+                </button>
+                <button class="tap-sync-toggle-btn" id="tap-sync-toggle-btn" type="button" title="Chạm câu đang hát để tự động đồng bộ thời gian (Tap to Sync)">
+                    <i class="fas fa-bullseye"></i> <span>Tap to Sync</span>
+                </button>
+            </div>
         </div>
+        <div class="lyrics-editor-panel" id="lyrics-editor-panel" aria-label="Studio Lyrics Editor"></div>
     </aside>
 
     <!-- TOAST NOTIFICATION CONTAINER -->
@@ -433,14 +443,25 @@
     </noscript>
 
     <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=18.0"></script>
-    <script src="js/stars.js?v=18.0"></script>
-    <script src="js/fluid-bg.js?v=18.0"></script>
-    <script src="js/avatar.js?v=18.0"></script>
-    <script src="js/music.js?v=18.0"></script>
-    <script src="js/lyrics.js?v=18.0"></script>
-    <script src="js/snapshot.js?v=18.0"></script>
-    <script src="js/features.js?v=18.0"></script>
+    <script src="js/config.js?v=20.0"></script>
+    <script src="js/stars.js?v=20.0"></script>
+    <script src="js/fluid-bg.js?v=20.0"></script>
+    <script src="js/avatar.js?v=20.0"></script>
+    <script src="js/music.js?v=20.0"></script>
+    <!-- Lyrics Engine V2 (Modular Decoupled Architecture) -->
+    <script src="js/lyrics/normalizer.js?v=20.0"></script>
+    <script src="js/lyrics/parser.js?v=20.0"></script>
+    <script src="js/lyrics/matcher.js?v=20.0"></script>
+    <script src="js/lyrics/cache.js?v=20.0"></script>
+    <script src="js/lyrics/diagnostics.js?v=20.0"></script>
+    <script src="js/lyrics/repository.js?v=20.0"></script>
+    <script src="js/lyrics/provider.js?v=20.0"></script>
+    <script src="js/lyrics/sync-engine.js?v=20.0"></script>
+    <script src="js/lyrics/renderer.js?v=20.0"></script>
+    <script src="js/lyrics/editor.js?v=20.0"></script>
+    <script src="js/lyrics/index.js?v=20.0"></script>
+    <script src="js/snapshot.js?v=20.0"></script>
+    <script src="js/features.js?v=20.0"></script>
     <script>
         // Top More Dropdown Toggle Handler
         (function() {

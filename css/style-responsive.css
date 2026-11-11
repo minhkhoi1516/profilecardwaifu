@@ -982,3 +982,74 @@ body.low-end .ambient-fluid-canvas {
     opacity: 0.25 !important;
 }
 
+/* ========================================================
+   9. MOBILE LYRICS V2 RESPONSIVE POLISH (<= 768px)
+   ======================================================== */
+@media (max-width: 768px) {
+    .lyrics-drawer-modal {
+        width: calc(100vw - 1.15rem) !important;
+        max-width: 520px !important;
+        height: min(78dvh, 560px) !important;
+        max-height: 82dvh !important;
+        border-radius: 26px !important;
+    }
+
+    .lyrics-drawer-header {
+        padding: 0.9rem 1rem 0.7rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .lyrics-track-title {
+        max-width: 100%;
+        font-size: 0.98rem;
+    }
+
+    .lyrics-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .lyrics-body {
+        padding: 1rem 0.9rem;
+    }
+
+    .lyrics-footer {
+        padding: 0.55rem 0.9rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .lyrics-footer-hint {
+        display: none;
+    }
+
+    .lyrics-footer-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .lyrics-editor-btn,
+    .lyrics-recenter-btn,
+    .lyrics-open-editor-cta,
+    .editor-btn,
+    .editor-back-btn {
+        min-height: 44px !important;
+        height: 44px !important;
+        box-sizing: border-box !important;
+        padding: 0 0.9rem !important;
+        font-size: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .lyrics-recenter-btn {
+        bottom: 4.1rem;
+    }
+
+    .editor-meta-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+

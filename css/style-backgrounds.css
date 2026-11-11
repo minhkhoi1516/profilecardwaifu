@@ -1,6 +1,6 @@
 /* ========================================================
    MAHIKARI · BACKGROUND & CINEMATIC BANNER STAGE
-   Ultra-Crisp 16:9 Artwork Presentation · Zero Blurry Fog
+   Atmospheric Film-Graded Crossfade Layers · Organic Finish
 ======================================================== */
 
 .banner-stage,
@@ -23,33 +23,64 @@
     background-color: #030408;
 }
 
-/* 6 Pre-Rasterized GPU Waifu Layers */
+/* Pre-Rasterized GPU Waifu Crossfade Layers */
 .banner-layer {
     position: absolute;
     inset: 0;
     background-size: cover;
-    background-position: center 25%;
+    background-position: center 22%;
     background-repeat: no-repeat;
     opacity: 0;
-    transition: opacity 0.6s var(--ease-out-quint);
-    transform: translateZ(0);
-    will-change: opacity;
-    filter: contrast(1.02) saturate(1.04);
+    transform: scale(1.045) translateZ(0);
+    transition:
+        opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 7.5s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+    /* Gentle analog film softness: dials back digital over-saturation & plastic sharpening */
+    filter: brightness(0.94) contrast(0.97) saturate(0.94);
 }
 
 .banner-layer.active {
     opacity: 1;
     z-index: 1;
+    transform: scale(1) translateZ(0);
 }
 
-/* Cinematic controlled vignette — keeps the image crystal-clear while providing subtle contrast */
+body.zen-mode .banner-layer {
+    filter: brightness(0.98) contrast(0.98) saturate(0.97);
+}
+
+/* Subtle organic micro-grain & persona atmospheric color wash to soften synthetic edges */
+.banner-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(ellipse at 25% 20%, var(--color-accent-glow, rgba(56, 189, 248, 0.14)) 0%, transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+    opacity: 0.72;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Cinematic controlled vignette — keeps artwork natural while preserving glass readability */
 .banner-stage::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at 50% 50%, rgba(3, 5, 12, 0.35) 0%, rgba(3, 5, 12, 0.85) 100%);
+    background:
+        radial-gradient(circle at 50% 42%, rgba(3, 5, 12, 0.28) 0%, rgba(3, 5, 12, 0.84) 100%),
+        linear-gradient(180deg, rgba(5, 7, 14, 0.18) 0%, transparent 25%, rgba(5, 7, 14, 0.55) 100%);
     pointer-events: none;
-    z-index: 2;
+    z-index: 3;
+    transition: opacity 0.6s ease, background 0.6s ease;
+}
+
+body.zen-mode .banner-stage::after {
+    background:
+        radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.08) 0%, rgba(3, 5, 12, 0.52) 100%),
+        linear-gradient(180deg, rgba(5, 7, 14, 0.12) 0%, transparent 30%, rgba(5, 7, 14, 0.45) 100%);
 }
 
 body.light-mode .banner-stage::after {
@@ -58,6 +89,15 @@ body.light-mode .banner-stage::after {
         rgba(240, 244, 250, 0.28) 0%,
         rgba(235, 240, 248, 0.68) 100%
     );
+}
+
+body.low-end .banner-stage::before {
+    display: none;
+}
+
+body.low-end .banner-layer {
+    transform: none !important;
+    transition: opacity 0.45s ease !important;
 }
 
 /* Minimalist ambient canvas */

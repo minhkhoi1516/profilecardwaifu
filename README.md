@@ -106,8 +106,20 @@ Slot `coming` (index cuối) luôn là chip mờ "Coming Soon" — cứ thêm wa
 3. (Tuỳ chọn) chạy `python tools/mp3_duration.py` để lấy thời lượng chính xác, rồi copy vào
    `duration`. Số bài trên tab `All` tự cập nhật.
 
+> Hiện tại hệ thống đã tích hợp **8 Personas** (bao gồm **Nakano Miku** với bộ banner riêng & 8 bản nhạc Gotoubun) và tổng cộng **31 tracks**.
 > Tên file có dấu tiếng Nhật vẫn chạy bình thường, nhưng nên dùng tên không dấu để tránh lỗi
 > khi deploy qua các hệ thống cũ.
+
+---
+
+## 🎤 Kiến trúc Lyrics Engine V2 (`js/lyrics/`)
+
+Engine hiển thị lời bài hát được tách module hoàn toàn theo mô hình Apple Music Sing:
+
+- `normalizer.js` · `parser.js` (`TTML` word/syllable, `Enhanced LRC <mm:ss.xx>`, `LRC`, plain text)
+- `matcher.js` · `diagnostics.js` · `cache.js` (per-track calibration offset + versioned LRU cache)
+- `provider.js` · `repository.js` (honest sync-level metadata cho toàn bộ 31 tracks)
+- `sync-engine.js` · `renderer.js` · `editor.js` · `index.js`
 
 ---
 

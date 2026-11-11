@@ -43,14 +43,23 @@
         return Array.isArray(pool) ? pool.slice() : [];
     }
 
+    // ------------------------------------------------------------------
+    // BANNER DOUBLE-BUFFER CROSSFADE ENGINE
+    // Smoothly pre-decodes images off-screen and dissolves between two
+    // layers so even same-persona randomizations (Zen mode) crossfade cleanly.
+    // ------------------------------------------------------------------
+    let bannerLoadSeq = 0;
+
     function pickBanner(persona) {
         const pool = bannerPool(persona);
         if (pool.length === 0) return '';
         if (pool.length === 1) return pool[0];
 
         const last = lastBannerPick.get(persona.key);
-        const candidates = pool.filter(src => src !== last);
-        const chosen = candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
+        const candidates = pool.filter(src => src !== last && src !== currentBannerSrc);
+        const fallback = pool.filter(src => src !== currentBannerSrc);
+        const usable = candidates.length > 0 ? candidates : (fallback.length > 0 ? fallback : pool);
+        const chosen = usable[Math.floor(Math.random() * usable.length)] || pool[0];
         lastBannerPick.set(persona.key, chosen);
         return chosen;
     }
@@ -155,36 +164,83 @@
     function ensureBannerLayers() {
         if (!bannerStage) return;
         const currentLayers = bannerStage.querySelectorAll('.banner-layer');
-        if (currentLayers.length < personas.length) {
-            for (let i = currentLayers.length; i < personas.length; i++) {
-                if (personas[i].available) {
-                    const layer = document.createElement('div');
-                    layer.className = 'banner-layer';
-                    layer.dataset.index = i;
-                    layer.dataset.key = personas[i].key;
-                    bannerStage.appendChild(layer);
-                }
+        const needed = Math.max(2, personas.length);
+        if (currentLayers.length < needed) {
+            for (let i = currentLayers.length; i < needed; i++) {
+                const layer = document.createElement('div');
+                layer.className = 'banner-layer';
+                layer.dataset.index = i;
+                bannerStage.appendChild(layer);
             }
         }
     }
 
-    function updateBannerLayers(persona) {
-        const src = pickBanner(persona);
+    function commitBannerCrossfade(src, immediate) {
+        currentBannerSrc = src;
+        if (!bannerStage) return;
 
-        if (bannerStage) {
-            ensureBannerLayers();
-            const layers = bannerStage.querySelectorAll('.banner-layer');
+        ensureBannerLayers();
+        const layers = Array.from(bannerStage.querySelectorAll('.banner-layer'));
+        if (layers.length === 0) return;
+
+        const currentActive = layers.find(l => l.classList.contains('active')) || layers[0];
+        if (immediate) {
             layers.forEach((layer) => {
-                const layerIdx = parseInt(layer.dataset.index, 10);
-                const isActive = layerIdx === currentIndex;
-                layer.classList.toggle('active', isActive);
-                if (isActive) {
+                const isTarget = layer === currentActive;
+                layer.classList.toggle('active', isTarget);
+                if (isTarget) {
                     layer.style.backgroundImage = src ? `url('${src}')` : 'none';
                 }
             });
+            return;
         }
 
-        currentBannerSrc = src;
+        // Always swap to an inactive standby buffer layer for true crossfade even within same persona
+        const standby = layers.find(l => !l.classList.contains('active')) || layers.find(l => l !== currentActive) || layers[0];
+        standby.style.backgroundImage = src ? `url('${src}')` : 'none';
+        // Restart gentle atmospheric settle animation smoothly
+        standby.classList.remove('active');
+        void standby.offsetWidth;
+
+        window.requestAnimationFrame(() => {
+            layers.forEach((layer) => {
+                layer.classList.toggle('active', layer === standby);
+            });
+        });
+    }
+
+    function updateBannerLayers(persona, options) {
+        const src = pickBanner(persona);
+        if (!src) {
+            commitBannerCrossfade('', true);
+            return '';
+        }
+
+        const immediate = Boolean(options && options.immediate);
+        const seq = ++bannerLoadSeq;
+
+        if (immediate || (currentBannerSrc === '' && bannerStage?.querySelector('.banner-layer.active')?.style.backgroundImage.includes(src))) {
+            commitBannerCrossfade(src, true);
+            return src;
+        }
+
+        // Pre-decode image asynchronously before starting opacity crossfade to eliminate AI art harsh pop-in
+        const loader = new Image();
+        loader.decoding = 'async';
+        loader.src = src;
+
+        const applyWhenReady = () => {
+            if (seq !== bannerLoadSeq) return;
+            commitBannerCrossfade(src, false);
+        };
+
+        if (typeof loader.decode === 'function') {
+            loader.decode().then(applyWhenReady).catch(applyWhenReady);
+        } else {
+            loader.onload = applyWhenReady;
+            loader.onerror = applyWhenReady;
+        }
+        return src;
     }
 
     function applyAvatar(persona, animate) {
@@ -234,7 +290,7 @@
 
         applyPersonaTokens(persona);
         updatePersonaText(persona);
-        updateBannerLayers(persona);
+        updateBannerLayers(persona, { immediate: !persist && currentBannerSrc === '' });
         applyAvatar(persona, persist);
 
         // Update ambient particle mode (Sakura petals, snowflakes, stardust)
@@ -276,6 +332,11 @@
     window.getCurrentPersonaIndex = () => currentIndex;
     window.getCurrentPersona = () => personas[currentIndex];
     window.getCurrentBanner = () => currentBannerSrc;
+    window.randomizeCurrentBanner = () => {
+        const persona = personas[currentIndex];
+        if (!persona) return '';
+        return updateBannerLayers(persona, { immediate: false });
+    };
 
     // Graceful fallback when an avatar file is missing
     if (avatarImg) {
