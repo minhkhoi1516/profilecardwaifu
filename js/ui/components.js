@@ -175,10 +175,21 @@
             doc.body.appendChild(scrim);
         }
 
-        let isOpenState = false;
+        let popupState = 'closed'; // 'closed' | 'opening' | 'open' | 'closing'
+        let transitionGen = 0;
         let releaseTrap = null;
         let popupOriginX = '100%';
         let popupOriginY = '0%';
+
+        function setPopupState(nextState) {
+            popupState = nextState;
+            wrap.dataset.popupState = nextState;
+            dropdown.dataset.popupState = nextState;
+            const expanded = nextState === 'opening' || nextState === 'open';
+            wrap.classList.toggle('open', expanded);
+            btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
+        setPopupState('closed');
 
         const spLib = Spring();
         const applyFraction = (f) => {
@@ -243,21 +254,31 @@
         }
 
         function openMenu() {
-            if (isOpenState) return;
+            if (popupState === 'opening' || popupState === 'open') return;
+            const myGen = ++transitionGen;
+            // Cancel any pending close animation callback before closing sibling overlays
+            if (fractionSpring) {
+                fractionSpring.onComplete = null;
+            }
             closeAllOverlays('top-more');
-            isOpenState = true;
             computeAnchor();
 
-            wrap.classList.add('open');
+            setPopupState('opening');
             dropdown.style.visibility = 'visible';
             dropdown.style.pointerEvents = 'auto';
-            btn.setAttribute('aria-expanded', 'true');
             scrim.classList.add('active');
 
             if (fractionSpring) {
-                fractionSpring.setTarget(1, { onComplete: null });
+                fractionSpring.setTarget(1, {
+                    onComplete: () => {
+                        if (myGen !== transitionGen || popupState !== 'opening') return;
+                        setPopupState('open');
+                        applyFraction(1);
+                    }
+                });
             } else {
                 applyFraction(1);
+                setPopupState('open');
             }
 
             if (releaseTrap) releaseTrap();
@@ -266,10 +287,12 @@
 
         function closeMenu(opts) {
             const options = opts || {};
-            if (!isOpenState) return;
-            isOpenState = false;
-            wrap.classList.remove('open');
-            btn.setAttribute('aria-expanded', 'false');
+            if (popupState === 'closing' || popupState === 'closed') return;
+            const myGen = ++transitionGen;
+            if (fractionSpring) {
+                fractionSpring.onComplete = null;
+            }
+            setPopupState('closing');
             scrim.classList.remove('active');
 
             if (releaseTrap) {
@@ -286,7 +309,8 @@
             }
 
             const hideDone = () => {
-                if (isOpenState) return;
+                if (myGen !== transitionGen || popupState !== 'closing') return;
+                setPopupState('closed');
                 dropdown.style.visibility = 'hidden';
                 dropdown.style.pointerEvents = 'none';
                 dropdown.style.clipPath = '';
@@ -303,7 +327,7 @@
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (isOpenState) {
+            if (popupState === 'opening' || popupState === 'open') {
                 closeMenu({ restoreFocus: true });
             } else {
                 openMenu();
@@ -316,14 +340,14 @@
         });
 
         doc.addEventListener('click', (e) => {
-            if (!isOpenState) return;
+            if (popupState !== 'opening' && popupState !== 'open') return;
             if (!wrap.contains(e.target) && e.target !== scrim) {
                 closeMenu({ restoreFocus: false });
             }
         });
 
         doc.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && isOpenState) {
+            if (e.key === 'Escape' && (popupState === 'opening' || popupState === 'open')) {
                 e.preventDefault();
                 closeMenu({ restoreFocus: true });
             }
@@ -348,7 +372,7 @@
         });
 
         registerOverlay('top-more', {
-            isOpen: () => isOpenState,
+            isOpen: () => popupState === 'opening' || popupState === 'open',
             close: closeMenu
         });
 
