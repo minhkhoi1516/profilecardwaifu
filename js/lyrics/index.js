@@ -215,14 +215,26 @@
             return (global.CONFIG?.music?.playlist || [])[0] || null;
         }
 
+        let releaseLyricsTrap = null;
+
         function openLyrics() {
             if (!lyricsModal) return;
+            if (global.MinkoiUI && typeof global.MinkoiUI.closeAllOverlays === 'function') {
+                global.MinkoiUI.closeAllOverlays('lyrics');
+            }
             const track = getActiveTrackFromPlayer();
             if (track && (!currentTrack || currentTrack.id !== track.id || currentTrack.file !== track.file)) {
                 loadLyricsForTrack(track);
             }
             lyricsModal.classList.add('open');
-            if (lyricsToggleBtn) lyricsToggleBtn.classList.add('active');
+            if (lyricsToggleBtn) {
+                lyricsToggleBtn.classList.add('active');
+                lyricsToggleBtn.setAttribute('aria-expanded', 'true');
+            }
+            if (global.MinkoiUI && typeof global.MinkoiUI.pushFocusTrap === 'function') {
+                if (releaseLyricsTrap) releaseLyricsTrap();
+                releaseLyricsTrap = global.MinkoiUI.pushFocusTrap(lyricsModal, lyricsToggleBtn);
+            }
             syncEngine.forceSync(true);
             if (!audio.paused) syncEngine.startLoop();
             if (typeof global.playChimeSFX === 'function') {
@@ -230,14 +242,31 @@
             }
         }
 
-        function closeLyrics() {
+        function closeLyrics(opts) {
             if (!lyricsModal) return;
             lyricsModal.classList.remove('open');
-            if (lyricsToggleBtn) lyricsToggleBtn.classList.remove('active');
+            if (lyricsToggleBtn) {
+                lyricsToggleBtn.classList.remove('active');
+                lyricsToggleBtn.setAttribute('aria-expanded', 'false');
+            }
             editor.close();
+            if (releaseLyricsTrap) {
+                const fn = releaseLyricsTrap;
+                releaseLyricsTrap = null;
+                if (!opts || opts.restoreFocus !== false) {
+                    fn();
+                }
+            }
             if (!document.body.classList.contains('zen-mode')) {
                 syncEngine.stopLoop();
             }
+        }
+
+        if (global.MinkoiUI && typeof global.MinkoiUI.registerOverlay === 'function') {
+            global.MinkoiUI.registerOverlay('lyrics', {
+                isOpen: () => Boolean(lyricsModal && lyricsModal.classList.contains('open')),
+                close: closeLyrics
+            });
         }
 
         function toggleLyrics() {

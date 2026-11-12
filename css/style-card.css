@@ -268,12 +268,11 @@ body.light-mode .top-action-btn:hover {
     opacity: 0;
     visibility: hidden;
     transform: translateY(-8px) scale(0.96);
-    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s;
+    transition: none;
     pointer-events: none;
 }
 
-.top-more-menu-wrap.open .top-more-dropdown,
-.top-more-menu-wrap:focus-within .top-more-dropdown {
+.top-more-menu-wrap.open .top-more-dropdown {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);

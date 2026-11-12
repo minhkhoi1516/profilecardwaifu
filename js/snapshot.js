@@ -77,7 +77,7 @@
         ctx.fillStyle = accentColor;
         ctx.font = '700 13px "JetBrains Mono", monospace';
         ctx.textAlign = 'right';
-        ctx.fillText('PRO5WAIFU-MINKOI.DUCKDNS.ORG', W - 70, 78);
+        ctx.fillText('PRO5-WAIFU-MINKOI.VERCEL.APP', W - 70, 78);
         ctx.textAlign = 'left';
 
         // 5. Load and Draw Avatar

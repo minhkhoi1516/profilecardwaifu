@@ -126,11 +126,20 @@
         }
     }
 
+    function getQualityFactor() {
+        const q = document.body ? document.body.getAttribute('data-quality') : 'high';
+        if (q === 'eco' || (document.body && document.body.classList.contains('low-end'))) return 0;
+        if (q === 'balanced') return 0.55;
+        return 1;
+    }
+
     function initParticles() {
         particles = [];
+        const factor = getQualityFactor();
+        if (factor === 0) return;
         const isMobile = width < 768;
-        // Optimal density: buttery smooth 60fps without battery drain
-        const count = isMobile ? (currentThemeMode === 'sakura' ? 20 : 28) : (currentThemeMode === 'sakura' ? 38 : 65);
+        const baseCount = isMobile ? (currentThemeMode === 'sakura' ? 20 : 28) : (currentThemeMode === 'sakura' ? 38 : 65);
+        const count = Math.max(8, Math.round(baseCount * factor));
 
         for (let i = 0; i < count; i++) {
             particles.push(createParticle(currentThemeMode, true));
@@ -198,15 +207,29 @@
         ctx.restore();
     }
 
+    let cachedAccentColor = '#38bdf8';
+    const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+    function refreshCachedAccent() {
+        const val = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+        if (val) cachedAccentColor = val;
+    }
+
+    function shouldPauseParticles() {
+        if (document.hidden) return true;
+        if (reducedMotionMQ && reducedMotionMQ.matches) return true;
+        return getQualityFactor() === 0;
+    }
+
     function render() {
-        if (document.hidden) {
+        if (shouldPauseParticles()) {
             animationId = null;
-            return; // Battery saving: truly pause loop
+            return; // Battery & reduced-motion saving: truly pause loop
         }
         animationId = requestAnimationFrame(render);
 
         ctx.clearRect(0, 0, width, height);
-        const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim() || '#38bdf8';
+        const accentColor = cachedAccentColor;
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
@@ -271,32 +294,59 @@
         }
     }
 
+    function startParticlesIfAllowed() {
+        if (shouldPauseParticles()) {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            ctx.clearRect(0, 0, width, height);
+            return;
+        }
+        if (!animationId) render();
+    }
+
     // Dynamic Persona Hook: instantly adapt particle mode
     function setAmbientParticleMode(personaIndex) {
+        refreshCachedAccent();
         const newMode = getThemeForPersona(personaIndex);
         if (newMode !== currentThemeMode) {
             currentThemeMode = newMode;
             initParticles();
         }
+        startParticlesIfAllowed();
     }
     window.setAmbientParticleMode = setAmbientParticleMode;
 
     let resizeTimer = null;
     window.addEventListener('resize', () => {
         if (resizeTimer) clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(resize, 150);
+        resizeTimer = setTimeout(() => {
+            resize();
+            startParticlesIfAllowed();
+        }, 150);
     }, { passive: true });
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !animationId) {
-            render();
-        }
+        if (!document.hidden) startParticlesIfAllowed();
     });
+
+    window.addEventListener('minkoi:themechange', () => refreshCachedAccent());
+    window.addEventListener('minkoi:persona', () => refreshCachedAccent());
+    window.addEventListener('minkoi:qualitychange', () => {
+        initParticles();
+        startParticlesIfAllowed();
+    });
+
+    if (reducedMotionMQ && typeof reducedMotionMQ.addEventListener === 'function') {
+        reducedMotionMQ.addEventListener('change', () => startParticlesIfAllowed());
+    }
 
     // Detect initial theme
     const initialIndex = parseInt(localStorage.getItem('minkoi_persona_index') || localStorage.getItem('mahikari_persona_index') || '0', 10);
     currentThemeMode = getThemeForPersona(isNaN(initialIndex) ? 0 : initialIndex);
+    refreshCachedAccent();
 
     resize();
-    render();
+    startParticlesIfAllowed();
 })();

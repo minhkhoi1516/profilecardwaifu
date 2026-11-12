@@ -49,8 +49,11 @@
 
         const metaTheme = document.querySelector('meta[name="theme-color"]');
         if (metaTheme) {
-            metaTheme.setAttribute('content', isLight ? '#f8fafc' : '#080a14');
+            metaTheme.setAttribute('content', isLight ? '#f4f7fb' : '#080a14');
         }
+        window.dispatchEvent(new CustomEvent('minkoi:themechange', {
+            detail: { theme: isLight ? 'light' : 'dark' }
+        }));
     }
 
     function initTheme() {
@@ -294,10 +297,10 @@
         // Click outside on banner stage to exit Zen mode
         const bannerStage = document.getElementById('banner-stage');
         if (bannerStage) {
-            bannerStage.addEventListener('click', () => {
-                if (document.body.classList.contains('zen-mode')) {
-                    toggleZenMode(false);
-                }
+            bannerStage.addEventListener('click', (e) => {
+                if (!document.body.classList.contains('zen-mode')) return;
+                if (e.target && e.target.closest && e.target.closest('#zen-mini-dock')) return;
+                toggleZenMode(false);
             });
         }
 
@@ -411,16 +414,57 @@
         }
     }
 
-    // 7. HARDWARE PROFILER & LOW-END AUTO-OPTIMIZER
-    function initHardwareProfiler() {
+    // 7. HARDWARE PROFILER & V3 QUALITY ENGINE (AUTO / HIGH / BALANCED / ECO)
+    const STORAGE_QUALITY = 'minkoi_quality_mode';
+
+    function detectAutoQuality() {
         const cores = navigator.hardwareConcurrency || 8;
         const memory = navigator.deviceMemory;
-        const isLowEnd = cores <= 4 || (typeof memory === 'number' && memory <= 4);
-        if (isLowEnd) {
-            document.body.classList.add('low-end');
-            document.documentElement.classList.add('low-end-device');
-            console.info(`[HyperOS Perf] Chế độ máy yếu được kích hoạt (Cores: ${cores}, RAM: ~${memory ?? 'N/A'}GB). Đã tắt kính mờ và giảm tải GPU.`);
+        const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduced || cores <= 2 || (typeof memory === 'number' && memory <= 2)) {
+            return 'eco';
         }
+        if ((cores <= 4 && window.innerWidth <= 900) || (typeof memory === 'number' && memory <= 4)) {
+            return 'balanced';
+        }
+        return 'high';
+    }
+
+    function setMinkoiQuality(mode, persist = true) {
+        const chosen = ['auto', 'high', 'balanced', 'eco'].includes(mode) ? mode : 'auto';
+        const resolved = chosen === 'auto' ? detectAutoQuality() : chosen;
+
+        if (persist) {
+            try { localStorage.setItem(STORAGE_QUALITY, chosen); } catch (_) {}
+        }
+
+        document.body.setAttribute('data-quality', resolved);
+        document.body.setAttribute('data-quality-pref', chosen);
+        const isEco = resolved === 'eco';
+        document.body.classList.toggle('low-end', isEco);
+        document.documentElement.classList.toggle('low-end-device', isEco);
+
+        document.querySelectorAll('.quality-option-btn').forEach((btn) => {
+            const active = btn.getAttribute('data-quality') === chosen;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+
+        window.dispatchEvent(new CustomEvent('minkoi:qualitychange', {
+            detail: { preference: chosen, resolved }
+        }));
+
+        if (persist && typeof showToast === 'function') {
+            const labels = { auto: `Tự động (${resolved})`, high: 'Cao (Liquid Glass)', balanced: 'Cân bằng', eco: 'Tiết kiệm (Eco)' };
+            showToast(`Chất lượng đồ họa: ${labels[chosen] || chosen}`, 'fa-gauge-high');
+        }
+    }
+    window.setMinkoiQuality = setMinkoiQuality;
+
+    function initHardwareProfiler() {
+        let saved = 'auto';
+        try { saved = localStorage.getItem(STORAGE_QUALITY) || 'auto'; } catch (_) {}
+        setMinkoiQuality(saved, false);
     }
 
     // Boot

@@ -7,7 +7,6 @@
 
     const avatarImg = document.getElementById('char-avatar');
     const avatarZone = document.getElementById('avatar-zone-wrap');
-    const heroBanner = document.getElementById('hero-banner-img');
     const personaContainer = document.getElementById('persona-selector');
     const personaRoleEl = document.getElementById('persona-role-text');
     const personaCountEl = document.getElementById('persona-count');
@@ -139,7 +138,7 @@
             } else {
                 btn.innerHTML = `
                     <span class="persona-avatar-preview">
-                        <img src="${persona.avatar}" alt="${persona.name}" loading="lazy" decoding="async" width="80" height="80">
+                        <img src="${persona.avatar}" alt="${persona.name}" loading="eager" decoding="async" width="80" height="80">
                     </span>
                     <span class="persona-meta">
                         <span class="persona-name">${persona.name}</span>
@@ -243,6 +242,9 @@
         return src;
     }
 
+    let avatarSeq = 0;
+    let avatarTimer = 0;
+
     function applyAvatar(persona, animate) {
         if (!avatarImg) return;
         const src = persona.avatar;
@@ -251,10 +253,19 @@
             return;
         }
 
+        const seq = ++avatarSeq;
+        if (avatarTimer) {
+            clearTimeout(avatarTimer);
+            avatarTimer = 0;
+        }
+
         const paint = () => {
+            if (seq !== avatarSeq) return;
             avatarImg.src = src;
             avatarImg.alt = `${persona.name} Portrait`;
             avatarImg.style.display = '';
+            avatarImg.style.opacity = '1';
+            avatarImg.style.transform = 'translateX(-50%) scale(1)';
             avatarZone?.classList.remove('avatar-fallback');
         };
 
@@ -265,10 +276,9 @@
 
         avatarImg.style.opacity = '0.25';
         avatarImg.style.transform = 'translateX(-50%) scale(0.96)';
-        setTimeout(() => {
+        avatarTimer = setTimeout(() => {
+            avatarTimer = 0;
             paint();
-            avatarImg.style.opacity = '1';
-            avatarImg.style.transform = 'translateX(-50%) scale(1)';
         }, 120);
     }
 
@@ -277,12 +287,13 @@
 
     let currentPersona = null;
 
-    function setPersona(index, persist) {
+    function setPersona(indexOrKey, persist) {
+        let index = typeof indexOrKey === 'string'
+            ? personas.findIndex(p => p.key === indexOrKey)
+            : Number(indexOrKey);
+        if (isNaN(index) || index < 0 || index >= personas.length) return;
         const persona = personas[index];
         if (!persona || !persona.available) return;
-        if (currentPersona && currentPersona.key === persona.key && !persist) {
-            // still refresh visuals on resize
-        }
 
         currentIndex = index;
         currentPersona = persona;

@@ -198,7 +198,20 @@
     let smoothBass = 0.0;
     const freqData = new Uint8Array(32);
 
+    const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+
+    function shouldPauseFluid() {
+        if (document.hidden) return true;
+        if (reducedMotionMQ && reducedMotionMQ.matches) return true;
+        const q = document.body ? document.body.getAttribute('data-quality') : '';
+        return q === 'eco' || Boolean(document.body && document.body.classList.contains('low-end'));
+    }
+
     function render(now) {
+        if (shouldPauseFluid()) {
+            animationFrameId = null;
+            return;
+        }
         const elapsed = (now - startTime) * 0.001;
 
         // Query Analyser bass energy (bins 0-6 represent 20Hz - 150Hz)
@@ -231,6 +244,10 @@
     }
 
     function startLoop() {
+        if (shouldPauseFluid()) {
+            stopLoop();
+            return;
+        }
         if (!animationFrameId) {
             animationFrameId = requestAnimationFrame(render);
         }
@@ -243,7 +260,7 @@
         }
     }
 
-    // Tab visibility handling: halt GPU loop when tab is hidden to conserve battery
+    // Tab visibility, quality mode & reduced motion listeners
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             stopLoop();
@@ -251,6 +268,18 @@
             startLoop();
         }
     });
+
+    window.addEventListener('minkoi:qualitychange', () => {
+        if (shouldPauseFluid()) stopLoop();
+        else startLoop();
+    });
+
+    if (reducedMotionMQ && typeof reducedMotionMQ.addEventListener === 'function') {
+        reducedMotionMQ.addEventListener('change', () => {
+            if (shouldPauseFluid()) stopLoop();
+            else startLoop();
+        });
+    }
 
     startLoop();
 })();

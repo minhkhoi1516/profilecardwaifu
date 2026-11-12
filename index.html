@@ -34,12 +34,13 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=20.1">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=20.1">
-    <link rel="stylesheet" href="css/style-card.css?v=20.1">
-    <link rel="stylesheet" href="css/style-left.css?v=20.1">
-    <link rel="stylesheet" href="css/style-right.css?v=20.1">
-    <link rel="stylesheet" href="css/style-responsive.css?v=20.1">
+    <link rel="stylesheet" href="css/style-base.css?v=30.0">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=30.0">
+    <link rel="stylesheet" href="css/style-card.css?v=30.0">
+    <link rel="stylesheet" href="css/style-left.css?v=30.0">
+    <link rel="stylesheet" href="css/style-right.css?v=30.0">
+    <link rel="stylesheet" href="css/style-responsive.css?v=30.0">
+    <link rel="stylesheet" href="css/tokens-v3.css?v=30.0">
 </head>
 <body>
 
@@ -88,9 +89,9 @@
                 <i class="fas fa-expand" aria-hidden="true"></i>
             </button>
 
-            <!-- MORE OPTIONS MENU (Chứa Share, Link, Camera) -->
+            <!-- MORE OPTIONS MENU (Miuix ListPopup: Share, Link, Camera, Quality) -->
             <div class="top-more-menu-wrap" id="top-more-menu-wrap">
-                <button class="top-action-btn" id="top-more-btn" type="button" title="Thêm tùy chọn" aria-label="Thêm tùy chọn" aria-haspopup="true" aria-expanded="false">
+                <button class="top-action-btn" id="top-more-btn" type="button" title="Thêm tùy chọn" aria-label="Thêm tùy chọn" aria-haspopup="true" aria-expanded="false" aria-controls="top-more-dropdown">
                     <i class="fas fa-ellipsis-vertical" aria-hidden="true"></i>
                 </button>
                 <div class="top-more-dropdown" id="top-more-dropdown" role="menu" aria-label="Tùy chọn bổ sung">
@@ -106,6 +107,14 @@
                         <i class="fas fa-camera" aria-hidden="true"></i>
                         <span>Chụp ảnh thẻ</span>
                     </button>
+                    <div class="top-more-divider" role="separator"></div>
+                    <div class="top-more-section-label">Đồ họa & Hiệu năng</div>
+                    <div class="quality-segment-group" role="radiogroup" aria-label="Chất lượng hiệu ứng">
+                        <button class="quality-option-btn active" type="button" role="radio" aria-checked="true" data-quality="auto">Auto</button>
+                        <button class="quality-option-btn" type="button" role="radio" aria-checked="false" data-quality="high">High</button>
+                        <button class="quality-option-btn" type="button" role="radio" aria-checked="false" data-quality="balanced">Mid</button>
+                        <button class="quality-option-btn" type="button" role="radio" aria-checked="false" data-quality="eco">Eco</button>
+                    </div>
                 </div>
             </div>
 
@@ -228,7 +237,7 @@
                         <div class="track-actions-bar" aria-label="Tùy chọn bài hát">
                             <!-- Sleep Timer -->
                             <div class="dropdown-wrapper">
-                                <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc">
+                                <button class="ctrl-btn" id="sleep-timer-btn" type="button" title="Hẹn giờ tắt nhạc" aria-label="Hẹn giờ tắt nhạc" aria-haspopup="true" aria-expanded="false" aria-controls="sleep-timer-menu">
                                     <i class="far fa-clock" aria-hidden="true"></i>
                                 </button>
                                 <div class="dropdown-flyout sleep-timer-menu" id="sleep-timer-menu">
@@ -238,7 +247,7 @@
 
                             <!-- Equalizer Selector -->
                             <div class="dropdown-wrapper">
-                                <button class="ctrl-btn" id="audio-fx-btn" type="button" title="Studio Equalizer" aria-label="Bộ lọc âm thanh">
+                                <button class="ctrl-btn" id="audio-fx-btn" type="button" title="Studio Equalizer" aria-label="Bộ lọc âm thanh" aria-haspopup="true" aria-expanded="false" aria-controls="audio-fx-menu">
                                     <i class="fas fa-sliders" aria-hidden="true"></i>
                                 </button>
                                 <div class="dropdown-flyout audio-fx-menu" id="audio-fx-menu">
@@ -247,13 +256,13 @@
                             </div>
 
                             <!-- Lyrics / Karaoke View -->
-                            <button class="ctrl-btn" id="lyrics-toggle-btn" type="button" title="Xem lời bài hát (Lyrics)" aria-label="Xem lời bài hát">
+                            <button class="ctrl-btn" id="lyrics-toggle-btn" type="button" title="Xem lời bài hát (Lyrics)" aria-label="Xem lời bài hát" aria-haspopup="dialog" aria-expanded="false" aria-controls="lyrics-modal">
                                 <i class="fas fa-quote-right" aria-hidden="true"></i>
                             </button>
 
                             <!-- Playlist Selector -->
                             <div class="dropdown-wrapper">
-                                <button class="ctrl-btn" id="playlist-toggle-btn" type="button" title="Danh sách phát & Tìm kiếm" aria-label="Danh sách phát">
+                                <button class="ctrl-btn" id="playlist-toggle-btn" type="button" title="Danh sách phát & Tìm kiếm" aria-label="Danh sách phát" aria-haspopup="true" aria-expanded="false" aria-controls="playlist-menu">
                                     <i class="fas fa-list-ul" aria-hidden="true"></i>
                                 </button>
                                 <div class="dropdown-flyout playlist-menu" id="playlist-menu">
@@ -442,53 +451,28 @@
         <div class="noscript-banner">Vui lòng bật JavaScript để trải nghiệm trọn vẹn bộ nhận diện và trình phát nhạc Mahikari Studio.</div>
     </noscript>
 
-    <!-- CLEAN JAVASCRIPT MODULES -->
-    <script src="js/config.js?v=20.1"></script>
-    <script src="js/stars.js?v=20.1"></script>
-    <script src="js/fluid-bg.js?v=20.1"></script>
-    <script src="js/avatar.js?v=20.1"></script>
-    <script src="js/music.js?v=20.1"></script>
+    <!-- CLEAN JAVASCRIPT MODULES (MINKOI V3) -->
+    <script src="js/config.js?v=30.0"></script>
+    <script src="js/ui/spring.js?v=30.0"></script>
+    <script src="js/ui/squircle.js?v=30.0"></script>
+    <script src="js/ui/components.js?v=30.0"></script>
+    <script src="js/stars.js?v=30.0"></script>
+    <script src="js/fluid-bg.js?v=30.0"></script>
+    <script src="js/avatar.js?v=30.0"></script>
+    <script src="js/music.js?v=30.0"></script>
     <!-- Lyrics Engine V2 (Modular Decoupled Architecture) -->
-    <script src="js/lyrics/normalizer.js?v=20.1"></script>
-    <script src="js/lyrics/parser.js?v=20.1"></script>
-    <script src="js/lyrics/matcher.js?v=20.1"></script>
-    <script src="js/lyrics/cache.js?v=20.1"></script>
-    <script src="js/lyrics/diagnostics.js?v=20.1"></script>
-    <script src="js/lyrics/repository.js?v=20.1"></script>
-    <script src="js/lyrics/provider.js?v=20.1"></script>
-    <script src="js/lyrics/sync-engine.js?v=20.1"></script>
-    <script src="js/lyrics/renderer.js?v=20.1"></script>
-    <script src="js/lyrics/editor.js?v=20.1"></script>
-    <script src="js/lyrics/index.js?v=20.1"></script>
-    <script src="js/snapshot.js?v=20.1"></script>
-    <script src="js/features.js?v=20.1"></script>
-    <script>
-        // Top More Dropdown Toggle Handler
-        (function() {
-            const moreWrap = document.getElementById('top-more-menu-wrap');
-            const moreBtn = document.getElementById('top-more-btn');
-            if (moreWrap && moreBtn) {
-                moreBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isOpen = moreWrap.classList.toggle('open');
-                    moreBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                });
-                document.addEventListener('click', function(e) {
-                    if (!moreWrap.contains(e.target)) {
-                        moreWrap.classList.remove('open');
-                        moreBtn.setAttribute('aria-expanded', 'false');
-                    }
-                });
-                moreWrap.querySelectorAll('.top-more-item').forEach(function(item) {
-                    item.addEventListener('click', function() {
-                        setTimeout(function() {
-                            moreWrap.classList.remove('open');
-                            moreBtn.setAttribute('aria-expanded', 'false');
-                        }, 120);
-                    });
-                });
-            }
-        })();
-    </script>
+    <script src="js/lyrics/normalizer.js?v=30.0"></script>
+    <script src="js/lyrics/parser.js?v=30.0"></script>
+    <script src="js/lyrics/matcher.js?v=30.0"></script>
+    <script src="js/lyrics/cache.js?v=30.0"></script>
+    <script src="js/lyrics/diagnostics.js?v=30.0"></script>
+    <script src="js/lyrics/repository.js?v=30.0"></script>
+    <script src="js/lyrics/provider.js?v=30.0"></script>
+    <script src="js/lyrics/sync-engine.js?v=30.0"></script>
+    <script src="js/lyrics/renderer.js?v=30.0"></script>
+    <script src="js/lyrics/editor.js?v=30.0"></script>
+    <script src="js/lyrics/index.js?v=30.0"></script>
+    <script src="js/snapshot.js?v=30.0"></script>
+    <script src="js/features.js?v=30.0"></script>
 </body>
 </html>

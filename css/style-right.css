@@ -1154,7 +1154,7 @@ body.light-mode .fx-preset-btn.active {
     border-radius: var(--radius-sm);
     background: rgba(56, 189, 248, 0.08);
     border: 1px solid rgba(56, 189, 248, 0.22);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
     font-size: 0.75rem;
     line-height: 1.4;
     text-align: left;
@@ -1181,18 +1181,18 @@ body.light-mode .fx-preset-btn.active {
 }
 
 .audio-iqoo-content strong {
-    color: var(--text-primary);
+    color: var(--color-text);
     font-weight: 600;
 }
 
 .audio-iqoo-close {
     background: transparent;
     border: none;
-    color: var(--text-secondary);
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    color: var(--color-text-secondary);
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1203,9 +1203,9 @@ body.light-mode .fx-preset-btn.active {
 }
 
 .audio-iqoo-close:hover {
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--text-primary);
-    transform: scale(1.1);
+    background: var(--surface-hover);
+    color: var(--color-text);
+    transform: scale(1.06);
 }
 
 /* Ẩn hoàn toàn trên màn hình Desktop máy tính vì iQOO là điện thoại Android */

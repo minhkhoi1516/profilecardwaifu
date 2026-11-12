@@ -244,7 +244,7 @@
                 visualizerFrameId = null;
                 if (bars.length > 0) {
                     for (let i = 0; i < bars.length; i++) {
-                        bars[i].style.height = '10%';
+                        bars[i].style.setProperty('--bar-scale', '0.18');
                     }
                 }
                 if (vinyl) {
@@ -271,8 +271,8 @@
                 for (let i = 0; i < bars.length; i++) {
                     const binIdx = Math.min(i + 1, visualizerData.length - 1);
                     const val = visualizerData[binIdx] || 0;
-                    const heightPercent = Math.max(10, Math.min(100, Math.round((val / 255) * 100)));
-                    bars[i].style.height = `${heightPercent}%`;
+                    const scaleY = Math.max(0.18, Math.min(1, val / 255));
+                    bars[i].style.setProperty('--bar-scale', scaleY.toFixed(3));
                 }
             }
 
@@ -462,11 +462,15 @@
         const nextIdx = (pos + 1) % list.length;
         const nextSong = list[nextIdx];
         if (nextSong && nextSong.file) {
-            const prefetcher = document.createElement('link');
-            prefetcher.rel = 'prefetch';
-            prefetcher.as = 'fetch';
+            let prefetcher = document.getElementById('minkoi-next-prefetch');
+            if (!prefetcher) {
+                prefetcher = document.createElement('link');
+                prefetcher.id = 'minkoi-next-prefetch';
+                prefetcher.rel = 'prefetch';
+                prefetcher.as = 'fetch';
+                document.head.appendChild(prefetcher);
+            }
             prefetcher.href = safeEncodePath(nextSong.file);
-            document.head.appendChild(prefetcher);
         }
     }
 
@@ -510,9 +514,8 @@
         // Direct sync with Zen Mode Mini Dock
         if (zenTitle) zenTitle.textContent = track.name;
         if (zenArtist) zenArtist.textContent = track.artist;
-        if (zenSeekFill) zenSeekFill.style.width = '0%';
+        setSeekProgressUI(0);
 
-        if (seekFill) seekFill.style.width = '0%';
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
         if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', '0');
@@ -545,8 +548,39 @@
         }
     }
 
+    function ensureSeekThumbDot() {
+        if (!seekContainer) return null;
+        let dot = seekContainer.querySelector('.seek-thumb-dot');
+        if (!dot) {
+            dot = document.createElement('div');
+            dot.className = 'seek-thumb-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            seekContainer.appendChild(dot);
+        }
+        return dot;
+    }
+
+    function setSeekProgressUI(pos, thumbScale) {
+        const clamped = Math.max(0, Math.min(1, pos || 0));
+        if (seekFill) seekFill.style.setProperty('--seek-progress', clamped.toFixed(4));
+        if (zenSeekFill) zenSeekFill.style.width = `${(clamped * 100).toFixed(2)}%`;
+        const dot = ensureSeekThumbDot();
+        if (dot) {
+            dot.style.left = `${(clamped * 100).toFixed(2)}%`;
+            if (typeof thumbScale === 'number') {
+                dot.style.setProperty('--seek-thumb-scale', thumbScale.toFixed(3));
+            }
+        }
+    }
+
+    let crossfadeTimer = 0;
+
     // Crossfade Playback Transition Engine (1.0s Total: 0.48s fade-out + 0.52s fade-in)
     function changeTrack(newIndex, autoPlay = true) {
+        if (crossfadeTimer) {
+            clearTimeout(crossfadeTimer);
+            crossfadeTimer = 0;
+        }
         if (isCrossfadeActive && audioCtx && gainNode && !audio.paused && audio.currentTime > 0) {
             const now = audioCtx.currentTime;
             const targetVol = isMuted ? 0 : (parseInt(volumeCtrl?.value || '45', 10) / 100);
@@ -556,7 +590,8 @@
             gainNode.gain.setValueAtTime(gainNode.gain.value, now);
             gainNode.gain.linearRampToValueAtTime(0.001, now + 0.48);
 
-            setTimeout(() => {
+            crossfadeTimer = setTimeout(() => {
+                crossfadeTimer = 0;
                 loadTrack(newIndex, autoPlay);
                 if (audioCtx && gainNode) {
                     const afterNow = audioCtx.currentTime;
@@ -576,20 +611,28 @@
     window.getCurrentPlayingTrack = () => fullPlaylist[currentTrackIndex];
     window.changeTrack = changeTrack;
 
+    function syncPlayIcons(isPlaying) {
+        const cls = isPlaying ? 'fas fa-pause' : 'fas fa-play';
+        const playIcon = playBtn?.querySelector('i');
+        if (playIcon) playIcon.className = cls;
+        else if (playBtn) playBtn.innerHTML = `<i class="${cls}" aria-hidden="true"></i>`;
+        const zenIcon = zenPlayBtn?.querySelector('i');
+        if (zenIcon) zenIcon.className = cls;
+        else if (zenPlayBtn) zenPlayBtn.innerHTML = `<i class="${cls}" aria-hidden="true"></i>`;
+    }
+
     function syncZenPlayer() {
         const track = fullPlaylist[currentTrackIndex];
         if (track) {
             if (zenTitle) zenTitle.textContent = track.name;
             if (zenArtist) zenArtist.textContent = track.artist;
         }
-        if (zenPlayBtn) {
-            zenPlayBtn.innerHTML = audio.paused ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
-        }
+        syncPlayIcons(!audio.paused);
         if (zenDisc) {
             zenDisc.classList.toggle('spinning', !audio.paused);
         }
-        if (zenSeekFill && audio.duration) {
-            zenSeekFill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        if (audio.duration) {
+            setSeekProgressUI(audio.currentTime / audio.duration);
         }
     }
     window.syncZenPlayer = syncZenPlayer;
@@ -604,8 +647,7 @@
             if ('mediaSession' in navigator) {
                 try { navigator.mediaSession.playbackState = 'playing'; } catch (_) {}
             }
-            if (playBtn) playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-            if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-pause"></i>';
+            syncPlayIcons(true);
             if (vinylDisc) vinylDisc.classList.add('spinning');
             if (zenDisc) zenDisc.classList.add('spinning');
             const avatarZone = document.getElementById('avatar-zone-wrap');
@@ -616,12 +658,11 @@
                 document.title = `▶ ${track.name} · ${CONFIG.name}`;
             }
             startVisualizerLoop();
-        }).catch((err) => {
+        }).catch(() => {
             if ('mediaSession' in navigator) {
                 try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
             }
-            if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
+            syncPlayIcons(false);
             if (vinylDisc) vinylDisc.classList.remove('spinning');
             if (zenDisc) zenDisc.classList.remove('spinning');
             const avatarZone = document.getElementById('avatar-zone-wrap');
@@ -634,19 +675,34 @@
         if ('mediaSession' in navigator) {
             try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
         }
-        if (playBtn) playBtn.innerHTML = '<i class="fas fa-play"></i>';
-        if (zenPlayBtn) zenPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
-        if (vinylDisc) vinylDisc.classList.remove('spinning');
+        syncPlayIcons(false);
+        if (vinylDisc) {
+            vinylDisc.classList.remove('spinning');
+            vinylDisc.style.boxShadow = '';
+            vinylDisc.style.transform = '';
+        }
         if (zenDisc) zenDisc.classList.remove('spinning');
         const avatarZone = document.getElementById('avatar-zone-wrap');
         if (avatarZone) avatarZone.classList.remove('playing');
+        const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
+        if (avatarBackdrop) {
+            avatarBackdrop.style.boxShadow = '';
+            avatarBackdrop.style.transform = '';
+        }
+        const charAvatar = document.getElementById('char-avatar');
+        if (charAvatar) charAvatar.style.transform = '';
+        const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
+        if (waifuCanvas) {
+            const wctx = waifuCanvas.getContext('2d');
+            if (wctx) wctx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
+        }
         document.title = `${CONFIG.name} · Waifu & Music Studio`;
         if (visualizerFrameId) {
             cancelAnimationFrame(visualizerFrameId);
             visualizerFrameId = null;
         }
         const bars = document.querySelectorAll('.live-visualizer-bars .viz-bar');
-        bars.forEach(b => { b.style.height = '10%'; });
+        bars.forEach(b => { b.style.setProperty('--bar-scale', '0.18'); });
     }
 
     function togglePlay() {
@@ -754,14 +810,23 @@
             });
             const activeTab = categoryNav.querySelector('.cat-tab.active');
             if (activeTab) {
-                // Cuộn mượt CHỈ bên trong thanh tab (trục ngang), TUYỆT ĐỐI KHÔNG làm nhảy/cuộn màn hình chính (trục dọc)
                 const targetLeft = activeTab.offsetLeft - (categoryNav.clientWidth / 2) + (activeTab.offsetWidth / 2);
                 categoryNav.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            }
+            if (window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
+                window.requestAnimationFrame(() => window.MinkoiUI.syncTabIndicator(categoryNav));
             }
         }
 
         if (options && options.openList && playlistMenu) {
-            playlistMenu.classList.add('open');
+            if (typeof openFlyout === 'function') {
+                openFlyout(playlistMenu, playlistToggleBtn, { forceOpen: true });
+            } else {
+                ensureFlyoutMounted(playlistMenu);
+                closeAllFlyouts(playlistMenu);
+                playlistMenu.classList.add('open');
+                syncFlyoutBackdrop();
+            }
         }
         updateCategoryTag();
         updatePlaylistItems();
@@ -812,9 +877,16 @@
     if (trackCatEl) {
         trackCatEl.setAttribute('role', 'button');
         trackCatEl.setAttribute('tabindex', '0');
-        trackCatEl.addEventListener('click', () => {
+        const triggerCatList = () => {
             const key = trackCatEl.dataset.persona;
             if (key) setFilter(key, { openList: true });
+        };
+        trackCatEl.addEventListener('click', triggerCatList);
+        trackCatEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                triggerCatList();
+            }
         });
     }
 
@@ -826,23 +898,33 @@
     });
 
     // Audio Progress & Seek Bar with Pointer Dragging (Scrubbing)
-    function seekToPosition(clientX) {
-        if (!audio.duration || !seekContainer) return;
+    let pendingScrubPos = null;
+
+    function getSeekPos(clientX) {
+        if (!seekContainer) return 0;
         const rect = seekContainer.getBoundingClientRect();
-        const pos = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        audio.currentTime = pos * audio.duration;
-        if (seekFill) seekFill.style.width = `${pos * 100}%`;
-        if (zenSeekFill) zenSeekFill.style.width = `${pos * 100}%`;
-        if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+        if (!rect.width) return 0;
+        return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    }
+
+    function seekToPosition(clientX, commitAudio = true) {
+        if (!audio.duration || !seekContainer) return;
+        const pos = getSeekPos(clientX);
+        pendingScrubPos = pos;
+        if (commitAudio) {
+            audio.currentTime = pos * audio.duration;
+        }
+        setSeekProgressUI(pos, isScrubbing ? 1.127 : 0.85);
+        if (currentTimeEl) currentTimeEl.textContent = formatTime(pos * audio.duration);
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
 
     audio.addEventListener('timeupdate', () => {
         if (!audio.duration || isScrubbing) return;
 
-        const pct = (audio.currentTime / audio.duration) * 100;
-        if (seekFill) seekFill.style.width = `${pct}%`;
-        if (zenSeekFill) zenSeekFill.style.width = `${pct}%`;
+        const pos = audio.currentTime / audio.duration;
+        const pct = pos * 100;
+        setSeekProgressUI(pos, 0.85);
         if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', Math.round(pct).toString());
 
@@ -935,14 +1017,13 @@
     if (seekContainer) {
         seekContainer.addEventListener('pointerdown', (e) => {
             isScrubbing = true;
-            seekContainer.setPointerCapture(e.pointerId);
-            seekToPosition(e.clientX);
+            try { seekContainer.setPointerCapture(e.pointerId); } catch (_) {}
+            seekToPosition(e.clientX, false);
         });
 
         seekContainer.addEventListener('pointermove', (e) => {
             if (!audio.duration) return;
-            const rect = seekContainer.getBoundingClientRect();
-            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const pos = getSeekPos(e.clientX);
 
             if (seekTip) {
                 seekTip.style.left = `${pos * 100}%`;
@@ -951,19 +1032,29 @@
             }
 
             if (isScrubbing) {
-                seekToPosition(e.clientX);
+                seekToPosition(e.clientX, false);
             }
         });
 
-        const endScrub = (e) => {
+        seekContainer.addEventListener('pointerup', (e) => {
             if (isScrubbing) {
-                seekToPosition(e.clientX);
                 isScrubbing = false;
+                seekToPosition(e.clientX, true);
             }
-        };
+        });
 
-        seekContainer.addEventListener('pointerup', endScrub);
-        seekContainer.addEventListener('pointercancel', endScrub);
+        seekContainer.addEventListener('pointercancel', () => {
+            if (isScrubbing) {
+                isScrubbing = false;
+                pendingScrubPos = null;
+                if (audio.duration) {
+                    const pos = audio.currentTime / audio.duration;
+                    setSeekProgressUI(pos, 0.85);
+                    if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+                    seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
+                }
+            }
+        });
 
         seekContainer.addEventListener('mouseleave', () => {
             if (!isScrubbing && seekTip) seekTip.style.opacity = '0';
@@ -1123,20 +1214,64 @@
         }
     }
 
+    let activeFlyoutLock = false;
+    let releaseFlyoutTrap = null;
+
     function syncFlyoutBackdrop() {
         const backdrop = document.getElementById('mobile-flyout-backdrop');
-        if (!backdrop) return;
         const hasOpen = !!(
             playlistMenu?.classList.contains('open') ||
             audioFxMenu?.classList.contains('open') ||
             sleepTimerMenu?.classList.contains('open')
         );
-        backdrop.classList.toggle('active', hasOpen && window.innerWidth <= 860);
+        const isMobile = window.innerWidth <= 860;
+        if (backdrop) {
+            backdrop.classList.toggle('active', hasOpen && isMobile);
+        }
+        if (audioFxBtn) audioFxBtn.setAttribute('aria-expanded', audioFxMenu?.classList.contains('open') ? 'true' : 'false');
+        if (sleepTimerBtn) sleepTimerBtn.setAttribute('aria-expanded', sleepTimerMenu?.classList.contains('open') ? 'true' : 'false');
+        if (playlistToggleBtn) playlistToggleBtn.setAttribute('aria-expanded', playlistMenu?.classList.contains('open') ? 'true' : 'false');
+
+        if (window.MinkoiUI) {
+            if (hasOpen && isMobile && !activeFlyoutLock) {
+                activeFlyoutLock = true;
+                window.MinkoiUI.lockBodyScroll();
+            } else if ((!hasOpen || !isMobile) && activeFlyoutLock) {
+                activeFlyoutLock = false;
+                window.MinkoiUI.unlockBodyScroll();
+            }
+        }
+    }
+
+    function openFlyout(menu, triggerBtn, opts) {
+        if (!menu) return;
+        const willOpen = (opts && opts.forceOpen) ? true : !menu.classList.contains('open');
+        if (window.MinkoiUI && typeof window.MinkoiUI.closeAllOverlays === 'function') {
+            window.MinkoiUI.closeAllOverlays(menu.id);
+        }
+        closeAllFlyouts(menu, { restoreFocus: false });
+        if (willOpen) {
+            ensureFlyoutMounted(menu);
+            menu.classList.add('open');
+            if (releaseFlyoutTrap) releaseFlyoutTrap();
+            if (window.MinkoiUI && typeof window.MinkoiUI.pushFocusTrap === 'function') {
+                releaseFlyoutTrap = window.MinkoiUI.pushFocusTrap(menu, triggerBtn);
+            }
+        } else {
+            menu.classList.remove('open');
+            if (releaseFlyoutTrap) {
+                const fn = releaseFlyoutTrap;
+                releaseFlyoutTrap = null;
+                fn();
+            }
+        }
+        syncFlyoutBackdrop();
     }
 
     function renderFxMenu() {
         if (!audioFxMenu) return;
         audioFxMenu.innerHTML = `
+            <div class="sheet-drag-handle" aria-hidden="true"></div>
             <div class="menu-header">
                 <span><i class="fas fa-sliders"></i> STUDIO 5-BAND EQUALIZER</span>
                 <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
@@ -1214,30 +1349,38 @@
             });
         });
 
-        // Bind crossfade toggle
+        // Bind crossfade toggle with Miuix Switch physics
         const crossfadeBtn = audioFxMenu.querySelector('#crossfade-toggle-btn');
         if (crossfadeBtn) {
-            crossfadeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                isCrossfadeActive = !isCrossfadeActive;
+            const commitCrossfade = (nextVal) => {
+                isCrossfadeActive = nextVal;
                 safeSet('minkoi_crossfade', isCrossfadeActive.toString());
                 crossfadeBtn.classList.toggle('active', isCrossfadeActive);
                 crossfadeBtn.setAttribute('aria-checked', isCrossfadeActive);
                 if (typeof window.showToast === 'function') {
-                    window.showToast(`Crossfade: ${isCrossfadeActive ? 'Đang bật (0.3s hòa âm)' : 'Đã tắt'}`, 'fa-wave-square');
+                    window.showToast(`Crossfade: ${isCrossfadeActive ? 'Đang bật (0.5s hòa âm)' : 'Đã tắt'}`, 'fa-wave-square');
                 }
-            });
+            };
+            if (window.MinkoiUI && typeof window.MinkoiUI.bindMiuixSwitch === 'function') {
+                window.MinkoiUI.bindMiuixSwitch(crossfadeBtn, () => isCrossfadeActive, commitCrossfade);
+            } else {
+                crossfadeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    commitCrossfade(!isCrossfadeActive);
+                });
+            }
+        }
+
+        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
+            delete audioFxMenu.dataset.swipeBound;
+            window.MinkoiUI.bindBottomSheetSwipe(audioFxMenu, () => closeAllFlyouts());
         }
     }
 
     if (audioFxBtn && audioFxMenu) {
         audioFxBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            ensureFlyoutMounted(audioFxMenu);
-            const willOpen = !audioFxMenu.classList.contains('open');
-            closeAllFlyouts(audioFxMenu);
-            audioFxMenu.classList.toggle('open', willOpen);
-            syncFlyoutBackdrop();
+            openFlyout(audioFxMenu, audioFxBtn);
         });
     }
 
@@ -1335,6 +1478,7 @@
     function renderSleepTimerMenu() {
         if (!sleepTimerMenu) return;
         sleepTimerMenu.innerHTML = `
+            <div class="sheet-drag-handle" aria-hidden="true"></div>
             <div class="menu-header">
                 <span><i class="far fa-clock"></i> HẸN GIỜ TẮT NHẠC</span>
                 <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
@@ -1360,20 +1504,20 @@
         sleepTimerMenu.querySelectorAll('.fx-option').forEach(btn => {
             btn.addEventListener('click', () => {
                 setSleepTimer(btn.dataset.sleep);
-                sleepTimerMenu.classList.remove('open');
-                syncFlyoutBackdrop();
+                closeAllFlyouts();
             });
         });
+
+        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
+            delete sleepTimerMenu.dataset.swipeBound;
+            window.MinkoiUI.bindBottomSheetSwipe(sleepTimerMenu, () => closeAllFlyouts());
+        }
     }
 
     if (sleepTimerBtn && sleepTimerMenu) {
         sleepTimerBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            ensureFlyoutMounted(sleepTimerMenu);
-            const willOpen = !sleepTimerMenu.classList.contains('open');
-            closeAllFlyouts(sleepTimerMenu);
-            sleepTimerMenu.classList.toggle('open', willOpen);
-            syncFlyoutBackdrop();
+            openFlyout(sleepTimerMenu, sleepTimerBtn);
         });
     }
 
@@ -1381,6 +1525,7 @@
     function buildPlaylistShell() {
         if (!playlistMenu) return;
         playlistMenu.innerHTML = `
+            <div class="sheet-drag-handle" aria-hidden="true"></div>
             <div class="playlist-header">
                 <div class="playlist-header-top">
                     <span id="playlist-title-header">ALL TRACKS</span>
@@ -1405,6 +1550,11 @@
                 searchQuery = e.target.value;
                 updatePlaylistItems();
             });
+        }
+
+        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
+            delete playlistMenu.dataset.swipeBound;
+            window.MinkoiUI.bindBottomSheetSwipe(playlistMenu, () => closeAllFlyouts());
         }
     }
 
@@ -1463,12 +1613,18 @@
         }).join('');
 
         scrollBox.querySelectorAll('.playlist-row').forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (e.target.closest('.row-fav-btn')) return;
+            const activateRow = (e) => {
+                if (e.target && e.target.closest && e.target.closest('.row-fav-btn')) return;
                 const idx = parseInt(row.dataset.idx, 10);
                 loadTrack(idx, true);
-                playlistMenu.classList.remove('open');
-                syncFlyoutBackdrop();
+                closeAllFlyouts();
+            };
+            row.addEventListener('click', activateRow);
+            row.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    activateRow(e);
+                }
             });
         });
 
@@ -1487,21 +1643,38 @@
         }
     }
 
-    function closeAllFlyouts(exceptThisOne) {
+    function closeAllFlyouts(exceptThisOne, opts) {
         if (playlistMenu && playlistMenu !== exceptThisOne) playlistMenu.classList.remove('open');
         if (audioFxMenu && audioFxMenu !== exceptThisOne) audioFxMenu.classList.remove('open');
         if (sleepTimerMenu && sleepTimerMenu !== exceptThisOne) sleepTimerMenu.classList.remove('open');
+        if (!exceptThisOne && releaseFlyoutTrap) {
+            const fn = releaseFlyoutTrap;
+            releaseFlyoutTrap = null;
+            if (!opts || opts.restoreFocus !== false) {
+                fn();
+            }
+        }
         syncFlyoutBackdrop();
+    }
+
+    if (window.MinkoiUI && typeof window.MinkoiUI.registerOverlay === 'function') {
+        [
+            { id: 'audio-fx-menu', el: audioFxMenu },
+            { id: 'sleep-timer-menu', el: sleepTimerMenu },
+            { id: 'playlist-menu', el: playlistMenu }
+        ].forEach(({ id, el }) => {
+            if (!el) return;
+            window.MinkoiUI.registerOverlay(id, {
+                isOpen: () => el.classList.contains('open'),
+                close: (opts) => closeAllFlyouts(null, opts)
+            });
+        });
     }
 
     if (playlistToggleBtn && playlistMenu) {
         playlistToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            ensureFlyoutMounted(playlistMenu);
-            const willOpen = !playlistMenu.classList.contains('open');
-            closeAllFlyouts(playlistMenu);
-            playlistMenu.classList.toggle('open', willOpen);
-            syncFlyoutBackdrop();
+            openFlyout(playlistMenu, playlistToggleBtn);
             if (playlistMenu.classList.contains('open')) {
                 updatePlaylistItems();
                 const input = document.getElementById('playlist-search-input');
@@ -1601,6 +1774,9 @@
     window.addEventListener('resize', () => {
         mountFlyoutForViewport();
         syncFlyoutBackdrop();
+        if (categoryNav && window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
+            window.MinkoiUI.syncTabIndicator(categoryNav);
+        }
     });
 
     // Initial boot
