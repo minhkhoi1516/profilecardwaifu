@@ -142,6 +142,10 @@ body.low-end * {
 /* ==========================================================================
    SURFACE ELEVATION ARCHITECTURE (NO !important BREAKING LIGHT MODE)
    ========================================================================== */
+.dropdown-flyout.sheet-swiping {
+    transition: none !important;
+}
+
 .site-brand-header {
     position: relative;
     z-index: 1100;

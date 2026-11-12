@@ -8,10 +8,11 @@
     'use strict';
 
     function folmeSpring(dampingRatio, responseSeconds) {
-        const safeResponse = Math.max(0.05, responseSeconds);
+        const safeDamping = Number.isFinite(dampingRatio) ? Math.max(0.05, dampingRatio) : 0.85;
+        const safeResponse = Number.isFinite(responseSeconds) ? Math.max(0.05, responseSeconds) : 0.35;
         const omega = (2 * Math.PI) / safeResponse;
         return {
-            dampingRatio: dampingRatio,
+            dampingRatio: safeDamping,
             stiffness: omega * omega
         };
     }
@@ -42,19 +43,56 @@
         return Boolean(docBody && (docBody.getAttribute('data-quality') === 'eco' || docBody.classList.contains('low-end')));
     }
 
+    function stopLoop() {
+        if (rafId) {
+            global.cancelAnimationFrame(rafId);
+            rafId = 0;
+        }
+        lastTimestamp = 0;
+    }
+
+    function safeUpdate(spring, val, vel) {
+        if (typeof spring.onUpdate !== 'function') return;
+        try {
+            spring.onUpdate(val, vel);
+        } catch (_) {
+            spring.running = false;
+            spring.onComplete = null;
+            activeSprings.delete(spring);
+        }
+    }
+
+    function safeComplete(spring) {
+        if (typeof spring.onComplete !== 'function') return;
+        const cb = spring.onComplete;
+        spring.onComplete = null;
+        try {
+            cb(spring.value);
+        } catch (_) { /* ignore callback error */ }
+    }
+
     function tick(now) {
         rafId = 0;
+        if (global.document && global.document.hidden) {
+            lastTimestamp = 0;
+            return;
+        }
+
         const dt = lastTimestamp
-            ? Math.min(0.10, Math.max(0.001, (now - lastTimestamp) / 1000))
+            ? Math.min(0.25, Math.max(0.001, (now - lastTimestamp) / 1000))
             : 0.016;
         lastTimestamp = now;
 
         const subSteps = Math.max(1, Math.ceil(dt / 0.012));
         const stepDt = dt / subSteps;
         const completed = [];
+        const stale = [];
 
         activeSprings.forEach((spring) => {
-            if (!spring.running) return;
+            if (!spring.running || (spring.el && !spring.el.isConnected)) {
+                stale.push(spring);
+                return;
+            }
             const k = spring.stiffness;
             const c = 2 * spring.dampingRatio * Math.sqrt(k);
 
@@ -65,9 +103,15 @@
                 spring.value += spring.velocity * stepDt;
             }
 
-            if (typeof spring.onUpdate === 'function') {
-                spring.onUpdate(spring.value, spring.velocity);
+            if (!Number.isFinite(spring.value) || !Number.isFinite(spring.velocity) || Math.abs(spring.value) > 1e6) {
+                spring.value = spring.target;
+                spring.velocity = 0;
+                spring.running = false;
+                completed.push(spring);
+                return;
             }
+
+            safeUpdate(spring, spring.value, spring.velocity);
 
             const settled =
                 Math.abs(spring.value - spring.target) < spring.precision &&
@@ -81,20 +125,20 @@
             }
         });
 
+        for (let i = 0; i < stale.length; i++) {
+            stale[i].running = false;
+            stale[i].onComplete = null;
+            activeSprings.delete(stale[i]);
+        }
+
         for (let i = 0; i < completed.length; i++) {
             const sp = completed[i];
             activeSprings.delete(sp);
-            if (typeof sp.onUpdate === 'function') {
-                sp.onUpdate(sp.value, 0);
-            }
-            if (typeof sp.onComplete === 'function') {
-                const cb = sp.onComplete;
-                sp.onComplete = null;
-                cb(sp.value);
-            }
+            safeUpdate(sp, sp.value, 0);
+            safeComplete(sp);
         }
 
-        if (activeSprings.size > 0) {
+        if (activeSprings.size > 0 && !(global.document && global.document.hidden)) {
             rafId = global.requestAnimationFrame(tick);
         } else {
             lastTimestamp = 0;
@@ -102,10 +146,33 @@
     }
 
     function ensureLoop() {
+        if (global.document && global.document.hidden) return;
         if (!rafId && activeSprings.size > 0) {
             lastTimestamp = 0;
             rafId = global.requestAnimationFrame(tick);
         }
+    }
+
+    if (global.document && typeof global.document.addEventListener === 'function') {
+        global.document.addEventListener('visibilitychange', () => {
+            if (global.document.hidden) {
+                stopLoop();
+            } else if (activeSprings.size > 0) {
+                if (shouldInstantSnap()) {
+                    const pending = Array.from(activeSprings);
+                    activeSprings.clear();
+                    pending.forEach((sp) => {
+                        sp.value = sp.target;
+                        sp.velocity = 0;
+                        sp.running = false;
+                        safeUpdate(sp, sp.value, 0);
+                        safeComplete(sp);
+                    });
+                } else {
+                    ensureLoop();
+                }
+            }
+        });
     }
 
     /**
@@ -113,7 +180,8 @@
      * Mirrors Miuix SpringUtils.kt (x - x^2 + x^3/3) * range
      */
     function obtainDampingDistance(touchDelta, maxRange) {
-        const range = Math.max(1, maxRange || 160);
+        if (!Number.isFinite(touchDelta)) return 0;
+        const range = Number.isFinite(maxRange) ? Math.max(1, maxRange) : 160;
         const sign = touchDelta < 0 ? -1 : 1;
         const clampedX = Math.min(1, Math.abs(touchDelta) / range);
         const damped = (clampedX - clampedX * clampedX + (clampedX * clampedX * clampedX) / 3) * range;
@@ -123,36 +191,36 @@
     function createSpring(options) {
         const opts = options || {};
         const preset = opts.preset || PRESETS.LIST_POPUP;
+        const initVal = Number.isFinite(opts.initial) ? opts.initial : 0;
+        const initTarget = Number.isFinite(opts.target) ? opts.target : initVal;
         const spring = {
-            value: typeof opts.initial === 'number' ? opts.initial : 0,
-            target: typeof opts.target === 'number' ? opts.target : (typeof opts.initial === 'number' ? opts.initial : 0),
+            el: opts.el || null,
+            value: initVal,
+            target: initTarget,
             velocity: 0,
-            dampingRatio: typeof opts.dampingRatio === 'number' ? opts.dampingRatio : preset.dampingRatio,
-            stiffness: typeof opts.stiffness === 'number' ? opts.stiffness : preset.stiffness,
-            precision: typeof opts.precision === 'number' ? opts.precision : 0.001,
-            velocityPrecision: typeof opts.velocityPrecision === 'number' ? opts.velocityPrecision : 0.01,
+            dampingRatio: Number.isFinite(opts.dampingRatio) ? Math.max(0.05, opts.dampingRatio) : preset.dampingRatio,
+            stiffness: Number.isFinite(opts.stiffness) ? Math.max(1, opts.stiffness) : preset.stiffness,
+            precision: Number.isFinite(opts.precision) ? Math.max(1e-5, opts.precision) : 0.001,
+            velocityPrecision: Number.isFinite(opts.velocityPrecision) ? Math.max(1e-4, opts.velocityPrecision) : 0.01,
             running: false,
-            onUpdate: opts.onUpdate || null,
-            onComplete: opts.onComplete || null,
+            onUpdate: typeof opts.onUpdate === 'function' ? opts.onUpdate : null,
+            onComplete: typeof opts.onComplete === 'function' ? opts.onComplete : null,
 
             setTarget(nextTarget, override) {
+                if (!Number.isFinite(nextTarget)) return;
                 if (override) {
-                    if (typeof override.dampingRatio === 'number') this.dampingRatio = override.dampingRatio;
-                    if (typeof override.stiffness === 'number') this.stiffness = override.stiffness;
+                    if (Number.isFinite(override.dampingRatio)) this.dampingRatio = Math.max(0.05, override.dampingRatio);
+                    if (Number.isFinite(override.stiffness)) this.stiffness = Math.max(1, override.stiffness);
                     if ('onComplete' in override) this.onComplete = override.onComplete;
                 }
                 this.target = nextTarget;
-                if (shouldInstantSnap()) {
+                if (shouldInstantSnap() || (global.document && global.document.hidden)) {
                     activeSprings.delete(this);
                     this.value = nextTarget;
                     this.velocity = 0;
                     this.running = false;
-                    if (typeof this.onUpdate === 'function') this.onUpdate(this.value, 0);
-                    if (typeof this.onComplete === 'function') {
-                        const cb = this.onComplete;
-                        this.onComplete = null;
-                        cb(this.value);
-                    }
+                    safeUpdate(this, this.value, 0);
+                    safeComplete(this);
                     return;
                 }
                 if (
@@ -163,12 +231,8 @@
                     this.velocity = 0;
                     this.running = false;
                     activeSprings.delete(this);
-                    if (typeof this.onUpdate === 'function') this.onUpdate(this.value, 0);
-                    if (typeof this.onComplete === 'function') {
-                        const cb = this.onComplete;
-                        this.onComplete = null;
-                        cb(this.value);
-                    }
+                    safeUpdate(this, this.value, 0);
+                    safeComplete(this);
                     return;
                 }
                 this.running = true;
@@ -177,15 +241,18 @@
             },
 
             snap(value) {
+                if (!Number.isFinite(value)) return;
                 activeSprings.delete(this);
                 this.value = value;
                 this.target = value;
                 this.velocity = 0;
                 this.running = false;
-                if (typeof this.onUpdate === 'function') this.onUpdate(value, 0);
+                this.onComplete = null;
+                safeUpdate(this, value, 0);
             },
 
             impulse(v) {
+                if (!Number.isFinite(v)) return;
                 this.velocity += v;
                 if (!this.running && !shouldInstantSnap()) {
                     this.running = true;
@@ -197,7 +264,9 @@
             destroy() {
                 this.running = false;
                 this.onComplete = null;
+                this.el = null;
                 activeSprings.delete(this);
+                if (activeSprings.size === 0) stopLoop();
             }
         };
         return spring;

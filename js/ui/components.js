@@ -31,6 +31,15 @@
         }
     }
 
+    function isFocusableVisible(el) {
+        if (!el || !doc.contains(el)) return false;
+        if (el.closest('[hidden], [aria-hidden="true"]')) return false;
+        const st = global.getComputedStyle(el);
+        if (st.display === 'none' || st.visibility === 'hidden' || st.pointerEvents === 'none') return false;
+        if (el.offsetParent === null && st.position !== 'fixed') return false;
+        return el.getClientRects().length > 0;
+    }
+
     function getFocusableElements(container) {
         if (!container) return [];
         const sel = [
@@ -41,40 +50,97 @@
             'textarea:not([disabled])',
             '[tabindex]:not([tabindex="-1"])'
         ].join(',');
-        return Array.from(container.querySelectorAll(sel)).filter((el) => {
-            const st = global.getComputedStyle(el);
-            return st.display !== 'none' && st.visibility !== 'hidden' && el.offsetParent !== null;
-        });
+        return Array.from(container.querySelectorAll(sel)).filter(isFocusableVisible);
     }
 
-    function pushFocusTrap(container, restoreEl) {
+    function pushFocusTrap(container, restoreEl, options) {
         if (!container) return () => {};
+        const opts = options || {};
+        // Prevent duplicate overlapping trap entries for the same container
+        for (let i = activeTraps.length - 1; i >= 0; i--) {
+            if (activeTraps[i].container === container) {
+                if (typeof activeTraps[i].cleanupOnly === 'function') {
+                    activeTraps[i].cleanupOnly();
+                } else {
+                    activeTraps.splice(i, 1);
+                }
+            }
+        }
+
         const prev = restoreEl || doc.activeElement;
-        const entry = { container, prev };
+        const entry = { container, prev, released: false, cleanupOnly: null };
         activeTraps.push(entry);
 
+        const focusFallback = (preferLast) => {
+            const items = getFocusableElements(container);
+            if (items.length) {
+                const target = preferLast ? items[items.length - 1] : items[0];
+                try { target.focus({ preventScroll: true }); } catch (_) {}
+                return true;
+            }
+            if (typeof container.focus === 'function') {
+                if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1');
+                try { container.focus({ preventScroll: true }); } catch (_) {}
+                return true;
+            }
+            return false;
+        };
+
         const onKeyDown = (e) => {
-            if (activeTraps[activeTraps.length - 1] !== entry) return;
+            if (entry.released || activeTraps[activeTraps.length - 1] !== entry) return;
             if (e.key !== 'Tab') return;
             const items = getFocusableElements(container);
-            if (!items.length) return;
+            if (!items.length) {
+                e.preventDefault();
+                focusFallback(false);
+                return;
+            }
             const first = items[0];
             const last = items[items.length - 1];
-            if (e.shiftKey && doc.activeElement === first) {
+            const active = doc.activeElement;
+            if (!container.contains(active) || items.indexOf(active) === -1) {
                 e.preventDefault();
-                last.focus();
-            } else if (!e.shiftKey && doc.activeElement === last) {
+                (e.shiftKey ? last : first).focus({ preventScroll: true });
+                return;
+            }
+            if (e.shiftKey && (active === first || active === container)) {
                 e.preventDefault();
-                first.focus();
+                last.focus({ preventScroll: true });
+            } else if (!e.shiftKey && active === last) {
+                e.preventDefault();
+                first.focus({ preventScroll: true });
             }
         };
 
-        doc.addEventListener('keydown', onKeyDown);
-        return () => {
-            doc.removeEventListener('keydown', onKeyDown);
+        const onFocusIn = (e) => {
+            if (entry.released || activeTraps[activeTraps.length - 1] !== entry) return;
+            if (container.contains(e.target)) return;
+            focusFallback(false);
+        };
+
+        doc.addEventListener('keydown', onKeyDown, true);
+        doc.addEventListener('focusin', onFocusIn, true);
+
+        const detachOnly = () => {
+            if (entry.released) return;
+            entry.released = true;
+            doc.removeEventListener('keydown', onKeyDown, true);
+            doc.removeEventListener('focusin', onFocusIn, true);
             const idx = activeTraps.indexOf(entry);
             if (idx !== -1) activeTraps.splice(idx, 1);
-            if (entry.prev && typeof entry.prev.focus === 'function' && doc.contains(entry.prev)) {
+        };
+        entry.cleanupOnly = detachOnly;
+
+        if (opts.initialFocus) {
+            focusFallback(false);
+        }
+
+        return (releaseOpts) => {
+            const wasReleased = entry.released;
+            detachOnly();
+            if (wasReleased) return;
+            const shouldRestore = !releaseOpts || releaseOpts.restoreFocus !== false;
+            if (shouldRestore && entry.prev && typeof entry.prev.focus === 'function' && isFocusableVisible(entry.prev)) {
                 try { entry.prev.focus({ preventScroll: true }); } catch (_) {}
             }
         };
@@ -253,6 +319,16 @@
             }
         }
 
+        function releaseCurrentTrap(restoreFocus) {
+            if (!releaseTrap) return;
+            const fn = releaseTrap;
+            releaseTrap = null;
+            fn({ restoreFocus: restoreFocus !== false });
+            if (restoreFocus === false && doc.activeElement && dropdown.contains(doc.activeElement)) {
+                try { doc.activeElement.blur(); } catch (_) {}
+            }
+        }
+
         function openMenu() {
             if (popupState === 'opening' || popupState === 'open') return;
             const myGen = ++transitionGen;
@@ -268,6 +344,9 @@
             dropdown.style.pointerEvents = 'auto';
             scrim.classList.add('active');
 
+            releaseCurrentTrap(false);
+            releaseTrap = pushFocusTrap(dropdown, btn, { initialFocus: true });
+
             if (fractionSpring) {
                 fractionSpring.setTarget(1, {
                     onComplete: () => {
@@ -280,9 +359,6 @@
                 applyFraction(1);
                 setPopupState('open');
             }
-
-            if (releaseTrap) releaseTrap();
-            releaseTrap = pushFocusTrap(dropdown, btn);
         }
 
         function closeMenu(opts) {
@@ -295,18 +371,7 @@
             setPopupState('closing');
             scrim.classList.remove('active');
 
-            if (releaseTrap) {
-                const fn = releaseTrap;
-                releaseTrap = null;
-                if (options.restoreFocus !== false) {
-                    fn();
-                } else {
-                    // Clean listener without moving focus when another control caused close
-                    const items = activeTraps.filter((t) => t.container === dropdown);
-                    items.forEach((t) => { t.prev = null; });
-                    fn();
-                }
-            }
+            releaseCurrentTrap(options.restoreFocus !== false);
 
             const hideDone = () => {
                 if (myGen !== transitionGen || popupState !== 'closing') return;
@@ -336,7 +401,7 @@
 
         scrim.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeMenu({ restoreFocus: true });
+            closeMenu({ restoreFocus: false });
         });
 
         doc.addEventListener('click', (e) => {
@@ -392,86 +457,214 @@
     // ----------------------------------------------------------------------
     // 5. MIUIX BOTTOM SHEET SWIPE & DISMISS HELPER (Mobile <= 768px)
     // ----------------------------------------------------------------------
-    function bindBottomSheetSwipe(sheetEl, onDismiss) {
-        if (!sheetEl || sheetEl.dataset.swipeBound === 'true') return;
-        sheetEl.dataset.swipeBound = 'true';
+    const bottomSheetStates = new WeakMap();
 
-        const handle = sheetEl.querySelector('.sheet-drag-handle, .menu-header');
-        if (!handle) return;
+    function bindBottomSheetSwipe(sheetEl, onDismiss) {
+        if (!sheetEl) return;
+
+        const handles = Array.from(sheetEl.querySelectorAll('.sheet-drag-handle, .menu-header, .playlist-header-top'));
+        if (!handles.length) return;
 
         const spLib = Spring();
-        let currentY = 0;
-        let startY = 0;
-        let lastY = 0;
-        let lastTime = 0;
-        let velocityY = 0;
-        let dragging = false;
+        let state = bottomSheetStates.get(sheetEl);
 
-        const sheetSpring = spLib
-            ? spLib.createSpring({
-                initial: 0,
-                target: 0,
-                preset: spLib.PRESETS.BOTTOM_SHEET_SETTLE,
-                precision: 0.4,
-                onUpdate: (y) => {
-                    currentY = y;
-                    sheetEl.style.transform = y === 0 ? '' : `translateY(${y.toFixed(1)}px)`;
+        if (!state) {
+            state = {
+                currentY: 0,
+                startY: 0,
+                lastY: 0,
+                lastTime: 0,
+                velocityY: 0,
+                dragging: false,
+                exiting: false,
+                activePointerId: null,
+                gestureGen: 0,
+                onDismiss: typeof onDismiss === 'function' ? onDismiss : null,
+                spring: null
+            };
+            state.spring = spLib
+                ? spLib.createSpring({
+                    el: sheetEl,
+                    initial: 0,
+                    target: 0,
+                    preset: spLib.PRESETS.BOTTOM_SHEET_SETTLE,
+                    precision: 0.5,
+                    velocityPrecision: 3,
+                    onUpdate: (y) => {
+                        state.currentY = y;
+                        if (!sheetEl.classList.contains('open') && !state.exiting && !state.dragging) {
+                            sheetEl.style.transform = '';
+                            return;
+                        }
+                        sheetEl.style.transform = Math.abs(y) < 0.2 ? '' : `translateY(${y.toFixed(1)}px)`;
+                        if (state.exiting && Number.isFinite(state.exitTarget) && y >= state.exitTarget - 8 && typeof state.activeFinalize === 'function') {
+                            state.activeFinalize();
+                        }
+                    }
+                })
+                : null;
+            bottomSheetStates.set(sheetEl, state);
+        } else {
+            state.onDismiss = typeof onDismiss === 'function' ? onDismiss : null;
+            state.gestureGen += 1;
+            state.dragging = false;
+            state.exiting = false;
+            state.activePointerId = null;
+            if (state.spring) {
+                state.spring.onComplete = null;
+                if (!sheetEl.classList.contains('open')) {
+                    state.spring.snap(0);
+                    sheetEl.classList.remove('sheet-swiping');
+                    sheetEl.style.transform = '';
                 }
-            })
-            : null;
+            }
+        }
 
-        handle.addEventListener('pointerdown', (e) => {
-            if ((global.innerWidth || 1024) > 768) return;
-            if (e.target.closest('button') && !e.target.closest('.sheet-drag-handle')) return;
-            dragging = true;
-            startY = e.clientY;
-            lastY = e.clientY;
-            lastTime = performance.now();
-            velocityY = 0;
-            if (sheetSpring) sheetSpring.snap(0);
-            try { handle.setPointerCapture(e.pointerId); } catch (_) {}
-        });
+        const hasScrolledContent = (target) => {
+            if (target && target.closest('.sheet-drag-handle')) return false;
+            if (sheetEl.scrollTop > 2) return true;
+            const scroller = sheetEl.querySelector('.playlist-items-scroll, .menu-items');
+            return Boolean(scroller && scroller.scrollTop > 2);
+        };
 
-        handle.addEventListener('pointermove', (e) => {
-            if (!dragging) return;
-            const now = performance.now();
-            const dt = Math.max(1, now - lastTime) / 1000;
-            velocityY = (e.clientY - lastY) / dt;
-            lastY = e.clientY;
-            lastTime = now;
+        const finishDrag = (cancelled) => {
+            if (!state.dragging) return;
+            state.dragging = false;
+            state.activePointerId = null;
 
-            const rawDy = e.clientY - startY;
-            // Miuix rubberband resistance when dragging upward past 0
-            currentY = rawDy < 0 && spLib ? spLib.obtainDampingDistance(rawDy, 48) : rawDy;
-            sheetEl.style.transform = `translateY(${currentY.toFixed(1)}px)`;
-        });
+            const shouldDismiss = !cancelled && (
+                state.currentY > 110 ||
+                (state.velocityY > 650 && state.currentY > 20)
+            );
 
-        const endDrag = () => {
-            if (!dragging) return;
-            dragging = false;
-            if (currentY > 110 || velocityY > 650) {
-                sheetEl.style.transform = '';
-                currentY = 0;
-                if (typeof onDismiss === 'function') onDismiss();
+            if (shouldDismiss) {
+                const exitGen = ++state.gestureGen;
+                state.exiting = true;
+                sheetEl.classList.add('sheet-swiping');
+                const exitTarget = Math.max((sheetEl.offsetHeight || 320) + 48, 360);
+                state.exitTarget = exitTarget;
+
+                const finalizeDismiss = () => {
+                    if (exitGen !== state.gestureGen || !state.exiting) return;
+                    state.exiting = false;
+                    state.activeFinalize = null;
+                    state.exitTarget = 0;
+                    if (state.spring) {
+                        state.spring.onComplete = null;
+                        state.spring.snap(exitTarget);
+                    }
+                    if (typeof state.onDismiss === 'function') state.onDismiss();
+                    global.requestAnimationFrame(() => {
+                        if (exitGen !== state.gestureGen || state.dragging || state.exiting) return;
+                        sheetEl.classList.remove('sheet-swiping');
+                        sheetEl.style.transform = '';
+                        state.currentY = 0;
+                        if (state.spring) state.spring.snap(0);
+                    });
+                };
+                state.activeFinalize = finalizeDismiss;
+
+                if (state.spring && !(spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
+                    state.spring.snap(state.currentY);
+                    if (state.velocityY > 0) {
+                        state.spring.impulse(Math.min(900, state.velocityY));
+                    }
+                    state.spring.setTarget(exitTarget, {
+                        dampingRatio: 0.92,
+                        stiffness: 460,
+                        onComplete: finalizeDismiss
+                    });
+                } else {
+                    finalizeDismiss();
+                }
                 return;
             }
-            if (sheetSpring) {
-                sheetSpring.snap(currentY);
-                sheetSpring.setTarget(0);
+
+            const settleGen = ++state.gestureGen;
+            state.exiting = false;
+            if (state.spring) {
+                sheetEl.classList.add('sheet-swiping');
+                state.spring.snap(state.currentY);
+                state.spring.setTarget(0, {
+                    dampingRatio: spLib.PRESETS.BOTTOM_SHEET_SETTLE.dampingRatio,
+                    stiffness: spLib.PRESETS.BOTTOM_SHEET_SETTLE.stiffness,
+                    onComplete: () => {
+                        if (settleGen !== state.gestureGen || state.dragging || state.exiting) return;
+                        sheetEl.classList.remove('sheet-swiping');
+                        sheetEl.style.transform = '';
+                    }
+                });
             } else {
+                sheetEl.classList.remove('sheet-swiping');
                 sheetEl.style.transform = '';
+                state.currentY = 0;
             }
         };
 
-        handle.addEventListener('pointerup', endDrag);
-        handle.addEventListener('pointercancel', () => {
-            dragging = false;
-            if (sheetSpring) {
-                sheetSpring.snap(currentY);
-                sheetSpring.setTarget(0);
-            } else {
-                sheetEl.style.transform = '';
-            }
+        handles.forEach((handle) => {
+            if (handle.dataset.swipeHandleBound === 'true') return;
+            handle.dataset.swipeHandleBound = 'true';
+
+            handle.addEventListener('pointerdown', (e) => {
+                if ((global.innerWidth || 1024) > 768) return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                if (e.target.closest('button, input, a, select, textarea') && !e.target.closest('.sheet-drag-handle')) return;
+                if (hasScrolledContent(e.target)) return;
+                if (state.dragging && state.activePointerId !== null && state.activePointerId !== e.pointerId) return;
+
+                // Interrupt any active settle or exit animation smoothly from currentY
+                state.gestureGen += 1;
+                state.exiting = false;
+                state.activeFinalize = null;
+                state.exitTarget = 0;
+                state.dragging = true;
+                state.activePointerId = e.pointerId;
+                state.startY = e.clientY - state.currentY;
+                state.lastY = e.clientY;
+                state.lastTime = performance.now();
+                state.velocityY = 0;
+
+                sheetEl.classList.add('sheet-swiping');
+                if (state.spring) {
+                    state.spring.onComplete = null;
+                    state.spring.snap(state.currentY);
+                }
+                try { handle.setPointerCapture(e.pointerId); } catch (_) {}
+            });
+
+            handle.addEventListener('pointermove', (e) => {
+                if (!state.dragging || e.pointerId !== state.activePointerId) return;
+                const now = performance.now();
+                const dt = Math.max(4, now - state.lastTime) / 1000;
+                state.velocityY = (e.clientY - state.lastY) / dt;
+                state.lastY = e.clientY;
+                state.lastTime = now;
+
+                const rawDy = e.clientY - state.startY;
+                // Miuix rubberband resistance when dragging upward past 0
+                state.currentY = rawDy < 0 && spLib ? spLib.obtainDampingDistance(rawDy, 48) : rawDy;
+                sheetEl.style.transform = Math.abs(state.currentY) < 0.2 ? '' : `translateY(${state.currentY.toFixed(1)}px)`;
+            });
+
+            handle.addEventListener('pointerup', (e) => {
+                if (!state.dragging || e.pointerId !== state.activePointerId) return;
+                try {
+                    if (handle.hasPointerCapture && handle.hasPointerCapture(e.pointerId)) {
+                        handle.releasePointerCapture(e.pointerId);
+                    }
+                } catch (_) {}
+                finishDrag(false);
+            });
+
+            handle.addEventListener('pointercancel', (e) => {
+                if (!state.dragging || e.pointerId !== state.activePointerId) return;
+                finishDrag(true);
+            });
+
+            handle.addEventListener('lostpointercapture', (e) => {
+                if (!state.dragging || e.pointerId !== state.activePointerId) return;
+                finishDrag(false);
+            });
         });
     }
 
@@ -638,6 +831,7 @@
         lockBodyScroll: lockBodyScroll,
         unlockBodyScroll: unlockBodyScroll,
         pushFocusTrap: pushFocusTrap,
+        getActiveTrapCount: () => activeTraps.length,
         registerOverlay: registerOverlay,
         closeAllOverlays: closeAllOverlays,
         bindBottomSheetSwipe: bindBottomSheetSwipe,

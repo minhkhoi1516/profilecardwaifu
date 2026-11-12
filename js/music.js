@@ -1253,7 +1253,11 @@
         if (willOpen) {
             ensureFlyoutMounted(menu);
             menu.classList.add('open');
-            if (releaseFlyoutTrap) releaseFlyoutTrap();
+            if (releaseFlyoutTrap) {
+                const prevFn = releaseFlyoutTrap;
+                releaseFlyoutTrap = null;
+                prevFn({ restoreFocus: false });
+            }
             if (window.MinkoiUI && typeof window.MinkoiUI.pushFocusTrap === 'function') {
                 releaseFlyoutTrap = window.MinkoiUI.pushFocusTrap(menu, triggerBtn);
             }
@@ -1262,7 +1266,7 @@
             if (releaseFlyoutTrap) {
                 const fn = releaseFlyoutTrap;
                 releaseFlyoutTrap = null;
-                fn();
+                fn({ restoreFocus: true });
             }
         }
         syncFlyoutBackdrop();
@@ -1650,9 +1654,7 @@
         if (!exceptThisOne && releaseFlyoutTrap) {
             const fn = releaseFlyoutTrap;
             releaseFlyoutTrap = null;
-            if (!opts || opts.restoreFocus !== false) {
-                fn();
-            }
+            fn({ restoreFocus: !opts || opts.restoreFocus !== false });
         }
         syncFlyoutBackdrop();
     }
@@ -1688,20 +1690,17 @@
 
     // Close open menus when clicking outside
     document.addEventListener('click', (e) => {
-        let changed = false;
-        if (audioFxMenu && audioFxMenu.classList.contains('open') && !audioFxMenu.contains(e.target) && !audioFxBtn?.contains(e.target)) {
-            audioFxMenu.classList.remove('open');
-            changed = true;
+        const hitOpenFlyout =
+            (audioFxMenu?.classList.contains('open') && (audioFxMenu.contains(e.target) || audioFxBtn?.contains(e.target))) ||
+            (playlistMenu?.classList.contains('open') && (playlistMenu.contains(e.target) || playlistToggleBtn?.contains(e.target))) ||
+            (sleepTimerMenu?.classList.contains('open') && (sleepTimerMenu.contains(e.target) || sleepTimerBtn?.contains(e.target)));
+        const hasAnyOpen =
+            audioFxMenu?.classList.contains('open') ||
+            playlistMenu?.classList.contains('open') ||
+            sleepTimerMenu?.classList.contains('open');
+        if (hasAnyOpen && !hitOpenFlyout) {
+            closeAllFlyouts(null, { restoreFocus: false });
         }
-        if (playlistMenu && playlistMenu.classList.contains('open') && !playlistMenu.contains(e.target) && !playlistToggleBtn?.contains(e.target)) {
-            playlistMenu.classList.remove('open');
-            changed = true;
-        }
-        if (sleepTimerMenu && sleepTimerMenu.classList.contains('open') && !sleepTimerMenu.contains(e.target) && !sleepTimerBtn?.contains(e.target)) {
-            sleepTimerMenu.classList.remove('open');
-            changed = true;
-        }
-        if (changed) syncFlyoutBackdrop();
     });
 
     const mobileFlyoutBackdrop = document.getElementById('mobile-flyout-backdrop');

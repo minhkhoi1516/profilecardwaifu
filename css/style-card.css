@@ -294,7 +294,7 @@ body.light-mode .top-action-btn:hover {
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
     box-sizing: border-box;
     white-space: nowrap;
 }

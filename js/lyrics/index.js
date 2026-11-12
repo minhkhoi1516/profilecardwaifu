@@ -253,9 +253,7 @@
             if (releaseLyricsTrap) {
                 const fn = releaseLyricsTrap;
                 releaseLyricsTrap = null;
-                if (!opts || opts.restoreFocus !== false) {
-                    fn();
-                }
+                fn({ restoreFocus: !opts || opts.restoreFocus !== false });
             }
             if (!document.body.classList.contains('zen-mode')) {
                 syncEngine.stopLoop();
