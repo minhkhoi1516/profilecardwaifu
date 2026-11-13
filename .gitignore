@@ -1,17 +1,39 @@
-# Local archives (never deploy / commit)
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# IDE & Editor configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local test scratchpads & temporary artifacts
+scratch/
+*.log
+*.tmp
+local-test-*
+test-results/
+
+# Archives & dumps
 *.zip
+*.tar.gz
+*.7z
 profilecardwaifu.zip
 
-# Debug artifacts from headless screenshots
+# Headless browser debug dumps & temporary captures
 tools/shot-*.png
 tools/dom*.html
 tools/chips-zoom*.png
 _preview.png
-
-# OS junk
-.DS_Store
-Thumbs.db
-
-# Local preview screenshots
-preview/
-scratch/
+dom_out.html
+wide_elements.txt

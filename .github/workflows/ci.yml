@@ -1,0 +1,64 @@
+name: Repository Integrity Check
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Validate Core Entrypoints & Config
+        run: |
+          test -f index.html || (echo "Missing index.html" && exit 1)
+          test -f manifest.webmanifest || (echo "Missing manifest.webmanifest" && exit 1)
+          test -f vercel.json || (echo "Missing vercel.json" && exit 1)
+          test -f favicon.ico || (echo "Missing favicon.ico" && exit 1)
+
+      - name: Validate Stylesheets
+        run: |
+          for f in css/style-base.css css/style-backgrounds.css css/style-card.css css/style-left.css css/style-right.css css/style-responsive.css css/tokens-v3.css; do
+            test -f "$f" || (echo "Missing stylesheet: $f" && exit 1)
+          done
+
+      - name: Validate JavaScript Modules
+        run: |
+          for f in js/config.js js/ui/spring.js js/ui/squircle.js js/ui/components.js js/stars.js js/fluid-bg.js js/avatar.js js/music.js js/snapshot.js js/features.js; do
+            test -f "$f" || (echo "Missing JavaScript file: $f" && exit 1)
+          done
+
+      - name: Validate Lyrics Engine Modules
+        run: |
+          for f in js/lyrics/normalizer.js js/lyrics/parser.js js/lyrics/matcher.js js/lyrics/cache.js js/lyrics/diagnostics.js js/lyrics/repository.js js/lyrics/provider.js js/lyrics/sync-engine.js js/lyrics/renderer.js js/lyrics/editor.js js/lyrics/index.js; do
+            test -f "$f" || (echo "Missing Lyrics module: $f" && exit 1)
+          done
+
+      - name: Validate Persona Assets
+        run: |
+          for p in alya hinako kaoruko mahiru nakanomiku sakuramiku umi; do
+            test -f "assets/avatar_${p}.png" || (echo "Missing avatar for $p" && exit 1)
+            test -f "assets/banner_${p}_pc.jpg" || (echo "Missing PC banner for $p" && exit 1)
+            test -f "assets/banner_${p}_phone.jpg" || (echo "Missing phone banner for $p" && exit 1)
+          done
+          test -f "assets/avatar_shinobu.png" || exit 1
+          test -f "assets/banner_shinobuuzuki_pc.jpg" || exit 1
+          test -f "assets/banner_shinobuuzuki_phone.jpg" || exit 1
+
+      - name: Validate Audio Track Library
+        run: |
+          count=$(ls -1 music/*.mp3 2>/dev/null | wc -l)
+          echo "Found $count audio tracks in music/"
+          if [ "$count" -lt 31 ]; then
+            echo "Expected at least 31 audio files, found $count"
+            exit 1
+          fi
+
+      - name: Validate JSON Syntax
+        run: |
+          python3 -c "import json; json.load(open('vercel.json')); json.load(open('manifest.webmanifest')); json.load(open('tools/durations.json'))"
+          echo "All JSON files are syntactically valid."
