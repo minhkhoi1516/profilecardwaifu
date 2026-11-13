@@ -487,8 +487,8 @@ body.light-mode .tab-sliding-pill {
 }
 
 .audio-category-nav .cat-tab.active {
-    /* The active lens receives dragging; other tabs allow native horizontal scrolling. */
-    touch-action: none;
+    /* Horizontal lens dragging is custom; preserve vertical scroll and pinch zoom. */
+    touch-action: pan-y pinch-zoom;
 }
 
 .audio-category-nav.is-liquid-dragging {
