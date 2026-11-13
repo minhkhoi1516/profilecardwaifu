@@ -815,6 +815,7 @@
         let dragStartY = 0;
         let dragStartIndicatorX = 0;
         let dragStartIndicatorW = 0;
+        let dragVisualX = 0; // Last displayed X, including rubberband resistance.
         let lastPointerX = 0;
         let lastPointerTime = 0;
         let dragVelocity = 0;
@@ -987,6 +988,7 @@
             dragStartY = e.clientY;
             dragStartIndicatorX = xSp ? xSp.value : 0;
             dragStartIndicatorW = wSp ? wSp.value : 64;
+            dragVisualX = dragStartIndicatorX;
             lastPointerX = e.clientX;
             lastPointerTime = performance.now();
             dragVelocity = 0;
@@ -1044,6 +1046,7 @@
             }
             const squashY = 1 / Math.sqrt(stretchX);
 
+            dragVisualX = curX;
             renderTransform(curX, dragStartIndicatorW, stretchX, squashY);
 
             const candidate = findCandidateTab(e.clientX);
@@ -1084,8 +1087,10 @@
                     const targetW = targetTab.offsetWidth;
 
                     if (xSp) {
-                        xSp.snap(lastPointerX ? (dragStartIndicatorX + (e.clientX - dragStartX)) : xSp.value);
-                        xSp.impulse(dragVelocity * 0.12);
+                        /* Start spring at the visually rendered (rubberband-clamped) X.
+                         * Raw pointer delta here would jump the lens on release. */
+                        xSp.snap(dragVisualX);
+                        xSp.impulse(Math.max(-2000, Math.min(2000, dragVelocity)) * 0.12);
                         xSp.setTarget(targetX);
                     }
                     if (wSp) wSp.setTarget(targetW);
