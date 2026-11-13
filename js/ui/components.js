@@ -172,6 +172,8 @@
 
         const selector = [
             '.ctrl-btn',
+            '.btn-control',
+            '.panel-btn',
             '.top-action-btn',
             '.play-hero-btn',
             '.suite-badge-btn',
@@ -762,57 +764,374 @@
     }
 
     // ----------------------------------------------------------------------
-    // 7. MIUIX TABROW SLIDING PILL INDICATOR
+    // 7. MIUIX iOS-LIKE LIQUID GLASS TABROW & NAVIGATION INDICATOR
+    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt, Glasmio
     // ----------------------------------------------------------------------
-    const tabPillSprings = new WeakMap();
+    const liquidNavInstances = new WeakMap();
 
-    function syncTabIndicator(navEl) {
-        if (!navEl) return;
-        const activeTab = navEl.querySelector('.cat-tab.active');
-        if (!activeTab) return;
-
-        let pill = navEl.querySelector('.tab-sliding-pill');
-        if (!pill) {
-            pill = doc.createElement('div');
-            pill.className = 'tab-sliding-pill';
-            pill.setAttribute('aria-hidden', 'true');
-            navEl.insertBefore(pill, navEl.firstChild);
+    function initLiquidGlassNav(navEl, onSelect) {
+        if (!navEl) return null;
+        let instance = liquidNavInstances.get(navEl);
+        if (instance) {
+            if (typeof onSelect === 'function') instance.onSelect = onSelect;
+            return instance;
         }
 
-        const targetX = activeTab.offsetLeft;
-        const targetW = activeTab.offsetWidth;
-        if (!targetW) return;
+        let indicator = null;
+
+        function ensureIndicator() {
+            if (!indicator || !indicator.isConnected) {
+                indicator = navEl.querySelector('.liquid-glass-indicator, .tab-sliding-pill');
+                if (!indicator) {
+                    indicator = doc.createElement('div');
+                    indicator.className = 'liquid-glass-indicator';
+                    indicator.setAttribute('aria-hidden', 'true');
+
+                    const lens = doc.createElement('div');
+                    lens.className = 'liquid-glass-lens';
+                    indicator.appendChild(lens);
+
+                    const shimmer = doc.createElement('div');
+                    shimmer.className = 'liquid-glass-shimmer';
+                    indicator.appendChild(shimmer);
+
+                    navEl.insertBefore(indicator, navEl.firstChild);
+                }
+            }
+            return indicator;
+        }
+
+        ensureIndicator();
 
         const spLib = Spring();
-        if (!spLib) {
-            pill.style.transform = `translateX(${targetX}px)`;
-            pill.style.width = `${targetW}px`;
-            return;
+        let xSp = null;
+        let wSp = null;
+        let scaleXSp = null;
+        let suppressClickUntil = 0;
+        let isDragging = false;
+        let dragPointerId = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let dragStartIndicatorX = 0;
+        let dragStartIndicatorW = 0;
+        let lastPointerX = 0;
+        let lastPointerTime = 0;
+        let dragVelocity = 0;
+        let autoScrollRaf = 0;
+
+        function renderTransform(x, w, sx, sy) {
+            const ind = ensureIndicator();
+            if (!ind) return;
+            const safeX = Number.isFinite(x) ? x : 0;
+            const safeW = Number.isFinite(w) ? Math.max(16, w) : 48;
+            const safeSx = Number.isFinite(sx) ? sx : 1;
+            const safeSy = Number.isFinite(sy) ? sy : 1;
+            ind.style.width = `${safeW.toFixed(1)}px`;
+            ind.style.transform = `translate3d(${safeX.toFixed(1)}px, 0, 0) scale(${safeSx.toFixed(3)}, ${safeSy.toFixed(3)})`;
         }
 
-        let state = tabPillSprings.get(navEl);
-        if (!state) {
-            const xSp = spLib.createSpring({
-                initial: targetX,
-                target: targetX,
-                preset: spLib.PRESETS.TAB_PILL,
-                precision: 0.25,
-                onUpdate: (x) => { pill.style.transform = `translateX(${x.toFixed(1)}px)`; }
+        function getActiveTab() {
+            return navEl.querySelector('.cat-tab.active') || navEl.querySelector('.cat-tab');
+        }
+
+        function findCandidateTab(clientX) {
+            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
+            if (!tabs.length) return null;
+            let bestTab = null;
+            let minDist = Infinity;
+            tabs.forEach((tab) => {
+                const rect = tab.getBoundingClientRect();
+                const center = rect.left + rect.width / 2;
+                const dist = Math.abs(clientX - center);
+                if (dist < minDist) {
+                    minDist = dist;
+                    bestTab = tab;
+                }
             });
-            const wSp = spLib.createSpring({
-                initial: targetW,
-                target: targetW,
-                preset: spLib.PRESETS.TAB_PILL,
+            return bestTab;
+        }
+
+        function ensureSprings() {
+            if (xSp && wSp && scaleXSp) return;
+            const activeTab = getActiveTab();
+            const initX = activeTab ? activeTab.offsetLeft : 0;
+            const initW = activeTab ? activeTab.offsetWidth : 64;
+
+            if (!spLib) {
+                renderTransform(initX, initW, 1, 1);
+                return;
+            }
+
+            const preset = spLib.PRESETS.LIQUID_GLASS || spLib.PRESETS.TAB_PILL;
+            const stretchPreset = spLib.PRESETS.LIQUID_STRETCH || preset;
+
+            xSp = spLib.createSpring({
+                initial: initX,
+                target: initX,
+                dampingRatio: preset.dampingRatio,
+                stiffness: preset.stiffness,
                 precision: 0.25,
-                onUpdate: (w) => { pill.style.width = `${w.toFixed(1)}px`; }
+                onUpdate: (x, vel) => {
+                    if (isDragging) return;
+                    let stretch = 1;
+                    if (!spLib.isReducedMotion()) {
+                        stretch = 1 + Math.min(0.20, Math.abs(vel) * 0.00028);
+                    }
+                    const squash = 1 / Math.sqrt(stretch);
+                    renderTransform(x, wSp ? wSp.value : initW, stretch, squash);
+                }
             });
-            state = { xSp, wSp };
-            tabPillSprings.set(navEl, state);
-            pill.style.transform = `translateX(${targetX}px)`;
-            pill.style.width = `${targetW}px`;
+
+            wSp = spLib.createSpring({
+                initial: initW,
+                target: initW,
+                dampingRatio: preset.dampingRatio,
+                stiffness: preset.stiffness,
+                precision: 0.25,
+                onUpdate: (w) => {
+                    if (isDragging) return;
+                    renderTransform(xSp.value, w, 1, 1);
+                }
+            });
+
+            scaleXSp = spLib.createSpring({
+                initial: 1,
+                target: 1,
+                dampingRatio: stretchPreset.dampingRatio,
+                stiffness: stretchPreset.stiffness,
+                precision: 0.005,
+                onUpdate: (sx) => {
+                    if (isDragging) return;
+                    const squash = 1 / Math.sqrt(Math.max(0.5, sx));
+                    renderTransform(xSp.value, wSp ? wSp.value : initW, sx, squash);
+                }
+            });
+
+            renderTransform(initX, initW, 1, 1);
+        }
+
+        function syncIndicator() {
+            const activeTab = getActiveTab();
+            if (!activeTab) return;
+            const targetX = activeTab.offsetLeft;
+            const targetW = activeTab.offsetWidth;
+            if (!targetW) return;
+
+            ensureSprings();
+
+            if (!spLib || spLib.isReducedMotion()) {
+                if (xSp) xSp.snap(targetX);
+                if (wSp) wSp.snap(targetW);
+                if (scaleXSp) scaleXSp.snap(1);
+                renderTransform(targetX, targetW, 1, 1);
+                return;
+            }
+
+            xSp.setTarget(targetX);
+            wSp.setTarget(targetW);
+            scaleXSp.setTarget(1);
+        }
+
+        function startAutoScroll(pointerClientX) {
+            stopAutoScroll();
+            const navRect = navEl.getBoundingClientRect();
+            const edgeZone = 40;
+            let speed = 0;
+
+            if (pointerClientX < navRect.left + edgeZone) {
+                const ratio = 1 - Math.max(0, (pointerClientX - navRect.left) / edgeZone);
+                speed = -Math.round(ratio * 12);
+            } else if (pointerClientX > navRect.right - edgeZone) {
+                const ratio = 1 - Math.max(0, (navRect.right - pointerClientX) / edgeZone);
+                speed = Math.round(ratio * 12);
+            }
+
+            if (speed !== 0) {
+                const step = () => {
+                    navEl.scrollLeft += speed;
+                    autoScrollRaf = global.requestAnimationFrame(step);
+                };
+                autoScrollRaf = global.requestAnimationFrame(step);
+            }
+        }
+
+        function stopAutoScroll() {
+            if (autoScrollRaf) {
+                global.cancelAnimationFrame(autoScrollRaf);
+                autoScrollRaf = 0;
+            }
+        }
+
+        function onPointerDown(e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            ensureSprings();
+
+            dragPointerId = e.pointerId;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            dragStartIndicatorX = xSp ? xSp.value : 0;
+            dragStartIndicatorW = wSp ? wSp.value : 64;
+            lastPointerX = e.clientX;
+            lastPointerTime = performance.now();
+            dragVelocity = 0;
+            isDragging = false;
+        }
+
+        function onPointerMove(e) {
+            if (dragPointerId === null || e.pointerId !== dragPointerId) return;
+
+            const now = performance.now();
+            const dt = Math.max(1, now - lastPointerTime);
+            dragVelocity = (e.clientX - lastPointerX) / (dt / 1000);
+            lastPointerX = e.clientX;
+            lastPointerTime = now;
+
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+
+            if (!isDragging) {
+                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY) * 0.8) {
+                    isDragging = true;
+                    if (indicator) indicator.classList.add('is-dragging');
+                    try {
+                        navEl.setPointerCapture(e.pointerId);
+                    } catch (_) {}
+                }
+            }
+
+            if (!isDragging) return;
+
+            e.preventDefault();
+
+            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
+            const firstTab = tabs[0];
+            const lastTab = tabs[tabs.length - 1];
+            const minX = firstTab ? firstTab.offsetLeft : 0;
+            const maxX = lastTab ? lastTab.offsetLeft + lastTab.offsetWidth - dragStartIndicatorW : 300;
+
+            let curX = dragStartIndicatorX + deltaX;
+
+            if (curX < minX) {
+                const overshoot = curX - minX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
+                curX = minX + damped;
+            } else if (curX > maxX) {
+                const overshoot = curX - maxX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
+                curX = maxX + damped;
+            }
+
+            let stretchX = 1;
+            if (!spLib || !spLib.isReducedMotion()) {
+                stretchX = 1 + Math.min(0.24, Math.abs(deltaX) / 180 + Math.abs(dragVelocity) * 0.00015);
+            }
+            const squashY = 1 / Math.sqrt(stretchX);
+
+            renderTransform(curX, dragStartIndicatorW, stretchX, squashY);
+
+            const candidate = findCandidateTab(e.clientX);
+            tabs.forEach((tab) => {
+                tab.classList.toggle('drag-candidate', tab === candidate);
+            });
+
+            startAutoScroll(e.clientX);
+        }
+
+        function onPointerUp(e) {
+            if (dragPointerId === null || e.pointerId !== dragPointerId) return;
+
+            stopAutoScroll();
+            if (indicator) indicator.classList.remove('is-dragging');
+
+            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
+            tabs.forEach((tab) => tab.classList.remove('drag-candidate'));
+
+            try {
+                if (navEl.hasPointerCapture(e.pointerId)) {
+                    navEl.releasePointerCapture(e.pointerId);
+                }
+            } catch (_) {}
+
+            if (isDragging) {
+                isDragging = false;
+                suppressClickUntil = performance.now() + 150;
+
+                const targetTab = findCandidateTab(e.clientX) || getActiveTab();
+                if (targetTab) {
+                    const targetCat = targetTab.dataset.cat;
+                    const targetX = targetTab.offsetLeft;
+                    const targetW = targetTab.offsetWidth;
+
+                    if (xSp) {
+                        xSp.snap(lastPointerX ? (dragStartIndicatorX + (e.clientX - dragStartX)) : xSp.value);
+                        xSp.impulse(dragVelocity * 0.12);
+                        xSp.setTarget(targetX);
+                    }
+                    if (wSp) wSp.setTarget(targetW);
+                    if (scaleXSp) {
+                        scaleXSp.snap(1.15);
+                        scaleXSp.setTarget(1);
+                    }
+
+                    if (typeof instance.onSelect === 'function') {
+                        instance.onSelect(targetCat);
+                    }
+                }
+            }
+
+            dragPointerId = null;
+        }
+
+        function onPointerCancel(e) {
+            onPointerUp(e);
+            syncIndicator();
+        }
+
+        navEl.addEventListener('click', (e) => {
+            if (performance.now() < suppressClickUntil) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            const tab = e.target.closest('.cat-tab');
+            if (!tab) return;
+            if (typeof instance.onSelect === 'function') {
+                instance.onSelect(tab.dataset.cat);
+            }
+        });
+
+        navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
+        global.addEventListener('pointermove', onPointerMove, { passive: false });
+        global.addEventListener('pointerup', onPointerUp, { passive: true });
+        global.addEventListener('pointercancel', onPointerCancel, { passive: true });
+
+        instance = {
+            navEl: navEl,
+            indicator: indicator,
+            onSelect: onSelect,
+            sync: syncIndicator,
+            destroy() {
+                stopAutoScroll();
+                if (xSp) xSp.destroy();
+                if (wSp) wSp.destroy();
+                if (scaleXSp) scaleXSp.destroy();
+                liquidNavInstances.delete(navEl);
+            }
+        };
+
+        liquidNavInstances.set(navEl, instance);
+        syncIndicator();
+        return instance;
+    }
+
+    function syncTabIndicator(navEl, onSelect) {
+        if (!navEl) return;
+        let instance = liquidNavInstances.get(navEl);
+        if (!instance) {
+            instance = initLiquidGlassNav(navEl, onSelect);
         } else {
-            state.xSp.setTarget(targetX);
-            state.wSp.setTarget(targetW);
+            if (typeof onSelect === 'function') instance.onSelect = onSelect;
+            instance.sync();
         }
     }
 
@@ -836,6 +1155,8 @@
         closeAllOverlays: closeAllOverlays,
         bindBottomSheetSwipe: bindBottomSheetSwipe,
         bindMiuixSwitch: bindMiuixSwitch,
-        syncTabIndicator: syncTabIndicator
+        syncTabIndicator: syncTabIndicator,
+        syncLiquidGlassNav: syncTabIndicator,
+        initLiquidGlassNav: initLiquidGlassNav
     });
 })(window);

@@ -28,7 +28,10 @@
         BOTTOM_SHEET_OPEN: Object.freeze(folmeSpring(0.90, 0.38)),
         BOTTOM_SHEET_SETTLE: Object.freeze(folmeSpring(0.85, 0.40)),
         DIALOG_SCALE: Object.freeze(folmeSpring(0.90, 0.30)),
-        TAB_PILL: Object.freeze({ dampingRatio: 0.85, stiffness: 480 })
+        TAB_PILL: Object.freeze({ dampingRatio: 0.85, stiffness: 480 }),
+        LIQUID_GLASS: Object.freeze({ dampingRatio: 0.84, stiffness: 440 }),
+        LIQUID_DRAG: Object.freeze({ dampingRatio: 0.92, stiffness: 1200 }),
+        LIQUID_STRETCH: Object.freeze({ dampingRatio: 0.76, stiffness: 520 })
     });
 
     const activeSprings = new Set();

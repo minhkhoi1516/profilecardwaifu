@@ -87,45 +87,47 @@
     background: rgba(56, 189, 248, 0.1);
 }
 
-/* Category Navigation */
+/* Category Navigation · Floating Liquid Capsule Surface */
 .audio-category-nav {
     display: flex;
-    gap: 0.4rem;
-    background: rgba(0, 0, 0, 0.25);
-    padding: 0.35rem;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-subtle);
+    gap: 0.25rem;
+    background: rgba(15, 23, 42, 0.48);
+    padding: 4px 6px;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .cat-tab {
-    flex: 1;
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.8rem;
+    border-radius: 9999px;
     background: transparent;
     border: none;
     color: var(--color-text-muted);
     font-family: var(--font-mono);
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
     white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .cat-tab:hover {
     color: var(--color-text);
-    background: rgba(255, 255, 255, 0.04);
 }
 
 .cat-tab.active {
     color: var(--color-text);
-    background: var(--surface-2);
-    border: 1px solid var(--color-border-active);
-    box-shadow: var(--shadow-soft);
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 /* 8 persona tabs: scroll ngang thay vì bóp chữ + mask gradient ở hai mép */
@@ -138,8 +140,8 @@
     -webkit-overflow-scrolling: touch;
     min-width: 0;
     max-width: 100%;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
 }
 
 .col-right,
