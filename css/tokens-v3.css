@@ -568,9 +568,28 @@ body.low-end .tab-sliding-pill {
 
 /* Compositor-Only Seek Fill & Visualizer Bars */
 .seek-bar-track {
-    height: 8px;
+    height: 6px;
+    position: relative;
+    border-radius: var(--radius-full);
+    transition: height 0.22s cubic-bezier(0.2, 0.8, 0.25, 1);
     padding: 0;
     touch-action: none;
+}
+
+.seek-bar-track:hover,
+.seek-bar-track.is-scrubbing {
+    height: 8px;
+}
+
+/* 42px touch hit-target for mobile precision scrubbing */
+.seek-bar-track::before {
+    content: '';
+    position: absolute;
+    top: -18px;
+    bottom: -18px;
+    left: 0;
+    right: 0;
+    cursor: pointer;
 }
 
 .seek-fill-bar {
@@ -595,7 +614,18 @@ body.low-end .tab-sliding-pill {
     transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.85));
     pointer-events: none;
     opacity: 0.92;
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, opacity 0.2s ease;
     will-change: left, transform;
+}
+
+.seek-bar-track:hover .seek-thumb-dot,
+.seek-bar-track.is-scrubbing .seek-thumb-dot {
+    opacity: 1;
+    box-shadow:
+        0 0 0 3.5px color-mix(in srgb, var(--color-accent) 40%, rgba(255, 255, 255, 0.7)),
+        0 0 14px var(--color-accent-glow),
+        0 3px 8px rgba(0, 0, 0, 0.45);
+    transform: translate(-50%, -50%) scale(1.25);
 }
 
 .seek-fill-bar::after {
@@ -733,3 +763,18 @@ body.zen-mode .banner-stage {
         font-size: 0.68rem;
     }
 }
+
+/* Tactile Focus Ring (Miuix & Material 3 Coherent Glass Feedback) */
+.ctrl-btn:focus-visible,
+.play-hero-btn:focus-visible,
+.seek-bar-track:focus-visible,
+.volume-slider:focus-visible,
+.cat-tab:focus-visible,
+.playlist-row:focus-visible,
+.suite-badge-btn:focus-visible,
+.audio-iqoo-close:focus-visible,
+.zen-ctrl-btn:focus-visible {
+    outline: none !important;
+    box-shadow: 0 0 0 2px var(--surface-bg, #0b0f19), 0 0 0 4px var(--color-accent), 0 0 14px var(--color-accent-glow) !important;
+}
+

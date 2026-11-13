@@ -514,6 +514,16 @@
         // Direct sync with Zen Mode Mini Dock
         if (zenTitle) zenTitle.textContent = track.name;
         if (zenArtist) zenArtist.textContent = track.artist;
+
+        // Visual Continuity: Sync Morphing Player Header inside Playlist
+        const morphArt = document.getElementById('playlist-morph-art');
+        const morphTitle = document.getElementById('playlist-morph-title');
+        const morphArtist = document.getElementById('playlist-morph-artist');
+        const pPersona = personaOf(track);
+        if (morphArt) morphArt.src = track.cover || (pPersona ? pPersona.avatar : 'assets/avatar_alya.png');
+        if (morphTitle) morphTitle.textContent = track.name;
+        if (morphArtist) morphArtist.textContent = track.artist;
+
         setSeekProgressUI(0);
 
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
@@ -769,7 +779,11 @@
             gainNode.gain.setValueAtTime(clamped / 100, audioCtx.currentTime);
         }
 
-        if (volumeCtrl) volumeCtrl.value = clamped;
+        if (volumeCtrl) {
+            volumeCtrl.value = clamped;
+            volumeCtrl.style.setProperty('--volume-percent', `${clamped}%`);
+            volumeCtrl.setAttribute('aria-valuenow', clamped.toString());
+        }
         isMuted = clamped === 0;
 
         if (!isMuted) {
@@ -1019,10 +1033,24 @@
     });
 
     if (seekContainer) {
+        function updateSeekTooltip(clientX, pos) {
+            if (!seekTip || !seekContainer) return;
+            const trackRect = seekContainer.getBoundingClientRect();
+            const tipWidth = seekTip.offsetWidth || 48;
+            const halfTip = tipWidth / 2;
+            const px = (typeof pos === 'number' ? pos : getSeekPos(clientX)) * trackRect.width;
+            const clampedPx = Math.max(halfTip, Math.min(trackRect.width - halfTip, px));
+            seekTip.style.left = `${clampedPx.toFixed(1)}px`;
+            seekTip.textContent = formatTime((typeof pos === 'number' ? pos : getSeekPos(clientX)) * (audio.duration || 0));
+            seekTip.classList.add('visible');
+            seekTip.style.opacity = '1';
+        }
+
         seekContainer.addEventListener('pointerdown', (e) => {
             isScrubbing = true;
             seekContainer.classList.add('is-scrubbing');
-            if (seekTip) seekTip.classList.add('visible');
+            const pos = getSeekPos(e.clientX);
+            updateSeekTooltip(e.clientX, pos);
             try { seekContainer.setPointerCapture(e.pointerId); } catch (_) {}
             seekToPosition(e.clientX, false);
         });
@@ -1030,13 +1058,7 @@
         seekContainer.addEventListener('pointermove', (e) => {
             if (!audio.duration) return;
             const pos = getSeekPos(e.clientX);
-
-            if (seekTip) {
-                seekTip.style.left = `${pos * 100}%`;
-                seekTip.textContent = formatTime(pos * audio.duration);
-                seekTip.classList.add('visible');
-                seekTip.style.opacity = '1';
-            }
+            updateSeekTooltip(e.clientX, pos);
 
             if (isScrubbing) {
                 seekToPosition(e.clientX, false);
@@ -1149,9 +1171,21 @@
     }
 
     if (volumeCtrl) {
+        const volumeDock = volumeCtrl.closest('.volume-slider-dock');
         volumeCtrl.addEventListener('input', (e) => {
             setVolume(parseInt(e.target.value, 10));
         });
+        volumeCtrl.addEventListener('pointerdown', () => {
+            volumeCtrl.classList.add('is-scrubbing');
+            if (volumeDock) volumeDock.classList.add('is-scrubbing');
+        });
+        const stopVolScrub = () => {
+            volumeCtrl.classList.remove('is-scrubbing');
+            if (volumeDock) volumeDock.classList.remove('is-scrubbing');
+        };
+        volumeCtrl.addEventListener('pointerup', stopVolScrub);
+        volumeCtrl.addEventListener('pointercancel', stopVolScrub);
+        volumeCtrl.addEventListener('blur', stopVolScrub);
     }
 
     if (shuffleBtn) {
@@ -1269,6 +1303,16 @@
         closeAllFlyouts(menu, { restoreFocus: false });
         if (willOpen) {
             ensureFlyoutMounted(menu);
+            if (menu === playlistMenu && triggerBtn && window.innerWidth > 860) {
+                const tRect = triggerBtn.getBoundingClientRect();
+                const mRect = menu.getBoundingClientRect();
+                if (mRect.width > 0 && mRect.height > 0) {
+                    const ox = Math.round(tRect.left + tRect.width / 2 - mRect.left);
+                    const oy = Math.round(tRect.top + tRect.height / 2 - mRect.top);
+                    menu.style.transformOrigin = `${ox}px ${oy}px`;
+                }
+            }
+            if (triggerBtn) triggerBtn.classList.add('is-morph-active');
             menu.classList.add('open');
             if (releaseFlyoutTrap) {
                 const prevFn = releaseFlyoutTrap;
@@ -1279,6 +1323,7 @@
                 releaseFlyoutTrap = window.MinkoiUI.pushFocusTrap(menu, triggerBtn);
             }
         } else {
+            if (triggerBtn) triggerBtn.classList.remove('is-morph-active');
             menu.classList.remove('open');
             if (releaseFlyoutTrap) {
                 const fn = releaseFlyoutTrap;
@@ -1545,12 +1590,26 @@
     // Playlist Search & Dropdown Menu (Non-destructive: keeps input node intact)
     function buildPlaylistShell() {
         if (!playlistMenu) return;
+        const curSong = fullPlaylist[currentTrackIndex] || fullPlaylist[0] || {};
+        const pPersona = personaOf(curSong);
+        const coverArt = curSong.cover || (pPersona ? pPersona.avatar : 'assets/avatar_alya.png');
         playlistMenu.innerHTML = `
             <div class="sheet-drag-handle" aria-hidden="true"></div>
             <div class="playlist-header">
                 <div class="playlist-header-top">
                     <span id="playlist-title-header">ALL TRACKS</span>
                     <button class="flyout-close-btn" type="button" aria-label="Đóng"><i class="fas fa-xmark"></i></button>
+                </div>
+                <!-- Shared-Element Morphing Player Header -->
+                <div class="playlist-morph-nowplaying" id="playlist-morph-nowplaying" title="Đang phát trên sân khấu">
+                    <div class="morph-art-wrap">
+                        <img src="${coverArt}" alt="Cover" class="morph-album-art" id="playlist-morph-art" width="32" height="32">
+                    </div>
+                    <div class="morph-track-meta">
+                        <span class="morph-track-title" id="playlist-morph-title">${curSong.name || '可爱くてごめん'}</span>
+                        <span class="morph-track-artist" id="playlist-morph-artist">${curSong.artist || 'Alya Kujou'}</span>
+                    </div>
+                    <span class="morph-playing-badge"><i class="fas fa-music"></i> NOW</span>
                 </div>
                 <div class="search-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
@@ -1665,9 +1724,18 @@
     }
 
     function closeAllFlyouts(exceptThisOne, opts) {
-        if (playlistMenu && playlistMenu !== exceptThisOne) playlistMenu.classList.remove('open');
-        if (audioFxMenu && audioFxMenu !== exceptThisOne) audioFxMenu.classList.remove('open');
-        if (sleepTimerMenu && sleepTimerMenu !== exceptThisOne) sleepTimerMenu.classList.remove('open');
+        if (playlistMenu && playlistMenu !== exceptThisOne) {
+            playlistMenu.classList.remove('open');
+            playlistToggleBtn?.classList.remove('is-morph-active');
+        }
+        if (audioFxMenu && audioFxMenu !== exceptThisOne) {
+            audioFxMenu.classList.remove('open');
+            audioFxBtn?.classList.remove('is-morph-active');
+        }
+        if (sleepTimerMenu && sleepTimerMenu !== exceptThisOne) {
+            sleepTimerMenu.classList.remove('open');
+            sleepTimerBtn?.classList.remove('is-morph-active');
+        }
         if (!exceptThisOne && releaseFlyoutTrap) {
             const fn = releaseFlyoutTrap;
             releaseFlyoutTrap = null;

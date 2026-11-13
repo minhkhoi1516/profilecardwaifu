@@ -815,6 +815,7 @@
         let dragPointerId = null;
         let dragStartX = 0;
         let dragStartY = 0;
+        let dragStartScrollLeft = 0;
         let dragStartIndicatorX = 0;
         let dragStartIndicatorW = 0;
         let dragVisualX = 0; // Last displayed X, including rubberband resistance.
@@ -822,6 +823,7 @@
         let lastPointerTime = 0;
         let dragVelocity = 0;
         let autoScrollRaf = 0;
+        let lastRenderedW = -1;
 
         function renderTransform(x, w, sx, sy) {
             const ind = ensureIndicator();
@@ -830,7 +832,10 @@
             const safeW = Number.isFinite(w) ? Math.max(16, w) : 48;
             const safeSx = Number.isFinite(sx) ? sx : 1;
             const safeSy = Number.isFinite(sy) ? sy : 1;
-            ind.style.width = `${safeW.toFixed(1)}px`;
+            if (Math.abs(lastRenderedW - safeW) >= 0.5) {
+                ind.style.width = `${safeW.toFixed(1)}px`;
+                lastRenderedW = safeW;
+            }
             ind.style.transform = `translate3d(${safeX.toFixed(1)}px, 0, 0) scale(${safeSx.toFixed(3)}, ${safeSy.toFixed(3)})`;
         }
 
@@ -986,9 +991,15 @@
             if (!pressedTab || pressedTab !== getActiveTab()) return;
             ensureSprings();
 
+            // Cancel any ongoing programmatic smooth scroll immediately to avoid coordinate competition
+            try {
+                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
+            } catch (_) {}
+
             dragPointerId = e.pointerId;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
+            dragStartScrollLeft = navEl.scrollLeft;
             dragStartIndicatorX = xSp ? xSp.value : 0;
             dragStartIndicatorW = wSp ? wSp.value : 64;
             dragVisualX = dragStartIndicatorX;
@@ -1025,13 +1036,14 @@
 
             e.preventDefault();
 
+            const scrollDelta = navEl.scrollLeft - dragStartScrollLeft;
             const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
             const firstTab = tabs[0];
             const lastTab = tabs[tabs.length - 1];
             const minX = firstTab ? firstTab.offsetLeft : 0;
             const maxX = lastTab ? lastTab.offsetLeft + lastTab.offsetWidth - dragStartIndicatorW : 300;
 
-            let curX = dragStartIndicatorX + deltaX;
+            let curX = dragStartIndicatorX + deltaX + scrollDelta;
 
             if (curX < minX) {
                 const overshoot = curX - minX;
@@ -1136,12 +1148,31 @@
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
         navEl.addEventListener('lostpointercapture', onPointerCancel);
 
+        let resizeObserver = null;
+        if (typeof ResizeObserver === 'function') {
+            let roTimer = 0;
+            resizeObserver = new ResizeObserver(() => {
+                if (roTimer) return;
+                roTimer = global.requestAnimationFrame(() => {
+                    roTimer = 0;
+                    syncIndicator();
+                });
+            });
+            try {
+                resizeObserver.observe(navEl);
+            } catch (_) {}
+        }
+
         instance = {
             navEl: navEl,
             indicator: indicator,
             onSelect: onSelect,
             sync: syncIndicator,
             destroy() {
+                if (resizeObserver) {
+                    try { resizeObserver.disconnect(); } catch (_) {}
+                    resizeObserver = null;
+                }
                 stopAutoScroll();
                 dragPointerId = null;
                 isDragging = false;
