@@ -437,31 +437,37 @@ body.light-mode .audio-category-nav {
     bottom: 4px;
     left: 0;
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-accent) 24%, rgba(255, 255, 255, 0.08));
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-accent) 38%, rgba(255, 255, 255, 0.18)) 0%,
+        color-mix(in srgb, var(--color-accent) 26%, rgba(15, 23, 42, 0.68)) 100%
+    );
     backdrop-filter: blur(14px) saturate(200%);
     -webkit-backdrop-filter: blur(14px) saturate(200%);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 45%, rgba(255, 255, 255, 0.38));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 65%, rgba(255, 255, 255, 0.5));
     box-shadow:
-        inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.55),
-        inset 0 -1.5px 1px 0 rgba(0, 0, 0, 0.28),
-        0 4px 16px -2px color-mix(in srgb, var(--color-accent) 40%, rgba(0, 0, 0, 0.35)),
-        0 1px 3px rgba(0, 0, 0, 0.2);
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.65),
+        inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.45),
+        0 4px 18px -2px var(--color-accent-glow),
+        0 0 12px color-mix(in srgb, var(--color-accent) 45%, transparent);
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
     overflow: hidden;
     will-change: transform, width;
     transform-origin: center center;
+    touch-action: none;
 }
 
 body.light-mode .liquid-glass-indicator,
 body.light-mode .tab-sliding-pill {
-    background: color-mix(in srgb, var(--color-accent) 18%, rgba(255, 255, 255, 0.8));
-    border: 1px solid color-mix(in srgb, var(--color-accent) 40%, rgba(255, 255, 255, 0.9));
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-accent) 28%, #ffffff) 0%,
+        color-mix(in srgb, var(--color-accent) 18%, rgba(255, 255, 255, 0.95)) 100%
+    );
+    border: 1px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.9));
     box-shadow:
-        inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.9),
+        inset 0 1.5px 2px 0 #ffffff,
         inset 0 -1px 1px 0 rgba(0, 0, 0, 0.08),
-        0 4px 14px -2px color-mix(in srgb, var(--color-accent) 25%, rgba(0, 0, 0, 0.12)),
-        0 1px 3px rgba(0, 0, 0, 0.06);
+        0 4px 14px -2px var(--color-accent-glow);
 }
 
 .liquid-glass-lens {
@@ -470,8 +476,8 @@ body.light-mode .tab-sliding-pill {
     border-radius: inherit;
     pointer-events: none;
     box-shadow:
-        inset 1px 0 1px 0 rgba(255, 255, 255, 0.25),
-        inset -1px 0 1px 0 rgba(255, 255, 255, 0.25);
+        inset 2px 0 2px 0 rgba(255, 255, 255, 0.45),
+        inset -2px 0 2px 0 rgba(255, 255, 255, 0.45);
 }
 
 .liquid-glass-shimmer {
@@ -479,33 +485,43 @@ body.light-mode .tab-sliding-pill {
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.06) 42%, transparent 60%, color-mix(in srgb, var(--color-accent) 25%, transparent) 100%);
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.08) 42%,
+        transparent 60%,
+        color-mix(in srgb, var(--color-accent) 35%, transparent) 100%
+    );
     mix-blend-mode: overlay;
-    opacity: 0.9;
+    opacity: 0.95;
 }
 
 .liquid-glass-indicator.is-dragging {
     box-shadow:
-        inset 0 2px 2px 0 rgba(255, 255, 255, 0.7),
-        inset 0 -2px 1.5px 0 rgba(0, 0, 0, 0.35),
-        0 8px 24px -2px color-mix(in srgb, var(--color-accent) 55%, rgba(0, 0, 0, 0.45)),
-        0 2px 6px rgba(0, 0, 0, 0.3);
-    filter: brightness(1.1);
+        inset 0 2.5px 2.5px 0 rgba(255, 255, 255, 0.8),
+        inset 0 -2px 2px 0 rgba(0, 0, 0, 0.45),
+        0 8px 28px -2px var(--color-accent-glow),
+        0 2px 8px rgba(0, 0, 0, 0.4);
+    filter: brightness(1.18);
 }
 
 .audio-category-nav .cat-tab {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     border-radius: 9999px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     color: var(--color-text-muted) !important;
     transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
 }
 
 .audio-category-nav .cat-tab.active {
-    /* Horizontal lens dragging is custom; preserve vertical scroll and pinch zoom. */
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 0 12px var(--color-accent-glow) !important;
     touch-action: pan-y pinch-zoom;
 }
 
@@ -516,7 +532,6 @@ body.light-mode .tab-sliding-pill {
 
 .audio-category-nav .cat-tab:hover,
 .audio-category-nav .cat-tab.active {
-    color: var(--color-text) !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -536,7 +551,12 @@ body.light-mode .audio-category-nav .cat-tab:hover {
     box-shadow: none !important;
 }
 
-body.light-mode .audio-category-nav .cat-tab.active,
+body.light-mode .audio-category-nav .cat-tab.active {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    text-shadow: none !important;
+}
+
 body.light-mode .audio-category-nav .cat-tab:hover {
     color: var(--color-text) !important;
 }
@@ -544,8 +564,12 @@ body.light-mode .audio-category-nav .cat-tab:hover {
 /* Quality Tiers Overrides */
 [data-quality="balanced"] .liquid-glass-indicator,
 [data-quality="balanced"] .tab-sliding-pill {
-    backdrop-filter: blur(8px) saturate(140%);
-    -webkit-backdrop-filter: blur(8px) saturate(140%);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-accent) 42%, rgba(255, 255, 255, 0.16)) 0%,
+        color-mix(in srgb, var(--color-accent) 30%, rgba(15, 23, 42, 0.75)) 100%
+    );
 }
 
 [data-quality="eco"] .liquid-glass-indicator,
@@ -554,8 +578,12 @@ body.low-end .liquid-glass-indicator,
 body.low-end .tab-sliding-pill {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: color-mix(in srgb, var(--color-accent) 25%, #1e293b) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-accent) 55%, #1e293b) 0%,
+        color-mix(in srgb, var(--color-accent) 40%, #0f172a) 100%
+    ) !important;
+    border: 1.5px solid color-mix(in srgb, var(--color-accent) 85%, #ffffff) !important;
+    box-shadow: 0 0 16px var(--color-accent-glow), 0 2px 8px rgba(0, 0, 0, 0.45) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

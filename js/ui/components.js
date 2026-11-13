@@ -811,19 +811,26 @@
         let wSp = null;
         let scaleXSp = null;
         let suppressClickUntil = 0;
-        let isDragging = false;
+        let gestureState = 'idle'; // 'idle' | 'pressed' | 'dragging' | 'settling'
         let dragPointerId = null;
         let dragStartX = 0;
         let dragStartY = 0;
-        let dragStartScrollLeft = 0;
-        let dragStartIndicatorX = 0;
-        let dragStartIndicatorW = 0;
-        let dragVisualX = 0; // Last displayed X, including rubberband resistance.
-        let lastPointerX = 0;
+        let lastPointerClientX = 0;
         let lastPointerTime = 0;
         let dragVelocity = 0;
         let autoScrollRaf = 0;
         let lastRenderedW = -1;
+
+        // Cached layout during drag to prevent synchronous layout thrashing (0ms move frames)
+        let cachedNavRectLeft = 0;
+        let cachedNavRectRight = 0;
+        let cachedTabs = [];
+        let grabOffset = 0;
+        let dragStartIndicatorW = 64;
+        let dragStartIndicatorX = 0;
+        let minContentX = 0;
+        let maxContentX = 0;
+        let dragVisualX = 0;
 
         function renderTransform(x, w, sx, sy) {
             const ind = ensureIndicator();
@@ -843,21 +850,56 @@
             return navEl.querySelector('.cat-tab.active') || navEl.querySelector('.cat-tab');
         }
 
-        function findCandidateTab(clientX) {
-            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
-            if (!tabs.length) return null;
-            let bestTab = null;
+        function getCandidateTab() {
+            if (!cachedTabs || !cachedTabs.length) return null;
+            const indicatorCenter = dragVisualX + dragStartIndicatorW / 2;
+            let best = null;
             let minDist = Infinity;
-            tabs.forEach((tab) => {
-                const rect = tab.getBoundingClientRect();
-                const center = rect.left + rect.width / 2;
-                const dist = Math.abs(clientX - center);
+            for (let i = 0; i < cachedTabs.length; i++) {
+                const item = cachedTabs[i];
+                const dist = Math.abs(indicatorCenter - item.center);
                 if (dist < minDist) {
                     minDist = dist;
-                    bestTab = tab;
+                    best = item;
                 }
-            });
-            return bestTab;
+            }
+            return best;
+        }
+
+        function updateIndicatorPosition(clientX) {
+            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+            const rawX = fingerContentX - grabOffset;
+            let curX = rawX;
+
+            if (curX < minContentX) {
+                const overshoot = curX - minContentX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
+                curX = minContentX + damped;
+            } else if (curX > maxContentX) {
+                const overshoot = curX - maxContentX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
+                curX = maxContentX + damped;
+            }
+
+            let stretchX = 1;
+            if (!spLib || !spLib.isReducedMotion()) {
+                const speedAbs = Math.abs(dragVelocity);
+                stretchX = 1 + Math.min(0.24, Math.abs(rawX - dragStartIndicatorX) / 220 + speedAbs * 0.00015);
+            }
+            const squashY = 1 / Math.sqrt(stretchX);
+
+            dragVisualX = curX;
+            renderTransform(curX, dragStartIndicatorW, stretchX, squashY);
+        }
+
+        function updateCandidateHighlight() {
+            const candidate = getCandidateTab();
+            if (cachedTabs) {
+                for (let i = 0; i < cachedTabs.length; i++) {
+                    const item = cachedTabs[i];
+                    item.el.classList.toggle('drag-candidate', Boolean(candidate && item.el === candidate.el));
+                }
+            }
         }
 
         function ensureSprings() {
@@ -882,7 +924,7 @@
                 stiffness: preset.stiffness,
                 precision: 0.25,
                 onUpdate: (x, vel) => {
-                    if (isDragging) return;
+                    if (gestureState === 'dragging') return;
                     let stretch = 1;
                     if (!spLib.isReducedMotion()) {
                         stretch = 1 + Math.min(0.20, Math.abs(vel) * 0.00028);
@@ -899,7 +941,7 @@
                 stiffness: preset.stiffness,
                 precision: 0.25,
                 onUpdate: (w) => {
-                    if (isDragging) return;
+                    if (gestureState === 'dragging') return;
                     renderTransform(xSp.value, w, 1, 1);
                 }
             });
@@ -911,7 +953,7 @@
                 stiffness: stretchPreset.stiffness,
                 precision: 0.005,
                 onUpdate: (sx) => {
-                    if (isDragging) return;
+                    if (gestureState === 'dragging') return;
                     const squash = 1 / Math.sqrt(Math.max(0.5, sx));
                     renderTransform(xSp.value, wSp ? wSp.value : initW, sx, squash);
                 }
@@ -921,6 +963,7 @@
         }
 
         function syncIndicator() {
+            if (gestureState === 'dragging' || gestureState === 'pressed') return;
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
             const activeTab = getActiveTab();
@@ -953,27 +996,42 @@
             scaleXSp.setTarget(1);
         }
 
-        function startAutoScroll(pointerClientX) {
-            stopAutoScroll();
-            const navRect = navEl.getBoundingClientRect();
-            const edgeZone = 40;
-            let speed = 0;
+        function startAutoScroll() {
+            if (autoScrollRaf) return;
+            const step = () => {
+                if (gestureState !== 'dragging') {
+                    autoScrollRaf = 0;
+                    return;
+                }
 
-            if (pointerClientX < navRect.left + edgeZone) {
-                const ratio = 1 - Math.max(0, (pointerClientX - navRect.left) / edgeZone);
-                speed = -Math.round(ratio * 12);
-            } else if (pointerClientX > navRect.right - edgeZone) {
-                const ratio = 1 - Math.max(0, (navRect.right - pointerClientX) / edgeZone);
-                speed = Math.round(ratio * 12);
-            }
+                const edgeZone = 44;
+                const leftBoundary = cachedNavRectLeft + edgeZone;
+                const rightBoundary = cachedNavRectRight - edgeZone;
+                let speed = 0;
 
-            if (speed !== 0) {
-                const step = () => {
-                    navEl.scrollLeft += speed;
-                    autoScrollRaf = global.requestAnimationFrame(step);
-                };
+                if (lastPointerClientX < leftBoundary) {
+                    const ratio = Math.min(1, Math.max(0, (leftBoundary - lastPointerClientX) / edgeZone));
+                    speed = -Math.round(ratio * 14);
+                } else if (lastPointerClientX > rightBoundary) {
+                    const ratio = Math.min(1, Math.max(0, (lastPointerClientX - rightBoundary) / edgeZone));
+                    speed = Math.round(ratio * 14);
+                }
+
+                if (speed !== 0) {
+                    const maxScroll = navEl.scrollWidth - navEl.clientWidth;
+                    const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
+                    if (nextScroll !== navEl.scrollLeft) {
+                        navEl.scrollLeft = nextScroll;
+                        // Synchronously re-render transform in the exact same frame to eliminate freeze/lag
+                        updateIndicatorPosition(lastPointerClientX);
+                        updateCandidateHighlight();
+                    }
+                }
+
                 autoScrollRaf = global.requestAnimationFrame(step);
-            }
+            };
+
+            autoScrollRaf = global.requestAnimationFrame(step);
         }
 
         function stopAutoScroll() {
@@ -985,10 +1043,11 @@
 
         function onPointerDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
-            if (dragPointerId !== null || e.isPrimary === false) return;
-            // Drag the selected lens; swipes on other tabs remain native scrolling.
+            if (gestureState === 'dragging' || e.isPrimary === false) return;
+            // Drag the selected lens; taps on other tabs remain native click selection.
             const pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
-            if (!pressedTab || pressedTab !== getActiveTab()) return;
+            const activeTab = getActiveTab();
+            if (!pressedTab || pressedTab !== activeTab) return;
             ensureSprings();
 
             // Cancel any ongoing programmatic smooth scroll immediately to avoid coordinate competition
@@ -999,14 +1058,37 @@
             dragPointerId = e.pointerId;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
-            dragStartScrollLeft = navEl.scrollLeft;
-            dragStartIndicatorX = xSp ? xSp.value : 0;
-            dragStartIndicatorW = wSp ? wSp.value : 64;
-            dragVisualX = dragStartIndicatorX;
-            lastPointerX = e.clientX;
+            lastPointerClientX = e.clientX;
             lastPointerTime = performance.now();
             dragVelocity = 0;
-            isDragging = false;
+
+            const navRect = navEl.getBoundingClientRect();
+            cachedNavRectLeft = navRect.left;
+            cachedNavRectRight = navRect.right;
+
+            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
+            cachedTabs = tabs.map(t => ({
+                el: t,
+                left: t.offsetLeft,
+                width: t.offsetWidth,
+                center: t.offsetLeft + t.offsetWidth / 2,
+                cat: t.dataset.cat
+            }));
+
+            const activeItem = cachedTabs.find(t => t.el === activeTab);
+            dragStartIndicatorX = activeItem ? activeItem.left : activeTab.offsetLeft;
+            dragStartIndicatorW = activeItem ? activeItem.width : activeTab.offsetWidth;
+            dragVisualX = dragStartIndicatorX;
+
+            minContentX = cachedTabs.length ? cachedTabs[0].left : 0;
+            maxContentX = cachedTabs.length
+                ? cachedTabs[cachedTabs.length - 1].left + cachedTabs[cachedTabs.length - 1].width - dragStartIndicatorW
+                : 300;
+
+            const fingerContentX = e.clientX - cachedNavRectLeft + navEl.scrollLeft;
+            grabOffset = fingerContentX - dragStartIndicatorX;
+
+            gestureState = 'pressed';
         }
 
         function onPointerMove(e) {
@@ -1014,88 +1096,70 @@
 
             const now = performance.now();
             const dt = Math.max(1, now - lastPointerTime);
-            dragVelocity = (e.clientX - lastPointerX) / (dt / 1000);
-            lastPointerX = e.clientX;
+            dragVelocity = (e.clientX - lastPointerClientX) / (dt / 1000);
+            lastPointerClientX = e.clientX;
             lastPointerTime = now;
 
             const deltaX = e.clientX - dragStartX;
             const deltaY = e.clientY - dragStartY;
 
-            if (!isDragging) {
-                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY) * 0.8) {
-                    isDragging = true;
+            if (gestureState === 'pressed') {
+                if (Math.abs(deltaY) > 7 && Math.abs(deltaY) > Math.abs(deltaX)) {
+                    // Yield gesture to native vertical scrolling
+                    gestureState = 'idle';
+                    dragPointerId = null;
+                    return;
+                }
+
+                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY) * 0.8) {
+                    gestureState = 'dragging';
                     navEl.classList.add('is-liquid-dragging');
                     if (indicator) indicator.classList.add('is-dragging');
                     try {
                         navEl.setPointerCapture(e.pointerId);
                     } catch (_) {}
+                    startAutoScroll();
                 }
             }
 
-            if (!isDragging) return;
+            if (gestureState !== 'dragging') return;
 
             e.preventDefault();
 
-            const scrollDelta = navEl.scrollLeft - dragStartScrollLeft;
-            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
-            const firstTab = tabs[0];
-            const lastTab = tabs[tabs.length - 1];
-            const minX = firstTab ? firstTab.offsetLeft : 0;
-            const maxX = lastTab ? lastTab.offsetLeft + lastTab.offsetWidth - dragStartIndicatorW : 300;
-
-            let curX = dragStartIndicatorX + deltaX + scrollDelta;
-
-            if (curX < minX) {
-                const overshoot = curX - minX;
-                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
-                curX = minX + damped;
-            } else if (curX > maxX) {
-                const overshoot = curX - maxX;
-                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
-                curX = maxX + damped;
-            }
-
-            let stretchX = 1;
-            if (!spLib || !spLib.isReducedMotion()) {
-                stretchX = 1 + Math.min(0.24, Math.abs(deltaX) / 180 + Math.abs(dragVelocity) * 0.00015);
-            }
-            const squashY = 1 / Math.sqrt(stretchX);
-
-            dragVisualX = curX;
-            renderTransform(curX, dragStartIndicatorW, stretchX, squashY);
-
-            const candidate = findCandidateTab(e.clientX);
-            tabs.forEach((tab) => {
-                tab.classList.toggle('drag-candidate', tab === candidate);
-            });
-
-            startAutoScroll(e.clientX);
+            updateIndicatorPosition(e.clientX);
+            updateCandidateHighlight();
         }
 
         function onPointerUp(e, cancelled = false) {
             if (dragPointerId === null || e.pointerId !== dragPointerId) return;
-            // Claim the gesture before releasing capture to avoid reentrant cancel.
+            const capturedPointerId = dragPointerId;
             dragPointerId = null;
 
             stopAutoScroll();
-            navEl.classList.remove('is-liquid-dragging');
-            if (indicator) indicator.classList.remove('is-dragging');
-
-            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
-            tabs.forEach((tab) => tab.classList.remove('drag-candidate'));
 
             try {
-                if (navEl.hasPointerCapture(e.pointerId)) {
-                    navEl.releasePointerCapture(e.pointerId);
+                if (navEl.hasPointerCapture(capturedPointerId)) {
+                    navEl.releasePointerCapture(capturedPointerId);
                 }
             } catch (_) {}
 
-            const didDrag = isDragging;
-            isDragging = false;
-            if (didDrag) suppressClickUntil = performance.now() + 150;
+            navEl.classList.remove('is-liquid-dragging');
+            if (indicator) indicator.classList.remove('is-dragging');
 
-            if (didDrag && !cancelled) {
-                const targetTab = findCandidateTab(e.clientX) || getActiveTab();
+            if (cachedTabs) {
+                cachedTabs.forEach(t => t.el.classList.remove('drag-candidate'));
+            }
+
+            const wasDragging = gestureState === 'dragging';
+            gestureState = wasDragging ? 'settling' : 'idle';
+
+            if (wasDragging) {
+                suppressClickUntil = performance.now() + 180;
+            }
+
+            if (wasDragging && !cancelled) {
+                const targetItem = getCandidateTab();
+                const targetTab = targetItem ? targetItem.el : getActiveTab();
                 if (targetTab) {
                     const targetCat = targetTab.dataset.cat;
                     const targetX = targetTab.offsetLeft;
@@ -1106,7 +1170,13 @@
                          * Raw pointer delta here would jump the lens on release. */
                         xSp.snap(dragVisualX);
                         xSp.impulse(Math.max(-2000, Math.min(2000, dragVelocity)) * 0.12);
-                        xSp.setTarget(targetX);
+                        xSp.setTarget(targetX, {
+                            onComplete: () => {
+                                gestureState = 'idle';
+                            }
+                        });
+                    } else {
+                        gestureState = 'idle';
                     }
                     if (wSp) wSp.setTarget(targetW);
                     if (scaleXSp) {
@@ -1117,14 +1187,14 @@
                     if (typeof instance.onSelect === 'function') {
                         instance.onSelect(targetCat);
                     }
+                } else {
+                    gestureState = 'idle';
                 }
-            }
-
-            if (cancelled && didDrag) {
-                // Pointer cancellation never changes the committed playlist category.
-                renderTransform(xSp ? xSp.value : dragStartIndicatorX,
-                    wSp ? wSp.value : dragStartIndicatorW, 1, 1);
+            } else if (cancelled && wasDragging) {
+                gestureState = 'idle';
                 syncIndicator();
+            } else {
+                gestureState = 'idle';
             }
         }
 
@@ -1152,9 +1222,11 @@
         if (typeof ResizeObserver === 'function') {
             let roTimer = 0;
             resizeObserver = new ResizeObserver(() => {
+                if (gestureState === 'dragging' || gestureState === 'pressed') return;
                 if (roTimer) return;
                 roTimer = global.requestAnimationFrame(() => {
                     roTimer = 0;
+                    if (gestureState === 'dragging' || gestureState === 'pressed') return;
                     syncIndicator();
                 });
             });
@@ -1175,7 +1247,7 @@
                 }
                 stopAutoScroll();
                 dragPointerId = null;
-                isDragging = false;
+                gestureState = 'idle';
                 navEl.classList.remove('is-liquid-dragging');
                 navEl.removeEventListener('click', onNavClick);
                 navEl.removeEventListener('pointerdown', onPointerDown);

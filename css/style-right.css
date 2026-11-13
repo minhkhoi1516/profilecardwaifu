@@ -336,7 +336,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all var(--transition-fast);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .track-actions-bar .ctrl-btn:hover {
@@ -344,6 +344,11 @@
     border-color: var(--color-border-active);
     background: var(--surface-hover);
     transform: translateY(-1px);
+}
+
+.track-actions-bar .ctrl-btn:active {
+    transform: scale(0.92) translateY(0);
+    transition-duration: 0.06s;
 }
 
 .track-actions-bar .ctrl-btn.active {
@@ -528,13 +533,18 @@
     justify-content: center;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .ctrl-btn:hover {
     color: var(--color-text);
     background: var(--surface-hover);
     border-color: var(--color-border);
+}
+
+.ctrl-btn:active {
+    transform: scale(0.91);
+    transition-duration: 0.06s;
 }
 
 .ctrl-btn.active {
@@ -567,16 +577,18 @@
     font-size: 1.15rem;
     cursor: pointer;
     box-shadow: 0 4px 18px var(--color-accent-glow);
-    transition: all var(--transition-fast);
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .play-hero-btn:hover {
-    transform: scale(1.05);
+    transform: scale(1.06);
     box-shadow: 0 6px 24px var(--color-accent-glow);
 }
 
 .play-hero-btn:active {
-    transform: scale(0.96);
+    transform: scale(0.93);
+    box-shadow: 0 2px 10px var(--color-accent-glow);
+    transition-duration: 0.06s;
 }
 
 /* Full-Width Volume Slider Dock (Dưới nút Play/Pause) - Tactile Volume V2 */
