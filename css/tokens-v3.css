@@ -486,6 +486,16 @@ body.light-mode .tab-sliding-pill {
     transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
+.audio-category-nav .cat-tab.active {
+    /* The active lens receives dragging; other tabs allow native horizontal scrolling. */
+    touch-action: none;
+}
+
+.audio-category-nav.is-liquid-dragging {
+    /* Keep drag auto-scroll from fighting asynchronous smooth scrolling. */
+    scroll-behavior: auto !important;
+}
+
 .audio-category-nav .cat-tab.drag-candidate {
     color: var(--color-text) !important;
     transform: scale(1.05);

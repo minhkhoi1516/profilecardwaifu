@@ -814,7 +814,7 @@
                 categoryNav.scrollTo({ left: targetLeft, behavior: 'smooth' });
             }
             if (window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
-                window.requestAnimationFrame(() => window.MinkoiUI.syncTabIndicator(categoryNav));
+                window.requestAnimationFrame(() => window.MinkoiUI.syncTabIndicator(categoryNav, setFilter));
             }
         }
 

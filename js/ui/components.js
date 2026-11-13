@@ -798,6 +798,7 @@
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
             }
+            if (instance) instance.indicator = indicator;
             return indicator;
         }
 
@@ -911,6 +912,8 @@
         }
 
         function syncIndicator() {
+            const wasDetached = !indicator || !indicator.isConnected;
+            ensureIndicator();
             const activeTab = getActiveTab();
             if (!activeTab) return;
             const targetX = activeTab.offsetLeft;
@@ -918,6 +921,15 @@
             if (!targetW) return;
 
             ensureSprings();
+
+            // Rebuilds via innerHTML detach the glass lens even when spring targets stay put.
+            if (wasDetached) {
+                if (xSp) xSp.snap(targetX);
+                if (wSp) wSp.snap(targetW);
+                if (scaleXSp) scaleXSp.snap(1);
+                renderTransform(targetX, targetW, 1, 1);
+                return;
+            }
 
             if (!spLib || spLib.isReducedMotion()) {
                 if (xSp) xSp.snap(targetX);
@@ -964,6 +976,10 @@
 
         function onPointerDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (dragPointerId !== null || e.isPrimary === false) return;
+            // Drag the selected lens; swipes on other tabs remain native scrolling.
+            const pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
+            if (!pressedTab || pressedTab !== getActiveTab()) return;
             ensureSprings();
 
             dragPointerId = e.pointerId;
@@ -992,6 +1008,7 @@
             if (!isDragging) {
                 if (Math.abs(deltaX) > 6 && Math.abs(deltaX) > Math.abs(deltaY) * 0.8) {
                     isDragging = true;
+                    navEl.classList.add('is-liquid-dragging');
                     if (indicator) indicator.classList.add('is-dragging');
                     try {
                         navEl.setPointerCapture(e.pointerId);
@@ -1037,10 +1054,13 @@
             startAutoScroll(e.clientX);
         }
 
-        function onPointerUp(e) {
+        function onPointerUp(e, cancelled = false) {
             if (dragPointerId === null || e.pointerId !== dragPointerId) return;
+            // Claim the gesture before releasing capture to avoid reentrant cancel.
+            dragPointerId = null;
 
             stopAutoScroll();
+            navEl.classList.remove('is-liquid-dragging');
             if (indicator) indicator.classList.remove('is-dragging');
 
             const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
@@ -1052,10 +1072,11 @@
                 }
             } catch (_) {}
 
-            if (isDragging) {
-                isDragging = false;
-                suppressClickUntil = performance.now() + 150;
+            const didDrag = isDragging;
+            isDragging = false;
+            if (didDrag) suppressClickUntil = performance.now() + 150;
 
+            if (didDrag && !cancelled) {
                 const targetTab = findCandidateTab(e.clientX) || getActiveTab();
                 if (targetTab) {
                     const targetCat = targetTab.dataset.cat;
@@ -1079,31 +1100,33 @@
                 }
             }
 
-            dragPointerId = null;
+            if (cancelled && didDrag) {
+                // Pointer cancellation never changes the committed playlist category.
+                renderTransform(xSp ? xSp.value : dragStartIndicatorX,
+                    wSp ? wSp.value : dragStartIndicatorW, 1, 1);
+                syncIndicator();
+            }
         }
 
         function onPointerCancel(e) {
-            onPointerUp(e);
-            syncIndicator();
+            onPointerUp(e, true);
         }
 
-        navEl.addEventListener('click', (e) => {
+        const onNavClick = (e) => {
             if (performance.now() < suppressClickUntil) {
                 e.preventDefault();
-                e.stopPropagation();
-                return;
+                // stopPropagation doesn't block music.js's listener on this same node.
+                e.stopImmediatePropagation();
             }
-            const tab = e.target.closest('.cat-tab');
-            if (!tab) return;
-            if (typeof instance.onSelect === 'function') {
-                instance.onSelect(tab.dataset.cat);
-            }
-        });
+            // Native clicks are handled by music.js; onSelect is used for drags only.
+        };
+        navEl.addEventListener('click', onNavClick);
 
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
+        navEl.addEventListener('lostpointercapture', onPointerCancel);
 
         instance = {
             navEl: navEl,
@@ -1112,6 +1135,15 @@
             sync: syncIndicator,
             destroy() {
                 stopAutoScroll();
+                dragPointerId = null;
+                isDragging = false;
+                navEl.classList.remove('is-liquid-dragging');
+                navEl.removeEventListener('click', onNavClick);
+                navEl.removeEventListener('pointerdown', onPointerDown);
+                navEl.removeEventListener('lostpointercapture', onPointerCancel);
+                global.removeEventListener('pointermove', onPointerMove);
+                global.removeEventListener('pointerup', onPointerUp);
+                global.removeEventListener('pointercancel', onPointerCancel);
                 if (xSp) xSp.destroy();
                 if (wSp) wSp.destroy();
                 if (scaleXSp) scaleXSp.destroy();
