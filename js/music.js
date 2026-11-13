@@ -862,7 +862,11 @@
                 );
             });
 
+        const existingIndicator = categoryNav.querySelector('.liquid-glass-indicator, .tab-sliding-pill');
         categoryNav.innerHTML = tabs.join('');
+        if (existingIndicator) {
+            categoryNav.insertBefore(existingIndicator, categoryNav.firstChild);
+        }
         setFilter(currentFilter);
     }
 
@@ -1017,6 +1021,8 @@
     if (seekContainer) {
         seekContainer.addEventListener('pointerdown', (e) => {
             isScrubbing = true;
+            seekContainer.classList.add('is-scrubbing');
+            if (seekTip) seekTip.classList.add('visible');
             try { seekContainer.setPointerCapture(e.pointerId); } catch (_) {}
             seekToPosition(e.clientX, false);
         });
@@ -1028,6 +1034,7 @@
             if (seekTip) {
                 seekTip.style.left = `${pos * 100}%`;
                 seekTip.textContent = formatTime(pos * audio.duration);
+                seekTip.classList.add('visible');
                 seekTip.style.opacity = '1';
             }
 
@@ -1039,6 +1046,8 @@
         seekContainer.addEventListener('pointerup', (e) => {
             if (isScrubbing) {
                 isScrubbing = false;
+                seekContainer.classList.remove('is-scrubbing');
+                if (seekTip) seekTip.classList.remove('visible');
                 seekToPosition(e.clientX, true);
             }
         });
@@ -1046,6 +1055,11 @@
         seekContainer.addEventListener('pointercancel', () => {
             if (isScrubbing) {
                 isScrubbing = false;
+                seekContainer.classList.remove('is-scrubbing');
+                if (seekTip) {
+                    seekTip.classList.remove('visible');
+                    seekTip.style.opacity = '0';
+                }
                 pendingScrubPos = null;
                 if (audio.duration) {
                     const pos = audio.currentTime / audio.duration;
@@ -1057,7 +1071,10 @@
         });
 
         seekContainer.addEventListener('mouseleave', () => {
-            if (!isScrubbing && seekTip) seekTip.style.opacity = '0';
+            if (!isScrubbing && seekTip) {
+                seekTip.classList.remove('visible');
+                seekTip.style.opacity = '0';
+            }
         });
 
         // Keyboard accessibility for Seek Bar
@@ -1784,6 +1801,9 @@
     renderFxMenu();
     renderSleepTimerMenu();
     mountFlyoutForViewport();
+    if (categoryNav && window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
+        window.MinkoiUI.syncTabIndicator(categoryNav, setFilter);
+    }
 
     let savedVol = parseInt(safeGet('minkoi_player_volume', CONFIG.music?.defaultVolume || 45), 10);
     let savedIdx = parseInt(safeGet('minkoi_player_track_idx', '0'), 10);

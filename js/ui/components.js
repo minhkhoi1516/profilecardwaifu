@@ -796,6 +796,8 @@
                     indicator.appendChild(shimmer);
 
                     navEl.insertBefore(indicator, navEl.firstChild);
+                } else if (!indicator.isConnected) {
+                    navEl.insertBefore(indicator, navEl.firstChild);
                 }
             }
             if (instance) instance.indicator = indicator;
@@ -854,6 +856,7 @@
         }
 
         function ensureSprings() {
+            ensureIndicator();
             if (xSp && wSp && scaleXSp) return;
             const activeTab = getActiveTab();
             const initX = activeTab ? activeTab.offsetLeft : 0;

@@ -3,7 +3,21 @@
    Semantic 5-Tier Surfaces · True Dark/Light Parity · Quality Tiers · Spring Hooks
    ========================================================================== */
 
+/* Houdini Native Color Interpolation for Waifu Ambient Glow */
+@property --color-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #38bdf8;
+}
+
+@property --color-accent-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(56, 189, 248, 0.28);
+}
+
 :root {
+    transition: --color-accent 0.35s ease, --color-accent-glow 0.35s ease;
     /* --- 1. FIVE-TIER SURFACE HIERARCHY (DARK STUDIO DEFAULT) --- */
     --surface-0: #05070e;
     --surface-1: rgba(16, 19, 28, 0.72);
@@ -483,6 +497,10 @@ body.light-mode .tab-sliding-pill {
     position: relative;
     z-index: 1;
     border-radius: 9999px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: var(--color-text-muted) !important;
     transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
 }
 
@@ -496,19 +514,30 @@ body.light-mode .tab-sliding-pill {
     scroll-behavior: auto !important;
 }
 
+.audio-category-nav .cat-tab:hover,
+.audio-category-nav .cat-tab.active {
+    color: var(--color-text) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .audio-category-nav .cat-tab.drag-candidate {
     color: var(--color-text) !important;
     transform: scale(1.05);
-    text-shadow: 0 0 10px var(--color-accent-glow);
+    text-shadow: 0 0 12px var(--color-accent-glow);
 }
 
-.audio-category-nav:has(.liquid-glass-indicator) .cat-tab.active,
-.audio-category-nav:has(.tab-sliding-pill) .cat-tab.active,
-body.light-mode .audio-category-nav:has(.liquid-glass-indicator) .cat-tab.active,
-body.light-mode .audio-category-nav:has(.tab-sliding-pill) .cat-tab.active {
+body.light-mode .audio-category-nav .cat-tab,
+body.light-mode .audio-category-nav .cat-tab.active,
+body.light-mode .audio-category-nav .cat-tab:hover {
     background: transparent !important;
-    border-color: transparent !important;
+    border: none !important;
     box-shadow: none !important;
+}
+
+body.light-mode .audio-category-nav .cat-tab.active,
+body.light-mode .audio-category-nav .cat-tab:hover {
     color: var(--color-text) !important;
 }
 

@@ -395,56 +395,86 @@
 
 .seek-bar-track {
     width: 100%;
-    height: 5px;
+    height: 6px;
     border-radius: var(--radius-full);
     background: var(--track-bg);
     position: relative;
     cursor: pointer;
     overflow: visible;
+    transition: height 0.22s cubic-bezier(0.2, 0.8, 0.25, 1), background 0.2s ease;
+    touch-action: none;
+}
+
+.seek-bar-track:hover,
+.seek-bar-track.is-scrubbing {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .seek-fill-bar {
     width: 0%;
     height: 100%;
     border-radius: var(--radius-full);
-    background: var(--color-accent);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-accent) 80%, #38bdf8), var(--color-accent));
+    box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 45%, transparent);
     position: relative;
-    transition: width 80ms linear;
+    transition: width 60ms linear;
 }
 
 .seek-fill-bar::after {
     content: '';
     position: absolute;
-    right: -5px;
+    right: -6px;
     top: 50%;
-    transform: translateY(-50%);
-    width: 11px;
-    height: 11px;
+    transform: translateY(-50%) scale(0.85);
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     background: #ffffff;
-    box-shadow: 0 0 8px var(--color-accent-glow);
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.4),
+        0 0 10px var(--color-accent-glow),
+        0 2px 6px rgba(0, 0, 0, 0.35);
     opacity: 0;
-    transition: opacity var(--transition-fast);
+    transition: opacity 0.2s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
 }
 
-.seek-bar-track:hover .seek-fill-bar::after {
+.seek-bar-track:hover .seek-fill-bar::after,
+.seek-bar-track.is-scrubbing .seek-fill-bar::after {
     opacity: 1;
+    transform: translateY(-50%) scale(1.25);
+    box-shadow:
+        0 0 0 3.5px color-mix(in srgb, var(--color-accent) 40%, rgba(255, 255, 255, 0.7)),
+        0 0 14px var(--color-accent-glow),
+        0 3px 8px rgba(0, 0, 0, 0.45);
 }
 
 .seek-hover-tooltip {
     position: absolute;
-    top: -24px;
-    transform: translateX(-50%);
-    background: var(--surface-3);
-    border: 1px solid var(--color-border-active);
+    top: -28px;
+    transform: translateX(-50%) scale(0.92);
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
     color: var(--color-text);
     font-family: var(--font-mono);
-    font-size: 0.65rem;
-    padding: 0.15rem 0.45rem;
-    border-radius: 4px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 0.18rem 0.55rem;
+    border-radius: 9999px;
     pointer-events: none;
     opacity: 0;
-    transition: opacity var(--transition-fast);
+    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
+    z-index: 20;
+}
+
+.seek-hover-tooltip.visible,
+.seek-bar-track.is-scrubbing .seek-hover-tooltip {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
 }
 
 /* ========================================================
@@ -597,14 +627,15 @@
     gap: 0.6rem;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(8px);
-    transition: all var(--transition-fast);
+    transform: translateY(8px) scale(0.96);
+    transform-origin: bottom right;
+    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.25, 1), transform 0.24s cubic-bezier(0.34, 1.4, 0.64, 1), visibility 0.2s ease;
 }
 
 .dropdown-flyout.open {
     opacity: 1;
     visibility: visible;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
 }
 
 /* Equalizer Menu */

@@ -703,9 +703,23 @@ body:has(.lyrics-drawer-modal.open) .zen-fab {
     transform: translateY(20px) scale(0.9);
 }
 
-/* Mini dock dims when idle in zen mode */
+/* Mini dock dims and retreats with spring physics when idle in zen mode */
+.zen-mini-dock {
+    transition: opacity 0.4s cubic-bezier(0.2, 0.8, 0.25, 1), transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1), filter 0.4s ease;
+}
+
 body.zen-idle .zen-mini-dock {
-    opacity: 0.18;
+    opacity: 0.22;
+    transform: translateX(-50%) translateY(8px) scale(0.96);
+    filter: blur(1px);
+    pointer-events: none;
+}
+
+body.zen-mode:not(.zen-idle) .zen-mini-dock {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    filter: blur(0px);
+    pointer-events: auto;
 }
 
 @media (max-width: 520px) {
