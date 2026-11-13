@@ -1,144 +1,204 @@
-# 🌌 MinKoi · Waifu & Music Studio
+# MinKoi — Anime Music Studio
 
-Trang định danh cá nhân + thư viện nhạc theo từng waifu. Vanilla HTML/CSS/JS, không build step.
-Deploy tĩnh trên Vercel.
+A responsive, client-side anime music studio and personal identity card built with vanilla JavaScript. The project combines HyperOS Miuix-inspired physics, translucent liquid glass navigation, reactive audio visualization, and a decoupled lyrics synchronization engine.
 
----
-
-## ✨ Tính năng hiện có
-
-- **7 persona** (Alya Kujou, Shiina Mahiru, Waguri Kaoruko, Sakura Miku, Shinobu Uzuki,
-  Konohana Hinako, Asanagi Umi) + **1 slot trống "Coming Soon"**.
-- Mỗi persona: 1 avatar, 2 banner PC, 2 banner phone. Mỗi lần chuyển waifu sẽ **random** giữa
-  2 banner cùng loại (không lặp lại ảnh vừa dùng), tự đổi theo bề rộng màn hình.
-- **Playlist theo waifu**: tab `All (23)` + tab riêng từng waifu. Đổi waifu **không cắt bài đang
-  phát** — chỉ chuyển danh sách đang xem sang waifu đó; bấm vào tag dưới tên bài cũng mở được
-  danh sách của waifu đang hát.
-- **23 track**, thời lượng lấy thật từ file MP3 (đã tính sẵn trong `js/config.js`).
-- **Zen mode (màn hình chờ)**: phím `Z` / `Esc` trên PC, nút nổi góc phải dưới trên mobile/tablet.
-  Có Screen Wake Lock (giữ màn hình sáng) và mini dock tự mờ sau 5s.
-- Equalizer Web Audio, seek bar, shuffle, repeat, tìm kiếm bài, MediaSession (điều khiển từ
-  màn hình khoá).
-- Light / Dark mode, lưu trạng thái vào localStorage.
-
-### Phím tắt
-| Phím | Chức năng |
-|---|---|
-| `Space` | Phát / dừng |
-| `J` / `K` | Bài trước / bài kế |
-| `M` | Tắt / mở tiếng |
-| `S` | Shuffle |
-| `R` | Đổi chế độ lặp |
-| `Z` / `Esc` | Vào / thoát Zen mode |
-| `1` – `7` | Đổi nhanh waifu |
+[![Vercel Deployment](https://img.shields.io/badge/Deployment-Vercel-black?style=flat&logo=vercel)](https://pro5-waifu-minkoi.vercel.app/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![No Runtime Dependencies](https://img.shields.io/badge/Dependencies-Zero%20Runtime-success.svg)](#tech-stack)
 
 ---
 
-## 🛠️ Cấu trúc
+## Live Demo
 
-```
+- **Production URL**: [https://pro5-waifu-minkoi.vercel.app/](https://pro5-waifu-minkoi.vercel.app/)
+
+---
+
+## Preview
+
+<div align="center">
+  <img src="docs/screenshots/desktop-preview.png" alt="MinKoi Desktop Studio View" width="850">
+  <br><br>
+  <img src="docs/screenshots/mobile-preview.png" alt="MinKoi Mobile Studio View" width="360">
+</div>
+
+---
+
+## Features
+
+### 1. Studio Audio Suite & Persona Library
+- **8 Curated Personas**: Alya Kujou, Shiina Mahiru, Waguri Kaoruko, Sakura Miku, Shinobu Uzuki, Konohana Hinako, Asanagi Umi, and Nakano Miku.
+- **31 Audio Tracks**: Real duration data extracted directly from source MP3s.
+- **Seamless Playlist Filtering**: Selecting a persona filters the playlist immediately without interrupting the currently playing audio.
+- **Dual Responsive Wallpapers**: Automatic aspect-ratio detection (PC vs Mobile) with non-repeating random crossfade on persona transition.
+
+### 2. Miuix Liquid Glass Navigation
+- **Floating Liquid Capsule**: Translucent sliding navigation indicator positioned below the Studio Audio Suite.
+- **Physics-Based Stretch & Squash**: Deforms dynamically based on spring velocity and drag displacement.
+- **Continuous Touch Dragging**: Zero-lag finger tracking with rubberband resistance at boundaries and synchronous edge auto-scrolling at 60/120 fps.
+- **Tactile Active Press Feedback**: Spring-damped press feedback (`scale(0.91-0.93)`) on playback and action controls.
+
+### 3. Modular Lyrics Engine V2
+- **Decoupled Architecture**: Independent modules for parsing, matching, caching, synchronization, rendering, and inline diagnostics.
+- **Format Support**: Parses standard LRC, enhanced LRC with word timestamps, and TTML karaoke markup.
+- **Continuous Sweep Rendering**: Syllable-level progressive gradient fill (Apple Music Sing style) with automatic fallback to line-level highlighting.
+- **Best-Effort Timing**: Lyrics timestamps are best-effort and can be inspected or edited locally.
+
+### 4. Audio Visualization & Ambient Lighting
+- **64-Band Spectrum Visualizer**: Real-time frequency analysis rendered via HTML5 Canvas.
+- **Reactive Disc Glow & Aura**: Bass and midrange frequencies modulate the vinyl platter rotation and avatar backdrop halo.
+- **Waifu Adaptive Ambient**: The ambient background glow dynamically adapts to each persona's signature accent colors.
+
+### 5. Performance Quality Tiers
+- **Automatic Hardware Profiling**: Evaluates CPU logical cores and device memory to select an appropriate rendering mode:
+  - **High**: Full GPU backdrop blur (`blur(14px)`), dynamic canvas particles, and smooth spring physics.
+  - **Balanced**: Reduced blur (`blur(10px)`) and optimized particle counts for mid-tier mobile hardware.
+  - **Eco (Tiết kiệm)**: Replaces GPU blur filters with solid high-contrast neon borders to eliminate frame drops on lower-end devices.
+
+### 6. Zen Mode & Keyboard Shortcuts
+- **Distraction-Free Mode**: Fullscreen visualizer with auto-dimming controls after 5 seconds of inactivity.
+- **Screen Wake Lock API**: Prevents display sleep on supported mobile and desktop browsers during playback.
+- **Keyboard Navigation**:
+  - `Space` — Play / Pause
+  - `J` / `K` — Previous / Next track
+  - `M` — Mute / Unmute
+  - `S` — Toggle Shuffle
+  - `R` — Cycle Repeat mode (Off / All / One)
+  - `Z` / `Esc` — Enter / Exit Zen Mode
+  - `1` to `8` — Quick-switch persona
+
+---
+
+## Tech Stack
+
+- **Markup & Layout**: HTML5, Semantic Elements, CSS3 (Modern Custom Properties, Flexbox, CSS Grid).
+- **Styling Architecture**: Modular CSS with centralized design tokens (`css/tokens-v3.css`).
+- **Core Runtime**: Vanilla JavaScript (ES2022+), zero third-party build tools, zero npm runtime dependencies.
+- **Physics & Geometry**: Custom analytical damped harmonic spring engine (`js/ui/spring.js`) and squircle border calculation (`js/ui/squircle.js`).
+- **Audio Processing**: Web Audio API (`AudioContext`, `AnalyserNode`, `BiquadFilterNode`).
+- **Hosting & Edge Routing**: Vercel Static CDN.
+- **Design References**: Inspired by interaction physics from [Compose Miuix UI](https://github.com/compose-miuix-ui/miuix) and material research from [Glasmio](https://github.com/NEORUAA/Glasmio). *MinKoi is an independent implementation and does not bundle Kotlin or Compose runtimes.*
+
+---
+
+## Project Structure
+
+```text
 profilecardwaifu/
-├── assets/                  # avatar_<key>.png + banner_<key>_pc.jpg / _pc2 / _phone / _phone2
+├── assets/                  # Avatars (avatar_<key>.png) and responsive wallpapers
 ├── css/
-│   ├── style-base.css       # design tokens, reset, typography
-│   ├── style-backgrounds.css# banner layers & canvas nền
-│   ├── style-card.css       # khung card, zen mode, toast
-│   ├── style-left.css       # cột trái: avatar, tên, bio, persona chips
-│   ├── style-right.css      # player, tab playlist, equalizer
-│   └── style-responsive.css # breakpoint mobile / tablet
+│   ├── style-base.css       # Core tokens, reset, typography, and utility classes
+│   ├── style-backgrounds.css# Fluid canvas background and wallpaper crossfading
+│   ├── style-card.css       # Studio container, Zen mode overlay, and toasts
+│   ├── style-left.css       # Persona card, avatar, bio, and social links
+│   ├── style-right.css      # Studio Audio Suite, audio dock, seek bar, and flyouts
+│   ├── style-responsive.css # Mobile and tablet responsive breakpoint rules
+│   └── tokens-v3.css        # Miuix design tokens, spring curves, and glass indicator
 ├── js/
-│   ├── config.js            # TOÀN BỘ dữ liệu: personas + playlist (sửa ở đây)
-│   ├── stars.js             # hạt bụi sao trên canvas
-│   ├── avatar.js            # đổi persona, random banner, fallback ảnh lỗi
-│   ├── music.js             # player, tab playlist theo waifu, EQ, tìm kiếm
-│   └── features.js          # theme, clock, zen mode, phím tắt, share
-├── music/                   # file .mp3
-├── tools/                   # script hỗ trợ (không chạy trên web)
-│   ├── optimize_assets.py   # resize + nén ảnh, tự đổi đuôi cho khớp định dạng
-│   ├── mp3_duration.py      # tính thời lượng MP3 (ghi ra tools/durations.json)
-│   └── durations.json
-├── index.html
-├── manifest.webmanifest
-└── vercel.json
+│   ├── config.js            # Central data configuration (personas and music library)
+│   ├── avatar.js            # Persona switching and wallpaper management
+│   ├── music.js             # Player lifecycle, Web Audio visualizer, and playlist
+│   ├── stars.js             # Canvas particle starfield simulation
+│   ├── fluid-bg.js          # Interactive ambient background animation
+│   ├── features.js          # Theme switching, Zen mode, hotkeys, and quality profiling
+│   ├── snapshot.js          # Profile snapshot sharing utility
+│   ├── ui/
+│   │   ├── spring.js        # Analytical spring physics solver
+│   │   ├── squircle.js      # Continuous curvature squircle border generator
+│   │   └── components.js    # Liquid glass navigation, list popups, and bottom sheets
+│   └── lyrics/              # Decoupled Lyrics Engine V2
+│       ├── parser.js        # TTML & LRC parser
+│       ├── normalizer.js    # Title and metadata string normalizer
+│       ├── matcher.js       # Confidence scoring and track matching
+│       ├── cache.js         # In-memory and local storage lyrics cache
+│       ├── sync-engine.js   # RAF audio clock tracking and line activation
+│       ├── renderer.js      # Continuous syllable sweep and DOM renderer
+│       └── diagnostics.js   # Performance telemetry and sync status
+├── music/                   # Curated MP3 audio library (31 tracks)
+├── tests/
+│   └── lyrics-v2.test.html  # Standalone automated unit test runner (15 test cases)
+├── scripts/
+│   └── qa/
+│       ├── verify-assets.ps1 # Validates existence of all referenced assets and tracks
+│       └── verify-lyrics.ps1 # Headless browser CDP test runner for lyrics engine
+├── tools/                   # Offline automation and audio analysis utilities
+│   ├── durations.json       # Precomputed track durations
+│   ├── scan-music.ps1       # Generates track metadata from music/*.mp3
+│   └── push-to-github.ps1   # Quick Git synchronization helper
+├── docs/                    # Architectural notes, screenshots, and deployment guide
+│   ├── deployment.md        # Vercel setup, protection bypass, and custom domains
+│   └── screenshots/         # Verified production preview images
+├── index.html               # Main entrypoint
+├── vercel.json              # Vercel caching headers and clean routing
+├── LICENSE                  # MIT License & Third-Party Fair Use Notice
+└── README.md
 ```
 
 ---
 
-## ➕ Cách thêm một waifu mới (3 bước)
+## Local Development
 
-1. Copy ảnh vào `assets/` theo đúng quy ước:
+Because MinKoi uses modern Web Audio APIs and media element loading, open the project through a local HTTP server rather than the `file://` protocol.
 
-   | Loại | Tên file |
-   |---|---|
-   | Avatar | `avatar_<key>.png` (vuông, ≤ 900px, nền trong suốt nếu được) |
-   | Banner PC | `banner_<key>_pc.jpg`, `banner_<key>_pc2.jpg` (ngang 16:9, ≤ 1920px) |
-   | Banner phone | `banner_<key>_phone.jpg`, `banner_<key>_phone2.jpg` (dọc, ≤ 1200px) |
+### Option 1: Python (Built-in)
+```bash
+# Navigate to the repository root
+python -m http.server 8080
+```
+Open `http://localhost:8080` in your browser.
 
-2. Chạy `python tools/optimize_assets.py` để resize + nén (script tự đổi `.png` → `.jpg`
-   nếu file thực chất là JPEG).
-
-3. Mở `js/config.js`, thêm 1 object vào `personas` **trước object `coming`**:
-
-```js
-{
-    id: 7, key: "tenwaifu", name: "Tên Waifu", role: "Danh hiệu", title: "Tên tác phẩm",
-    avatar: "assets/avatar_tenwaifu.png",
-    banners: {
-        pc: ["assets/banner_tenwaifu_pc.jpg", "assets/banner_tenwaifu_pc2.jpg"],
-        phone: ["assets/banner_tenwaifu_phone.jpg", "assets/banner_tenwaifu_phone2.jpg"]
-    },
-    accent: "#38bdf8", accentSecondary: "#f43f5e", accentGlow: "rgba(56, 189, 248, 0.28)",
-    available: true
-}
+### Option 2: Node.js (npx)
+```bash
+npx serve .
 ```
 
-Slot `coming` (index cuối) luôn là chip mờ "Coming Soon" — cứ thêm waifu mới ngay trước nó.
-
-## 🎵 Cách thêm nhạc
-
-1. Copy file `.mp3` vào `music/`.
-2. Thêm 1 dòng vào `CONFIG.music.playlist` (nhớ `persona` đúng `key`):
-
-```js
-{ id: 24, persona: "alya", name: "Tên bài", artist: "Alya Kujou", file: "music/ten-bai.mp3", duration: "3:45" }
-```
-
-3. (Tuỳ chọn) chạy `python tools/mp3_duration.py` để lấy thời lượng chính xác, rồi copy vào
-   `duration`. Số bài trên tab `All` tự cập nhật.
-
-> Hiện tại hệ thống đã tích hợp **8 Personas** (bao gồm **Nakano Miku** với bộ banner riêng & 8 bản nhạc Gotoubun) và tổng cộng **31 tracks**.
-> Tên file có dấu tiếng Nhật vẫn chạy bình thường, nhưng nên dùng tên không dấu để tránh lỗi
-> khi deploy qua các hệ thống cũ.
+### Option 3: VS Code Live Server
+Right-click `index.html` in VS Code and select **Open with Live Server**.
 
 ---
 
-## 🎤 Kiến trúc Lyrics Engine V2 (`js/lyrics/`)
+## Configuration
 
-Engine hiển thị lời bài hát được tách module hoàn toàn theo mô hình Apple Music Sing:
+All customizable application data is defined in [`js/config.js`](js/config.js):
 
-- `normalizer.js` · `parser.js` (`TTML` word/syllable, `Enhanced LRC <mm:ss.xx>`, `LRC`, plain text)
-- `matcher.js` · `diagnostics.js` · `cache.js` (per-track calibration offset + versioned LRU cache)
-- `provider.js` · `repository.js` (honest sync-level metadata cho toàn bộ 31 tracks)
-- `sync-engine.js` · `renderer.js` · `editor.js` · `index.js`
-
----
-
-## 📐 Quy ước asset
-
-- **Đuôi file phải khớp định dạng thật**: JPEG → `.jpg`, PNG → `.png`. Trước đây nhiều file
-  `.png` thực chất là JPEG/WebP, làm hỏng preview ảnh và `og:image` khi share link.
-- Banner PC ≤ 1920px, banner phone ≤ 1200px, avatar ≤ 900px; mỗi file nên < 1 MB.
-- Tổng dung lượng `assets/` hiện tại khoảng **7 MB** (trước khi nén là 69 MB).
+- **Adding a Persona**:
+  Add an entry to `CONFIG.personas` specifying `key`, `name`, `role`, `avatar`, `banners`, and accent color codes. Place image assets into `assets/` following the naming convention (`avatar_<key>.png`, `banner_<key>_pc.jpg`, `banner_<key>_phone.jpg`).
+- **Adding an Audio Track**:
+  Place the `.mp3` file into `music/` and add an entry to `CONFIG.music.playlist` matching the persona's `key`. You can run `powershell -File tools/scan-music.ps1` to extract exact audio durations automatically.
 
 ---
 
-## 🚀 Deploy
+## Testing & Quality Assurance
 
-- Nếu deploy qua GitHub → Vercel: **phải commit cả thư mục `assets/` và `music/`**, nếu không
-  Vercel sẽ 404 và avatar/banner bị vỡ.
-- Không commit `profilecardwaifu.zip` (đã có trong `.gitignore`).
-- Kiểm tra nhanh trước khi deploy: mở DevTools → Network, lọc `404`, phải bằng 0.
+MinKoi includes non-interactive automated test suites to prevent regression in core functionality:
+
+1. **Asset & Route Integrity**:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/qa/verify-assets.ps1
+   ```
+   Validates that all 8 personas, 31 audio files, stylesheets, and scripts exist on disk without dead links.
+
+2. **Lyrics Engine Regression (15 Test Cases)**:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/qa/verify-lyrics.ps1
+   ```
+   Or open `tests/lyrics-v2.test.html` in any browser to inspect unit test assertions for syllable parsing, Japanese Unicode handling, instrumental gaps, and clock resynchronization.
 
 ---
 
-© 2026 MinKoi Studio · All rights reserved.
+## Browser Compatibility
+
+| Browser | Minimum Version | Notes |
+| :--- | :--- | :--- |
+| **Google Chrome / Chromium** | 94+ | Full support for Backdrop Filter, Web Audio API, and Wake Lock. |
+| **Microsoft Edge** | 94+ | Full support. |
+| **Mozilla Firefox** | 103+ | Full support. Backdrop blur may require hardware acceleration enabled. |
+| **Apple Safari (macOS / iOS)** | 15.4+ | Full support. Uses `-webkit-backdrop-filter`. |
+
+---
+
+## Attribution & Legal Notice
+
+- **Original Source Code**: Licensed under the [MIT License](LICENSE).
+- **Anime Artwork & Media**: All character names, illustrations, and music tracks belong to their respective copyright holders (Kadokawa, Doga Kobo, CloverWorks, Crypton Future Media, Kodansha, etc.). They are used strictly for non-commercial, personal demonstration and fan tribute purposes under fair use.
+- **Third-Party Research**: Interaction physics inspired by [Compose Miuix UI](https://github.com/compose-miuix-ui/miuix). Fonts provided by Google Fonts under SIL Open Font License 1.1. Icons provided by Font Awesome Free.
