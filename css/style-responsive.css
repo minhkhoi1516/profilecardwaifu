@@ -124,14 +124,17 @@
     }
 
     .card-content-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
+        min-width: 0;
     }
 
     /* Miuix Anime Waifu Stage & Creator Showcase Hero */
     .col-left {
         border-right: none;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        padding: 0.85rem 0.75rem 0.65rem;
+        /* Reserve room for chibi artwork extending above its circular pedestal.
+           Without this space the rounded card container clips the hair/bow. */
+        padding: 2.75rem 0.75rem 0.65rem;
         gap: 0.45rem;
         align-items: center;
         text-align: center;
@@ -280,16 +283,12 @@
     .social-link-pill .pill-arrow {
         display: none;
     }
-        font-size: 0.75rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: space-between;
-        box-sizing: border-box;
-    }
 
     /* Miuix Anime Studio Audio Suite */
     .col-right {
         padding: 1rem 1rem 1.5rem;
+        min-width: 0;
+        max-width: 100%;
         gap: 1rem;
         display: flex;
         flex-direction: column;
@@ -298,6 +297,8 @@
     .studio-audio-suite {
         display: flex;
         flex-direction: column;
+        min-width: 0;
+        max-width: 100%;
         gap: 0.95rem;
     }
 
@@ -377,7 +378,9 @@
         border-radius: 24px;
         padding: 1rem 1.15rem;
         display: grid;
-        grid-template-columns: 82px 1fr;
+        grid-template-columns: 82px minmax(0, 1fr);
+        min-width: 0;
+        max-width: 100%;
         gap: 1rem;
         align-items: center;
         box-shadow: 0 12px 32px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
@@ -563,6 +566,8 @@
     /* Integrated Volume Dock */
     .volume-slider-dock {
         width: 100%;
+        min-width: 0;
+        max-width: 100%;
         min-height: 44px;
         padding: 0.45rem 1rem;
         border-radius: 9999px;
@@ -576,7 +581,8 @@
     }
 
     .volume-slider-dock .volume-slider {
-        flex: 1;
+        flex: 1 1 0%;
+        min-width: 0;
         width: 100%;
         max-width: none;
     }

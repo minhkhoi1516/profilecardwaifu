@@ -26,6 +26,9 @@ jobs:
             test -f "$f" || (echo "Missing stylesheet: $f" && exit 1)
           done
 
+      - name: Verify Mobile CSS Scope and Overflow Guards
+        run: node scripts/qa/verify-mobile-css.cjs
+
       - name: Validate JavaScript Modules
         run: |
           for f in js/config.js js/ui/spring.js js/ui/squircle.js js/ui/components.js js/stars.js js/fluid-bg.js js/avatar.js js/music.js js/snapshot.js js/features.js; do
