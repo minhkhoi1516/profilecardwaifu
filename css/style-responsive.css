@@ -122,8 +122,55 @@
 
     .avatar-zone,
     .avatar-presentation-stage {
+        width: 130px;
+        height: 130px;
+        margin: 0.75rem auto 0.5rem auto;
+    }
+
+    .avatar-backdrop-disc {
+        width: 108px;
+        height: 108px;
+    }
+
+    .halo-rotate {
+        width: 114px;
+        height: 114px;
+    }
+
+    .halo-rotate.outer {
         width: 124px;
         height: 124px;
+    }
+
+    .avatar-img,
+    .avatar-portrait {
+        height: 146px;
+        max-width: 140px;
+        bottom: 2px;
+    }
+
+    .avatar-portrait[data-persona="sakuramiku"] {
+        height: 180px;
+        max-width: 172px;
+        bottom: -6px;
+    }
+
+    .avatar-portrait[data-persona="nakanomiku"] {
+        height: 164px;
+        max-width: 154px;
+        bottom: -4px;
+    }
+
+    .avatar-portrait[data-persona="hinako"],
+    .avatar-portrait[data-persona="kaoruko"] {
+        height: 148px;
+        max-width: 142px;
+        bottom: 0px;
+    }
+
+    .avatar-status-badge {
+        bottom: 6px;
+        right: 10px;
     }
 
     .creator-name {

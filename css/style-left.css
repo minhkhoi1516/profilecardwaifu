@@ -14,14 +14,14 @@
 }
 
 /* ========================================================
-   AVATAR ZONE & CELESTIAL ROTATING HALOS (UNCLIPPED ARTWORK)
+   AVATAR ZONE & CELESTIAL ROTATING HALOS (CHIBI POP-OUT STAGE)
 ======================================================== */
 .avatar-zone,
 .avatar-presentation-stage {
     position: relative;
-    width: 136px;
-    height: 136px;
-    margin: 0.25rem auto 0.65rem auto;
+    width: 140px;
+    height: 140px;
+    margin: 0.85rem auto 0.65rem auto;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -32,11 +32,11 @@
 /* Pulsing Ethereal Ripple Waves */
 .ripple-ground {
     position: absolute;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 120px;
-    height: 120px;
+    width: 116px;
+    height: 116px;
     pointer-events: none;
     z-index: 1;
 }
@@ -71,7 +71,7 @@
 /* Ambient Canvas Visualizer behind Waifu */
 .waifu-viz-canvas {
     position: absolute;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 220px;
@@ -85,11 +85,11 @@
 /* Obsidian Glass Pedestal Disc */
 .avatar-backdrop-disc {
     position: absolute;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 120px;
-    height: 120px;
+    width: 116px;
+    height: 116px;
     border-radius: 50%;
     background: radial-gradient(
         circle at 50% 28%,
@@ -144,11 +144,11 @@ body.light-mode .avatar-status-badge {
 /* Rotating Celestial Halos */
 .halo-rotate {
     position: absolute;
-    top: 50%;
+    top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 126px;
-    height: 126px;
+    width: 122px;
+    height: 122px;
     border-radius: 50%;
     border: 1.5px dashed var(--color-accent);
     animation: rotateHalo 20s linear infinite;
@@ -158,8 +158,8 @@ body.light-mode .avatar-status-badge {
 }
 
 .halo-rotate.outer {
-    width: 138px;
-    height: 138px;
+    width: 134px;
+    height: 134px;
     border: 1px solid var(--color-accent-secondary, rgba(56, 189, 248, 0.4));
     animation: rotateHaloRev 26s linear infinite;
     z-index: 3;
@@ -173,32 +173,61 @@ body.light-mode .avatar-status-badge {
     100% { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
-/* Unclipped Character Artwork Pop-Out with Natural Rim-Light & Feathered Pedestal Blend */
+/* Unclipped Chibi Artwork Pop-Out Beyond Circular Pedestal */
 .avatar-img,
 .avatar-portrait {
     position: absolute;
     bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
-    max-height: 124%;
+    height: 158px;
     width: auto;
-    max-width: 116%;
+    max-width: 152px;
+    object-fit: contain;
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 14px var(--color-accent-glow)) contrast(0.98) saturate(0.96);
-    /* Fade all four portrait edges into the round pedestal. The previous
-       bottom-only mask exposed square backgrounds baked into some avatar PNGs. */
-    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 66%, rgba(0, 0, 0, 0.9) 76%, transparent 98%);
-    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 66%, rgba(0, 0, 0, 0.9) 76%, transparent 98%);
+    /* Gentle bottom-only feather to blend waist cut seamlessly onto the pedestal disc, leaving head, ears, ribbons & accessories 100% crisp & unclipped */
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.75) 4%, #000 12%, #000 100%);
+    mask-image: linear-gradient(to top, transparent 0%, rgba(0, 0, 0, 0.75) 4%, #000 12%, #000 100%);
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease, opacity 0.3s ease;
     z-index: 5;
     user-select: none;
     pointer-events: none;
 }
 
+/* Persona-specific optical scale balance */
+.avatar-portrait[data-persona="sakuramiku"] {
+    height: 194px;
+    max-width: 186px;
+    bottom: -8px;
+}
+
+.avatar-portrait[data-persona="nakanomiku"] {
+    height: 178px;
+    max-width: 168px;
+    bottom: -6px;
+}
+
+.avatar-portrait[data-persona="hinako"],
+.avatar-portrait[data-persona="kaoruko"] {
+    height: 160px;
+    max-width: 154px;
+    bottom: 0px;
+}
+
+.avatar-portrait[data-persona="mahiru"],
+.avatar-portrait[data-persona="shinobu"],
+.avatar-portrait[data-persona="umi"],
+.avatar-portrait[data-persona="alya"] {
+    height: 158px;
+    max-width: 152px;
+    bottom: 2px;
+}
+
 .avatar-zone:hover .avatar-img,
 .avatar-zone:hover .avatar-portrait,
 .avatar-presentation-stage:hover .avatar-img,
 .avatar-presentation-stage:hover .avatar-portrait {
-    transform: translateX(-50%) scale(1.08) translateY(-4px);
+    transform: translateX(-50%) scale(1.08) translateY(-4px) !important;
     filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 24px var(--color-accent));
 }
 
@@ -247,8 +276,8 @@ body.light-mode .avatar-status-badge {
 /* Status Indicator Dot */
 .avatar-status-badge {
     position: absolute;
-    bottom: 5px;
-    right: 8px;
+    bottom: 6px;
+    right: 12px;
     width: 14px;
     height: 14px;
     border-radius: 50%;

@@ -263,9 +263,10 @@
             if (seq !== avatarSeq) return;
             avatarImg.src = src;
             avatarImg.alt = `${persona.name} Portrait`;
+            avatarImg.dataset.persona = persona.key;
             avatarImg.style.display = '';
-            avatarImg.style.opacity = '1';
-            avatarImg.style.transform = 'translateX(-50%) scale(1)';
+            avatarImg.style.opacity = '';
+            avatarImg.style.transform = '';
             avatarZone?.classList.remove('avatar-fallback');
         };
 
