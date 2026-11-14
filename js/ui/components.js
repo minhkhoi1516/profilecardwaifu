@@ -926,14 +926,20 @@
             // Miuix Smooth Directional Edge-Lag Model:
             // Continuous lag that smoothly transitions through zero during direction reversals
             // and decays to 0 when finger pauses, restoring natural capsule shape.
-            const trailLag = Math.min(54, speed * 0.05 + 16 * Math.tanh(speed / 140));
+            const stationaryFactor = Math.min(1, speed / 30);
+            const trailLag = Math.min(54, (speed * 0.08 + 18 * Math.tanh(speed / 90) + 4.5) * stationaryFactor);
             const dirWeight = Math.tanh(vel / 120); // -1.0 (moving left) to +1.0 (moving right)
 
-            const stretchLeft = trailLag * Math.max(0, dirWeight);
-            const stretchRight = trailLag * Math.max(0, -dirWeight);
+            let nextLeft = rawX;
+            let nextRight = rawX + baseTabWidth;
 
-            let nextLeft = rawX - stretchLeft;
-            let nextRight = rawX + baseTabWidth + stretchRight;
+            if (dirWeight > 0.05) {
+                // Moving right: right edge leads forward, left edge follows finger
+                nextRight += trailLag * dirWeight;
+            } else if (dirWeight < -0.05) {
+                // Moving left: left edge leads forward, right edge follows finger
+                nextLeft -= trailLag * Math.abs(dirWeight);
+            }
 
             // Damped elastic resistance at container boundaries (Miuix obtainDampingDistance)
             if (nextLeft < minContentX) {
@@ -1343,6 +1349,7 @@
         }
 
         function onPointerCancel(e) {
+            if (e && e.type === 'lostpointercapture' && e.buttons > 0) return;
             onPointerUp(e, true);
         }
 
@@ -1358,7 +1365,6 @@
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
-        navEl.addEventListener('lostpointercapture', onPointerCancel);
 
         let resizeObserver = null;
         if (typeof ResizeObserver === 'function') {
@@ -1382,6 +1388,7 @@
             indicator: indicator,
             onSelect: onSelect,
             sync: syncIndicator,
+            debug: () => ({ gestureState, dragPointerId, currentLeft, currentRight, baseTabWidth, lastRenderedWidth }),
             destroy() {
                 if (resizeObserver) {
                     try { resizeObserver.disconnect(); } catch (_) {}
@@ -1397,7 +1404,6 @@
                 navEl.classList.remove('is-liquid-dragging');
                 navEl.removeEventListener('click', onNavClick, true);
                 navEl.removeEventListener('pointerdown', onPointerDown);
-                navEl.removeEventListener('lostpointercapture', onPointerCancel);
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);
                 global.removeEventListener('pointercancel', onPointerCancel);
@@ -1409,6 +1415,7 @@
         };
 
         liquidNavInstances.set(navEl, instance);
+        global.__liquidNavInstance = instance;
         syncIndicator();
         if (doc.fonts && doc.fonts.ready) {
             doc.fonts.ready.then(() => syncIndicator());

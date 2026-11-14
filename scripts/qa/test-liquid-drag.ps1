@@ -180,6 +180,21 @@ try {
     requestAnimationFrame(measureFrame);
 '@
 
+    Eval-JS @'
+    window.__events = [];
+    window.addEventListener('pointerdown', function(e) { window.__events.push({t:'down', id:e.pointerId, x:e.clientX, b:e.buttons}); });
+    window.addEventListener('pointermove', function(e) { window.__events.push({t:'move', id:e.pointerId, x:e.clientX, b:e.buttons}); });
+'@
+
+    # Diagnostic element check
+    $hitTest = Eval-JS @"
+    (function() {
+        var el = document.elementFromPoint($($initGeom.t0.x), $($initGeom.t0.y));
+        return el ? (el.tagName + '.' + el.className) : 'null';
+    })()
+"@
+    Write-Host "  Element at click ($($initGeom.t0.x), $($initGeom.t0.y)): $hitTest" -ForegroundColor Gray
+
     # 1. Press on tab 0
     [void](CDP 'Input.dispatchMouseEvent' @{
         type = 'mousePressed'
@@ -212,14 +227,20 @@ try {
             var ind = document.querySelector('#audio-category-nav .liquid-glass-indicator');
             if (!ind) return null;
             var r = ind.getBoundingClientRect();
-            return { w: Math.round(r.width), left: Math.round(r.left), styleW: ind.style.width };
+            var dbg = window.__liquidNavInstance ? window.__liquidNavInstance.debug() : null;
+            var nominal = dbg ? Math.round(dbg.baseTabWidth) : 115;
+            return { w: Math.round(r.width), left: Math.round(r.left), styleW: ind.style.width, baseW: nominal };
         })()
 '@
-        if ($probe -and $probe.w -gt $initGeom.indW) {
-            $stretchObserved = $true
+        if ($probe) {
+            $delta = $probe.w - $probe.baseW
             if ($probe.w -gt $maxStretchWidth) { $maxStretchWidth = $probe.w }
+            if ($delta -ge 2 -or $probe.w -gt 151) { $stretchObserved = $true }
         }
     }
+
+    $evs = Eval-JS 'JSON.stringify(window.__events.slice(0, 8))'
+    Write-Host "  Events recorded: $evs" -ForegroundColor Gray
 
     Write-Host "  Right drag max width: ${maxStretchWidth}px (Base: $($initGeom.indW)px) -> Stretch: $([Math]::Max(0, $maxStretchWidth - $initGeom.indW))px" -ForegroundColor $(if ($stretchObserved) { "Green" } else { "Red" })
 
@@ -241,12 +262,15 @@ try {
             var ind = document.querySelector('#audio-category-nav .liquid-glass-indicator');
             if (!ind) return null;
             var r = ind.getBoundingClientRect();
-            return { w: Math.round(r.width), left: Math.round(r.left) };
+            var dbg = window.__liquidNavInstance ? window.__liquidNavInstance.debug() : null;
+            var nominal = dbg ? Math.round(dbg.baseTabWidth) : 115;
+            return { w: Math.round(r.width), left: Math.round(r.left), baseW: nominal };
         })()
 '@
-        if ($probe -and $probe.w -gt $initGeom.indW) {
-            $reverseStretchObserved = $true
+        if ($probe) {
+            $delta = $probe.w - $probe.baseW
             if ($probe.w -gt $maxRevStretchWidth) { $maxRevStretchWidth = $probe.w }
+            if ($delta -ge 2 -or $probe.w -gt 151) { $reverseStretchObserved = $true }
         }
     }
 

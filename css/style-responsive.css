@@ -399,13 +399,13 @@
     }
 
     .vinyl-art {
-        height: 78px;
-        max-width: 76px;
-        bottom: 3px;
+        height: 98px;
+        max-width: 90px;
+        bottom: 2px;
         position: absolute;
         left: 50%;
         transform: translateX(-50%);
-        filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7));
+        filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 12px var(--color-accent-glow));
     }
 
     .track-metadata {
@@ -787,10 +787,13 @@
     .vinyl-disc-wrap {
         width: 70px;
         height: 70px;
+        overflow: visible !important;
     }
 
     .vinyl-art {
-        height: 68px;
+        height: 86px;
+        max-width: 80px;
+        bottom: 2px;
     }
 
     .track-title {
