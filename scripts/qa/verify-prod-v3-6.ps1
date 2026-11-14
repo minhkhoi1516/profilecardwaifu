@@ -7,14 +7,14 @@ Write-Host "==========================================================" -Foregro
 Write-Host " MINKOI V3.6 PRODUCTION LIVE VERIFICATION" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
-# Step 1: Poll Vercel until version 36.0 appears in HTML
-Write-Host "1. POLLING PRODUCTION FOR MINKOI V3.6 DEPLOYMENT..." -ForegroundColor Yellow
+# Step 1: Poll Vercel until version 36.1 appears in HTML
+Write-Host "1. POLLING PRODUCTION FOR MINKOI V3.6.1 DEPLOYMENT..." -ForegroundColor Yellow
 $deployed = $false
-for ($i = 1; $i -le 30; $i++) {
+for ($i = 1; $i -le 35; $i++) {
   try {
     $res = Invoke-RestMethod -Uri $ProdUrl -TimeoutSec 10 -Headers @{ 'Cache-Control' = 'no-cache' }
-    if ($res -match '\?v=36\.0') {
-      Write-Host "  [OK] MinKoi V3.6 is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
+    if ($res -match '\?v=36\.1') {
+      Write-Host "  [OK] MinKoi V3.6 (v36.1) is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
       $deployed = $true
       break
     } else {
@@ -117,18 +117,26 @@ try {
       const cur = document.getElementById('current-time');
       const tot = document.getElementById('total-time');
       const sep = document.querySelector('.time-sep');
+      const disc = document.querySelector('.avatar-backdrop-disc');
+      const img = document.querySelector('#char-avatar');
+
+      const dR = disc ? disc.getBoundingClientRect() : null;
+      const iR = img ? img.getBoundingClientRect() : null;
 
       return {
         stageWidth: stage ? Math.round(stage.getBoundingClientRect().width) : 0,
         heroWidth: hero ? Math.round(hero.getBoundingClientRect().width) : 0,
         sepHidden: sep ? window.getComputedStyle(sep).display === 'none' : false,
         curText: cur ? cur.textContent.trim() : '',
-        totText: tot ? tot.textContent.trim() : ''
+        totText: tot ? tot.textContent.trim() : '',
+        popoutTop: (dR && iR) ? Math.round(dR.top - iR.top) : 0,
+        imgHeight: iR ? Math.round(iR.height) : 0
       };
     })()
 "@
   Write-Host "  Desktop Stage: $($prodDesktopInfo.stageWidth)px | Hero: $($prodDesktopInfo.heroWidth)px" -ForegroundColor Green
   Write-Host "  Dual-Sided Time: '$($prodDesktopInfo.curText)' / '$($prodDesktopInfo.totText)' | Sep Hidden: $($prodDesktopInfo.sepHidden)" -ForegroundColor Green
+  Write-Host "  Desktop Chibi Pop-out: Protrusion = $($prodDesktopInfo.popoutTop)px | Avatar Height = $($prodDesktopInfo.imgHeight)px" -ForegroundColor Green
 
   Write-Host "`n3. NAVIGATING TO PRODUCTION (390x844 MOBILE)..." -ForegroundColor Yellow
   SetViewport 390 844 3
