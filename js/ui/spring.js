@@ -35,6 +35,7 @@
         // V4.0 Natural Physics Additions
         EDGE_LEADING: Object.freeze(folmeSpring(0.92, 0.26)),
         EDGE_TRAILING: Object.freeze(folmeSpring(0.78, 0.38)),
+        NAV_FOLLOW: Object.freeze(folmeSpring(1.02, 0.16)),
         HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
         TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22))
     });
