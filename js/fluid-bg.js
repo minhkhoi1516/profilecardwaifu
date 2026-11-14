@@ -195,6 +195,7 @@
     // Render loop state
     let animationFrameId = null;
     let startTime = performance.now();
+    let lastBackgroundPaint = 0;
     let smoothBass = 0.0;
     const freqData = new Uint8Array(32);
 
@@ -210,8 +211,18 @@
     function render(now) {
         if (shouldPauseFluid()) {
             animationFrameId = null;
+            lastBackgroundPaint = 0;
             return;
         }
+        // Full-screen shader competes with expensive glass compositing on phones.
+        // Throttle the BACKGROUND only, never the foreground gesture animations.
+        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const mobileBackground = touchDevice || window.innerWidth <= 768;
+        if (mobileBackground && lastBackgroundPaint && now - lastBackgroundPaint < 32) {
+            animationFrameId = requestAnimationFrame(render);
+            return;
+        }
+        lastBackgroundPaint = now;
         const elapsed = (now - startTime) * 0.001;
 
         // Query Analyser bass energy (bins 0-6 represent 20Hz - 150Hz)

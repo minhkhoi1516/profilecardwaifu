@@ -529,6 +529,9 @@ body.light-mode .tab-sliding-pill {
     box-shadow: none !important;
     color: var(--color-text-muted) !important;
     transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
+    /* Let the liquid selection follow a horizontal finger slide from ANY tab.
+       Preserve vertical page scrolling; JS handles category edge auto-scroll. */
+    touch-action: pan-y pinch-zoom;
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     user-select: none !important;

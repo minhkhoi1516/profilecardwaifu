@@ -15,6 +15,7 @@
     let height = 0;
     let particles = [];
     let animationId = null;
+    let lastParticlePaint = 0;
     let currentThemeMode = 'snow'; // 'snow' (Alya), 'stardust' (Mahiru), 'sakura' (Kaoruko/Miku), 'twilight' (Shinobu/Rikka)
     const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -221,11 +222,21 @@
         return getQualityFactor() === 0;
     }
 
-    function render() {
+    function render(now) {
         if (shouldPauseParticles()) {
             animationId = null;
+            lastParticlePaint = 0;
             return; // Battery & reduced-motion saving: truly pause loop
         }
+        // Atmospheric particles need less frequent painting than touch controls.
+        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const mobileBackground = touchDevice || window.innerWidth <= 768;
+        const time = Number.isFinite(now) ? now : performance.now();
+        if (mobileBackground && lastParticlePaint && time - lastParticlePaint < 32) {
+            animationId = requestAnimationFrame(render);
+            return;
+        }
+        lastParticlePaint = time;
         animationId = requestAnimationFrame(render);
 
         ctx.clearRect(0, 0, width, height);

@@ -1053,10 +1053,11 @@
         function onPointerDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (gestureState === 'dragging' || e.isPrimary === false) return;
-            // Drag the selected lens; taps on other tabs remain native click selection.
+            // Any category can start a press-and-scrub gesture, not just the active
+            // pill. Native clicks still work; horizontal motion moves the lens.
             const pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
             const activeTab = getActiveTab();
-            if (!pressedTab || pressedTab !== activeTab) return;
+            if (!pressedTab || !navEl.contains(pressedTab) || !activeTab) return;
             ensureSprings();
 
             // Cancel any ongoing programmatic smooth scroll immediately to avoid coordinate competition
@@ -1085,8 +1086,11 @@
             }));
 
             const activeItem = cachedTabs.find(t => t.el === activeTab);
-            dragStartIndicatorX = activeItem ? activeItem.left : activeTab.offsetLeft;
-            dragStartIndicatorW = activeItem ? activeItem.width : activeTab.offsetWidth;
+            // Anchor at the category under the finger. The glass starts moving
+            // toward it on press and then tracks the finger on horizontal drag.
+            const pressedItem = cachedTabs.find(t => t.el === pressedTab) || activeItem;
+            dragStartIndicatorX = pressedItem ? pressedItem.left : activeTab.offsetLeft;
+            dragStartIndicatorW = pressedItem ? pressedItem.width : activeTab.offsetWidth;
             dragVisualX = dragStartIndicatorX;
 
             minContentX = cachedTabs.length ? cachedTabs[0].left : 0;
@@ -1098,6 +1102,11 @@
             grabOffset = fingerContentX - dragStartIndicatorX;
 
             gestureState = 'pressed';
+            if (pressedTab !== activeTab) {
+                // Visual preview only; do not commit the playlist before release.
+                if (xSp) xSp.setTarget(dragStartIndicatorX);
+                if (wSp) wSp.setTarget(dragStartIndicatorW);
+            }
         }
 
         function onPointerMove(e) {
@@ -1117,6 +1126,8 @@
                     // Yield gesture to native vertical scrolling
                     gestureState = 'idle';
                     dragPointerId = null;
+                    // A vertical page scroll cancels the uncommitted glass preview.
+                    syncIndicator();
                     return;
                 }
 
@@ -1206,6 +1217,7 @@
                 syncIndicator();
             } else {
                 gestureState = 'idle';
+                if (cancelled) syncIndicator();
             }
         }
 

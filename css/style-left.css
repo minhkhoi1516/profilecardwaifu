@@ -184,8 +184,10 @@ body.light-mode .avatar-status-badge {
     width: auto;
     max-width: 116%;
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 14px var(--color-accent-glow)) contrast(0.98) saturate(0.96);
-    -webkit-mask-image: linear-gradient(to bottom, #000000 0%, #000000 90%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000000 0%, #000000 90%, transparent 100%);
+    /* Fade all four portrait edges into the round pedestal. The previous
+       bottom-only mask exposed square backgrounds baked into some avatar PNGs. */
+    -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 66%, rgba(0, 0, 0, 0.9) 76%, transparent 98%);
+    mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 0%, #000 66%, rgba(0, 0, 0, 0.9) 76%, transparent 98%);
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.4s ease, opacity 0.3s ease;
     z-index: 5;
     user-select: none;
