@@ -7,18 +7,18 @@ Write-Host "==========================================================" -Foregro
 Write-Host " MINKOI V3.6 PRODUCTION LIVE VERIFICATION" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
-# Step 1: Poll Vercel until version 36.1 appears in HTML
-Write-Host "1. POLLING PRODUCTION FOR MINKOI V3.6.1 DEPLOYMENT..." -ForegroundColor Yellow
+# Step 1: Poll Vercel until version 36.2 appears in HTML
+Write-Host "1. POLLING PRODUCTION FOR MINKOI V3.6.2 DEPLOYMENT..." -ForegroundColor Yellow
 $deployed = $false
 for ($i = 1; $i -le 35; $i++) {
   try {
     $res = Invoke-RestMethod -Uri $ProdUrl -TimeoutSec 10 -Headers @{ 'Cache-Control' = 'no-cache' }
-    if ($res -match '\?v=36\.1') {
-      Write-Host "  [OK] MinKoi V3.6 (v36.1) is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
+    if ($res -match '\?v=36\.2') {
+      Write-Host "  [OK] MinKoi V3.6 (v36.2) is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
       $deployed = $true
       break
     } else {
-      Write-Host "  [WAIT] Attempt ${i} - Waiting for Vercel deployment..." -ForegroundColor DarkGray
+      Write-Host "  [WAIT] Attempt ${i} - Waiting for Vercel deployment (v36.2)..." -ForegroundColor DarkGray
     }
   } catch {
     Write-Host "  [WARN] Request attempt $i failed: $_" -ForegroundColor DarkGray
@@ -122,6 +122,9 @@ try {
 
       const dR = disc ? disc.getBoundingClientRect() : null;
       const iR = img ? img.getBoundingClientRect() : null;
+      const vinylArt = document.getElementById('player-album-art');
+      const vR = vinylArt ? vinylArt.getBoundingClientRect() : null;
+      const avatarCs = img ? window.getComputedStyle(img) : null;
 
       return {
         stageWidth: stage ? Math.round(stage.getBoundingClientRect().width) : 0,
@@ -130,13 +133,17 @@ try {
         curText: cur ? cur.textContent.trim() : '',
         totText: tot ? tot.textContent.trim() : '',
         popoutTop: (dR && iR) ? Math.round(dR.top - iR.top) : 0,
-        imgHeight: iR ? Math.round(iR.height) : 0
+        imgHeight: iR ? Math.round(iR.height) : 0,
+        vinylArtHeight: vR ? Math.round(vR.height) : 0,
+        avatarMask: avatarCs ? avatarCs.maskImage : 'none'
       };
     })()
 "@
   Write-Host "  Desktop Stage: $($prodDesktopInfo.stageWidth)px | Hero: $($prodDesktopInfo.heroWidth)px" -ForegroundColor Green
   Write-Host "  Dual-Sided Time: '$($prodDesktopInfo.curText)' / '$($prodDesktopInfo.totText)' | Sep Hidden: $($prodDesktopInfo.sepHidden)" -ForegroundColor Green
   Write-Host "  Desktop Chibi Pop-out: Protrusion = $($prodDesktopInfo.popoutTop)px | Avatar Height = $($prodDesktopInfo.imgHeight)px" -ForegroundColor Green
+  Write-Host "  Desktop Avatar Mask Image: $($prodDesktopInfo.avatarMask) (No square box clamping)" -ForegroundColor Green
+  Write-Host "  Desktop Vinyl Pop-out Figurine: Height = $($prodDesktopInfo.vinylArtHeight)px (>=70px)" -ForegroundColor Green
 
   Write-Host "`n3. NAVIGATING TO PRODUCTION (390x844 MOBILE)..." -ForegroundColor Yellow
   SetViewport 390 844 3
@@ -158,12 +165,15 @@ try {
       const sRect = stage ? stage.getBoundingClientRect() : null;
       const hRect = hero ? hero.getBoundingClientRect() : null;
       const pRect = prev ? prev.getBoundingClientRect() : null;
+      const vinylArt = document.getElementById('player-album-art');
+      const vRect = vinylArt ? vinylArt.getBoundingClientRect() : null;
 
       return {
         indWidth: iRect ? Math.round(iRect.width) : 0,
         stageWidth: sRect ? Math.round(sRect.width) : 0,
         heroWidth: hRect ? Math.round(hRect.width) : 0,
         prevWidth: pRect ? Math.round(pRect.width) : 0,
+        vinylArtHeight: vRect ? Math.round(vRect.height) : 0,
         overflow: document.body.scrollWidth > document.body.clientWidth
       };
     })()
@@ -171,6 +181,7 @@ try {
 
   Write-Host "  Mobile Liquid Glass Indicator Width: $($prodMobileInfo.indWidth)px" -ForegroundColor Green
   Write-Host "  Mobile Stage Width: $($prodMobileInfo.stageWidth)px | Hero: $($prodMobileInfo.heroWidth)px | Touch Target: $($prodMobileInfo.prevWidth)px" -ForegroundColor Green
+  Write-Host "  Mobile Vinyl Pop-out Figurine: Height = $($prodMobileInfo.vinylArtHeight)px (>=65px)" -ForegroundColor Green
   Write-Host "  Zero Overflow: $(!$prodMobileInfo.overflow)" -ForegroundColor Green
 
   # Capture Mobile Crop
