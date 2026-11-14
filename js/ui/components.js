@@ -1072,15 +1072,20 @@
                     speed = Math.round(ratio * 12);
                 }
 
-                if (speed !== 0) {
-                    const maxScroll = navEl.scrollWidth - navEl.clientWidth;
-                    const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
-                    if (nextScroll !== navEl.scrollLeft) {
-                        navEl.scrollLeft = nextScroll;
-                        computePhysicalDrag(targetPointerClientX);
-                    }
+                // No scroll velocity, or already at the edge: stop this RAF loop.
+                // The next pointermove restarts it when the finger enters an edge.
+                if (speed === 0) {
+                    autoScrollRaf = 0;
+                    return;
                 }
-
+                const maxScroll = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
+                const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
+                if (nextScroll === navEl.scrollLeft) {
+                    autoScrollRaf = 0;
+                    return;
+                }
+                navEl.scrollLeft = nextScroll;
+                computePhysicalDrag(targetPointerClientX);
                 autoScrollRaf = global.requestAnimationFrame(step);
             };
 
@@ -1223,6 +1228,15 @@
 
         function onPointerUp(e, cancelled = false) {
             if (dragPointerId === null || e.pointerId !== dragPointerId) return;
+            // A fast release can happen before the queued drag RAF. Always process the
+            // final real finger position before settling, or selection uses stale glass.
+            if (!cancelled && gestureState === 'dragging' && Number.isFinite(e.clientX)) {
+                targetPointerClientX = e.clientX;
+                if (velocityTracker && Number.isFinite(e.clientY)) {
+                    velocityTracker.addPoint(e.clientX, e.clientY);
+                }
+                computePhysicalDrag(targetPointerClientX);
+            }
             const capturedPointerId = dragPointerId;
             dragPointerId = null;
 
