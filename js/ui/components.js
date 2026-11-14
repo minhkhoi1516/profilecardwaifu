@@ -800,11 +800,17 @@
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
             }
+            if (indicator) {
+                indicator.style.display = 'block';
+                indicator.style.opacity = '1';
+            }
+            navEl.classList.add('has-liquid-nav');
             if (instance) instance.indicator = indicator;
             return indicator;
         }
 
         ensureIndicator();
+        navEl.classList.add('has-liquid-nav');
 
         const spLib = Spring();
         let xSp = null;
@@ -970,7 +976,10 @@
             if (!activeTab) return;
             const targetX = activeTab.offsetLeft;
             const targetW = activeTab.offsetWidth;
-            if (!targetW) return;
+            if (!targetW) {
+                global.requestAnimationFrame(() => syncIndicator());
+                return;
+            }
 
             ensureSprings();
 
@@ -1264,6 +1273,9 @@
 
         liquidNavInstances.set(navEl, instance);
         syncIndicator();
+        if (doc.fonts && doc.fonts.ready) {
+            doc.fonts.ready.then(() => syncIndicator());
+        }
         return instance;
     }
 

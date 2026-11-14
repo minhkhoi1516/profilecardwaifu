@@ -130,7 +130,7 @@
     box-shadow: none;
 }
 
-/* 8 persona tabs: scroll ngang thay vì bóp chữ + mask gradient ở hai mép */
+/* 8 persona tabs: scroll ngang thay vì bóp chữ */
 .audio-category-nav {
     overflow-x: auto;
     overflow-y: hidden;
@@ -140,8 +140,6 @@
     -webkit-overflow-scrolling: touch;
     min-width: 0;
     max-width: 100%;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, #000 3%, #000 97%, transparent 100%);
 }
 
 .col-right,

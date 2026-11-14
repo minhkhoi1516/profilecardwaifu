@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.5.0] - 2026-11-14
+
+### Fixed
+- **Critical Mobile Liquid Glass Recovery (P0 Resolved)**:
+  - Completely resolved the issue where the category indicator was invisible on real mobile devices across Eco, Balanced, and High quality tiers.
+  - Eliminated `-webkit-mask-image` and `mask-image` on `.audio-category-nav` scroll container, preventing WebKit / Android WebView hardware-accelerated compositing layer drops and offscreen buffer isolation.
+  - Removed `mix-blend-mode: overlay` from `.liquid-glass-shimmer` which triggered WebKit layer discarding inside scrollable contexts.
+  - Introduced robust solid/RGBA fallback properties before all `color-mix()` declarations, ensuring full visual rendering on mobile browsers with partial or legacy CSS Color 5 engines.
+  - Re-architected **Eco Mode** with a vibrant, high-contrast, saturated accent pill (`#0284c7` to `#0369a1` gradient with glowing aura and 2px border) that is immediately visible without GPU blur overhead.
+  - Refined **High & Balanced Modes** with multi-stop luminous glass, top specular bevel highlight (`inset 0 1.5px 2px rgba(255, 255, 255, 0.75)`), bottom rim shadow, and glowing accent halo.
+  - Polished **Light Mode** porcelain-glass capsule with crisp borders and high-contrast `#0f172a` active text.
+  - Added `.has-liquid-nav` state management with graceful fallback styling for `.cat-tab.active` to ensure zero flash of unstyled/invisible tabs.
+  - Added `document.fonts.ready` lifecycle listener in `js/ui/components.js` to synchronously re-measure tab dimensions when web fonts finish loading.
+
+### Added
+- **Multi-Viewport Automated QA Suite**: Created `scripts/qa/verify-v3-5.ps1` testing 9 viewport sizes (320x720, 360x800, 375x812, 390x844, 393x873, 412x915, 430x932, 768x1024, 1440x900), persona switching, auto-centering scroll position, and zero console errors.
+- **Cache-Busting Update**: Bumped asset cache versions to `?v=35.0` across all CSS and JavaScript references in `index.html`.
+
+---
+
 ## [3.4.0] - 2026-11-14
 
 ### Added

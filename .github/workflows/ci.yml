@@ -58,6 +58,13 @@ jobs:
             exit 1
           fi
 
+      - name: Validate JavaScript Syntax
+        run: |
+          for f in js/*.js js/ui/*.js js/lyrics/*.js; do
+            node -c "$f" || (echo "Syntax error in $f" && exit 1)
+          done
+          echo "All JavaScript files passed syntax verification."
+
       - name: Validate JSON Syntax
         run: |
           python3 -c "import json; json.load(open('vercel.json')); json.load(open('manifest.webmanifest')); json.load(open('tools/durations.json'))"
