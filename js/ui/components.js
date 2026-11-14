@@ -1062,17 +1062,38 @@
         function onPointerDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (gestureState === 'dragging' || e.isPrimary === false) return;
-            // Any category can start a press-and-scrub gesture, not just the active
-            // pill. Native clicks still work; horizontal motion moves the lens.
-            const pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
+            // Treat the entire liquid track as one draggable surface, including
+            // the small gaps between categories. Native taps on buttons still
+            // select their categories via music.js.
+            let pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
             const activeTab = getActiveTab();
-            if (!pressedTab || !navEl.contains(pressedTab) || !activeTab) return;
+            if (!activeTab) return;
+            if (!pressedTab && (e.target === navEl || navEl.contains(e.target))) {
+                const rect = navEl.getBoundingClientRect();
+                const pos = e.clientX - rect.left + navEl.scrollLeft;
+                const buttons = navEl.querySelectorAll('.cat-tab');
+                let nearest = null;
+                let minDistance = Infinity;
+                buttons.forEach(tab => {
+                    const center = tab.offsetLeft + tab.offsetWidth * 0.5;
+                    const distance = Math.abs(center - pos);
+                    if (distance < minDistance) {
+                        nearest = tab;
+                        minDistance = distance;
+                    }
+                });
+                pressedTab = nearest;
+            }
+            if (!pressedTab || !navEl.contains(pressedTab)) return;
             ensureSprings();
 
-            // Cancel any ongoing programmatic smooth scroll immediately to avoid coordinate competition
+            // Computed CSS scroll-behavior is now auto; pointer ownership must
+            // cancel the previous programmatic scroll before caching geometry.
             try {
-                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
-            } catch (_) {}
+                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'instant' });
+            } catch (_) {
+                navEl.scrollLeft = navEl.scrollLeft;
+            }
 
             dragPointerId = e.pointerId;
             dragStartX = e.clientX;

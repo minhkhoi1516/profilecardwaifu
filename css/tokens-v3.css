@@ -430,7 +430,9 @@ body.light-mode .banner-stage::after {
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
     padding: 4px 6px !important;
-    touch-action: pan-x pan-y;
+    /* JS owns horizontal glass dragging; native vertical page scrolling remains.
+       pan-x here allows browsers to cancel the pointer gesture on pill gaps. */
+    touch-action: pan-y pinch-zoom;
     user-select: none;
     -webkit-user-select: none;
 }
