@@ -165,27 +165,27 @@
 
     .avatar-img,
     .avatar-portrait {
-        height: 132px;
-        max-width: 126px;
+        height: 124px;
+        max-width: 119px;
         bottom: 2px;
     }
 
     .avatar-portrait[data-persona="sakuramiku"] {
-        height: 162px;
-        max-width: 154px;
+        height: 152px;
+        max-width: 145px;
         bottom: -5px;
     }
 
     .avatar-portrait[data-persona="nakanomiku"] {
-        height: 148px;
-        max-width: 140px;
+        height: 139px;
+        max-width: 132px;
         bottom: -4px;
     }
 
     .avatar-portrait[data-persona="hinako"],
     .avatar-portrait[data-persona="kaoruko"] {
-        height: 134px;
-        max-width: 128px;
+        height: 125px;
+        max-width: 121px;
         bottom: 0px;
     }
 
@@ -402,8 +402,8 @@
     }
 
     .vinyl-art {
-        height: 98px;
-        max-width: 90px;
+        height: 92px;
+        max-width: 85px;
         bottom: 2px;
         position: absolute;
         left: 50%;

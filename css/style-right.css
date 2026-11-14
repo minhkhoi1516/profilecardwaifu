@@ -296,9 +296,9 @@
     bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
-    height: 106px;
+    height: 100px;
     width: auto;
-    max-width: 96px;
+    max-width: 91px;
     object-fit: contain;
     border-radius: 0;
     display: block;
@@ -953,6 +953,8 @@
 
 .dropdown-flyout {
     position: absolute;
+    box-sizing: border-box;
+    min-height: 0;
     bottom: calc(100% + 12px);
     right: 0;
     width: 320px;
@@ -977,6 +979,12 @@
     opacity: 1;
     visibility: visible;
     transform: translateY(0) scale(1);
+}
+
+/* Preserve the popup heading while the content scrolls on shorter screens. */
+.dropdown-flyout .menu-header,
+.dropdown-flyout .playlist-header {
+    flex-shrink: 0;
 }
 
 /* Equalizer Menu */

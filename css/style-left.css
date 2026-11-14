@@ -179,9 +179,9 @@ body.light-mode .avatar-status-badge {
     bottom: 2px;
     left: 50%;
     transform: translateX(-50%);
-    height: 158px;
+    height: 148px;
     width: auto;
-    max-width: 152px;
+    max-width: 144px;
     object-fit: contain;
     filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 12px var(--color-accent-glow)) contrast(0.98) saturate(0.96);
     /* No CSS mask-image here: preserves pure alpha transparency and eliminates Chromium rectangular rasterization clamping artifacts */
@@ -193,21 +193,21 @@ body.light-mode .avatar-status-badge {
 
 /* Persona-specific optical scale balance */
 .avatar-portrait[data-persona="sakuramiku"] {
-    height: 194px;
-    max-width: 186px;
+    height: 182px;
+    max-width: 175px;
     bottom: -8px;
 }
 
 .avatar-portrait[data-persona="nakanomiku"] {
-    height: 178px;
-    max-width: 168px;
+    height: 167px;
+    max-width: 158px;
     bottom: -6px;
 }
 
 .avatar-portrait[data-persona="hinako"],
 .avatar-portrait[data-persona="kaoruko"] {
-    height: 160px;
-    max-width: 154px;
+    height: 150px;
+    max-width: 145px;
     bottom: 0px;
 }
 
@@ -215,8 +215,8 @@ body.light-mode .avatar-status-badge {
 .avatar-portrait[data-persona="shinobu"],
 .avatar-portrait[data-persona="umi"],
 .avatar-portrait[data-persona="alya"] {
-    height: 158px;
-    max-width: 152px;
+    height: 148px;
+    max-width: 144px;
     bottom: 2px;
 }
 

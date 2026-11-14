@@ -1350,12 +1350,23 @@
         menu.style.overflowY = '';
         if (window.innerWidth <= 860) return;
 
-        // Measure only when the flyout opens/resizes; never on pointermove.
+        // Tool popovers must stay BELOW the Studio Audio Suite title. On short
+        // desktop windows (or an Android phone using desktop-site mode) there
+        // is not enough room for six timer options above the action button.
+        // Clip to the available space and scroll the menu, never the whole page.
         const trigger = triggerBtn.getBoundingClientRect();
         const viewportHeight = window.visualViewport?.height || window.innerHeight;
-        const topSafe = Math.min(84, Math.max(12, Math.round(viewportHeight * 0.10)));
-        const availableAbove = Math.max(0, trigger.top - topSafe - 10);
-        const availableBelow = Math.max(0, viewportHeight - trigger.bottom - 22);
+        const suite = triggerBtn.closest?.('.studio-audio-suite');
+        const header = suite?.querySelector('.suite-header-row');
+        const headerBottom = header?.getBoundingClientRect().bottom;
+        const topSafe = Math.max(
+            16,
+            Math.min(trigger.top - 24,
+                Number.isFinite(headerBottom) ? headerBottom + 14
+                    : Math.min(96, Math.round(viewportHeight * 0.16)))
+        );
+        const availableAbove = Math.max(0, trigger.top - topSafe - 12);
+        const availableBelow = Math.max(0, viewportHeight - trigger.bottom - 16);
         const desiredHeight = Math.max(menu.scrollHeight, menu.getBoundingClientRect().height);
         const flipUp = desiredHeight > availableBelow && availableAbove > availableBelow;
         const available = flipUp ? availableAbove : availableBelow;
@@ -1363,7 +1374,8 @@
         menu.classList.toggle('is-flipped', flipUp);
         menu.style.maxHeight = Math.floor(available) + 'px';
         menu.style.overflowY = 'auto';
-        if (flipUp) menu.style.transformOrigin = 'bottom center';
+        menu.style.overscrollBehavior = 'contain';
+        menu.style.transformOrigin = flipUp ? 'bottom center' : 'top center';
     }
 
     function openFlyout(menu, triggerBtn, opts) {

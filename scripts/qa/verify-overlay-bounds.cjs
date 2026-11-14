@@ -38,6 +38,22 @@ function simulate(top, bottom, contentHeight) {
 const low = simulate(460, 504, 420);
 check(low.flipped, 'Flyout near the bottom must open upward');
 check(low.height > 0 && low.height <= 460 - 70, 'Flipped flyout exceeds its safe upper space');
+
+check(music.includes("suite?.querySelector('.suite-header-row')"), 'Missing safe-header anchor for desktop tools');
+check(right.includes('box-sizing: border-box;'), 'Flyouts must use border-box sizing');
+const header = { getBoundingClientRect: () => ({ bottom: 92 }) };
+const suite = { querySelector: selector => selector === '.suite-header-row' ? header : null };
+const placeWithHeader = new Function('window',
+    music.slice(start, end) + '\nreturn positionDesktopFlyout;')(win);
+const popup = {scrollHeight: 300,style:{},classList:{add(){},remove(){},contains(){return false},toggle(x,v){this.flipped=v}},getBoundingClientRect(){return {height:300}}};
+const triggerWithHeader = {getBoundingClientRect(){return {top:318,bottom:360}},closest(sel){return sel === '.studio-audio-suite' ? suite : null}};
+win.visualViewport.height=380; win.innerHeight=380;
+placeWithHeader(popup, triggerWithHeader);
+check(popup.classList.flipped, 'Short desktop window should flip timer upward');
+check(parseInt(popup.style.maxHeight,10) <= 318-92-14-12, 'Timer popover must not cover Studio title');
+check(popup.style.overflowY === 'auto', 'Short popover content must scroll internally');
+win.visualViewport.height=768; win.innerHeight=768;
+
 const high = simulate(105, 149, 320);
 check(!high.flipped, 'Flyout with plenty of lower space should not flip');
 check(high.height > 320, 'Flyout below trigger lacks sufficient room');
