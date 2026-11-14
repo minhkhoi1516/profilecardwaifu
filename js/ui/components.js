@@ -1090,7 +1090,7 @@
             // Computed CSS scroll-behavior is now auto; pointer ownership must
             // cancel the previous programmatic scroll before caching geometry.
             try {
-                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'instant' });
+                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
             } catch (_) {
                 navEl.scrollLeft = navEl.scrollLeft;
             }
