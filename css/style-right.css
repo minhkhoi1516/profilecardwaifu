@@ -91,11 +91,29 @@
 .audio-category-nav {
     display: flex;
     gap: 0.25rem;
-    background: rgba(15, 23, 42, 0.48);
-    padding: 4px 6px;
+    position: relative;
     border-radius: 9999px;
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
+    padding: 4px 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+    max-width: 100%;
+    touch-action: pan-y pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.audio-category-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .cat-tab {
@@ -113,10 +131,13 @@
     font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
-    transition: color 0.18s ease, transform 0.18s cubic-bezier(0.2, 0.8, 0.25, 1);
+    transition: color 0.18s ease;
     white-space: nowrap;
     user-select: none;
     -webkit-user-select: none;
+    touch-action: pan-y pinch-zoom;
+    position: relative;
+    z-index: 2;
 }
 
 .cat-tab:hover {
@@ -124,38 +145,17 @@
 }
 
 .cat-tab.active {
-    color: var(--color-text);
+    color: #ffffff;
+    font-weight: 700;
     background: transparent;
     border: none;
     box-shadow: none;
-}
-
-/* 8 persona tabs: scroll ngang thay vì bóp chữ */
-.audio-category-nav {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    /* scrollTo({behavior:'auto'}) inherits computed scroll-behavior.
-       Keeping this smooth makes pointer-down fail to interrupt the old scroll,
-       and turns every drag auto-scroll write into competing animations. */
-    scroll-behavior: auto;
-    -webkit-overflow-scrolling: touch;
-    min-width: 0;
-    max-width: 100%;
+    text-shadow: 0 0 12px var(--color-accent-glow);
 }
 
 .col-right,
 .studio-audio-suite {
     min-width: 0;
-}
-
-.audio-category-nav::-webkit-scrollbar {
-    display: none;
-}
-
-.audio-category-nav .cat-tab {
-    flex: 0 0 auto;
 }
 
 .cat-count {

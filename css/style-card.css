@@ -253,30 +253,25 @@ body.light-mode .top-action-btn:hover {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    min-width: 195px;
-    background: var(--surface-2);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    min-width: 228px;
+    max-width: min(296px, calc(100vw - 16px));
+    background: var(--surface-popup, rgba(20, 24, 36, 0.92));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid var(--color-border-active, rgba(255, 255, 255, 0.14));
+    border-radius: var(--v3-radius-popup, 20px);
     padding: 0.45rem;
-    box-shadow: var(--shadow-deep);
-    z-index: 1000;
+    box-shadow: var(--v3-shadow-popup, 0 20px 48px -10px rgba(0, 0, 0, 0.7));
+    z-index: 1050;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-8px) scale(0.96);
-    transition: none;
     pointer-events: none;
-}
-
-.top-more-menu-wrap.open .top-more-dropdown {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
+    transform-origin: var(--popup-origin-x, 100%) var(--popup-origin-y, 0%);
+    transform: scale(0.85);
+    will-change: transform, opacity;
 }
 
 .top-more-item {

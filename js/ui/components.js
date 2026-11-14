@@ -176,6 +176,7 @@
             '.panel-btn',
             '.top-action-btn',
             '.play-hero-btn',
+            '#play-pause',
             '.suite-badge-btn',
             '.cat-tab',
             '.persona-chip',
@@ -186,13 +187,17 @@
 
         const springs = new WeakMap();
 
-        function getScaleSpring(el) {
+        function getScaleSpring(el, tier) {
             let sp = springs.get(el);
             if (!sp) {
+                const preset = tier === 1
+                    ? spLib.PRESETS.HERO_BUTTON
+                    : (tier === 3 ? spLib.PRESETS.TACTILE_PRESS : spLib.PRESETS.SINK);
+
                 sp = spLib.createSpring({
                     initial: 1,
                     target: 1,
-                    preset: spLib.PRESETS.SINK,
+                    preset: preset,
                     precision: 0.002,
                     onUpdate: (val) => {
                         el.style.scale = val === 1 ? '' : val.toFixed(4);
@@ -210,15 +215,27 @@
             const target = e.target && e.target.closest ? e.target.closest(selector) : null;
             if (!target || target.disabled) return;
             activeEl = target;
-            const sinkTarget = target.id === 'play-pause' ? 0.90 : 0.94;
-            getScaleSpring(target).setTarget(sinkTarget);
+
+            // Tier 1: Expressive (Play/Pause hero)
+            if (target.id === 'play-pause' || target.classList.contains('play-hero-btn')) {
+                getScaleSpring(target, 1).setTarget(0.88);
+            }
+            // Tier 3: Minimal feedback (category tabs, pills, chips)
+            else if (target.classList.contains('cat-tab') || target.classList.contains('quality-option-btn') || target.classList.contains('social-link-pill')) {
+                getScaleSpring(target, 3).setTarget(0.97);
+            }
+            // Tier 2: Functional (control buttons, top buttons, persona chips)
+            else {
+                getScaleSpring(target, 2).setTarget(0.93);
+            }
         }, { passive: true });
 
         const release = () => {
             if (!activeEl) return;
             const el = activeEl;
             activeEl = null;
-            getScaleSpring(el).setTarget(1);
+            const tier = (el.id === 'play-pause' || el.classList.contains('play-hero-btn')) ? 1 : 2;
+            getScaleSpring(el, tier).setTarget(1);
         };
 
         doc.addEventListener('pointerup', release, { passive: true });
@@ -261,16 +278,15 @@
 
         const spLib = Spring();
         const applyFraction = (f) => {
-            const clamped = Math.max(0, Math.min(1.06, f));
-            const scaleVal = 0.15 + 0.85 * clamped;
-            const clipBottom = Math.max(0, (1 - Math.min(1, clamped)) * 88);
-            const alpha = Math.max(0, Math.min(1, clamped * 1.45));
+            const clamped = Math.max(0, Math.min(1.04, f));
+            // Miuix natural listpopup scale: starts at 0.84 and gently settles at 1.0
+            const scaleVal = 0.84 + 0.16 * clamped;
+            const alpha = Math.max(0, Math.min(1, clamped * 1.35));
 
             dropdown.style.transformOrigin = `${popupOriginX} ${popupOriginY}`;
             dropdown.style.transform = `scale(${scaleVal.toFixed(4)})`;
             dropdown.style.opacity = alpha.toFixed(3);
-            dropdown.style.clipPath = clamped >= 0.985 ? 'none' : `inset(0px 0px ${clipBottom.toFixed(1)}% 0px round 20px)`;
-            scrim.style.opacity = Math.min(1, Math.max(0, clamped)).toFixed(3);
+            scrim.style.opacity = Math.min(1, Math.max(0, clamped * 0.95)).toFixed(3);
         };
 
         const fractionSpring = spLib
@@ -764,8 +780,9 @@
     }
 
     // ----------------------------------------------------------------------
-    // 7. MIUIX iOS-LIKE LIQUID GLASS TABROW & NAVIGATION INDICATOR
-    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt, Glasmio
+    // 7. MINKOI V4 · ORGANIC LIQUID GLASS NAVIGATION REBORN
+    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt, Glasmio Physics
+    // Directional Trailing-Edge Stretch, Damped Boundary Resistance, Velocity Fling
     // ----------------------------------------------------------------------
     const liquidNavInstances = new WeakMap();
 
@@ -813,57 +830,49 @@
         navEl.classList.add('has-liquid-nav');
 
         const spLib = Spring();
-        let xSp = null;
-        let wSp = null;
-        let scaleXSp = null;
-        let suppressClickUntil = 0;
+        const velocityTracker = spLib && typeof spLib.createVelocityTracker === 'function'
+            ? spLib.createVelocityTracker()
+            : null;
+
+        let leftSpring = null;
+        let rightSpring = null;
+        let scaleYSpring = null;
+
         let gestureState = 'idle'; // 'idle' | 'pressed' | 'dragging' | 'settling'
         let dragPointerId = null;
         let dragStartX = 0;
         let dragStartY = 0;
-        let lastPointerClientX = 0;
-        let lastPointerTime = 0;
-        let dragVelocity = 0;
+        let targetPointerClientX = 0;
+        let suppressClickUntil = 0;
         let autoScrollRaf = 0;
-        let lastRenderedW = -1;
+        let dragRaf = 0;
 
-        // Cached layout during drag to prevent synchronous layout thrashing (0ms move frames)
+        // Cached geometry during active gestures (zero layout thrashing during moves)
         let cachedNavRectLeft = 0;
         let cachedNavRectRight = 0;
         let cachedTabs = [];
         let grabOffset = 0;
-        let dragStartIndicatorW = 64;
-        let dragStartIndicatorX = 0;
+        let baseTabWidth = 64;
         let minContentX = 0;
         let maxContentX = 0;
-        let dragVisualX = 0;
 
-        function renderTransform(x, w, sx, sy) {
-            const ind = ensureIndicator();
-            if (!ind) return;
-            const safeX = Number.isFinite(x) ? x : 0;
-            const safeW = Number.isFinite(w) ? Math.max(16, w) : 48;
-            const safeSx = Number.isFinite(sx) ? sx : 1;
-            const safeSy = Number.isFinite(sy) ? sy : 1;
-            if (Math.abs(lastRenderedW - safeW) >= 0.5) {
-                ind.style.width = `${safeW.toFixed(1)}px`;
-                lastRenderedW = safeW;
-            }
-            ind.style.transform = `translate3d(${safeX.toFixed(1)}px, 0, 0) scale(${safeSx.toFixed(3)}, ${safeSy.toFixed(3)})`;
-        }
+        // Authoritative current physical bounds of the liquid capsule
+        let currentLeft = 0;
+        let currentRight = 64;
+        let lastRenderedWidth = -1;
 
         function getActiveTab() {
             return navEl.querySelector('.cat-tab.active') || navEl.querySelector('.cat-tab');
         }
 
-        function getCandidateTab() {
+        function getCandidateTab(projX) {
             if (!cachedTabs || !cachedTabs.length) return null;
-            const indicatorCenter = dragVisualX + dragStartIndicatorW / 2;
+            const searchCenter = Number.isFinite(projX) ? projX : (currentLeft + currentRight) / 2;
             let best = null;
             let minDist = Infinity;
             for (let i = 0; i < cachedTabs.length; i++) {
                 const item = cachedTabs[i];
-                const dist = Math.abs(indicatorCenter - item.center);
+                const dist = Math.abs(searchCenter - item.center);
                 if (dist < minDist) {
                     minDist = dist;
                     best = item;
@@ -872,36 +881,27 @@
             return best;
         }
 
-        function updateIndicatorPosition(clientX) {
-            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
-            const rawX = fingerContentX - grabOffset;
-            let curX = rawX;
+        function renderCapsule(left, right) {
+            const ind = ensureIndicator();
+            if (!ind) return;
+            const safeLeft = Number.isFinite(left) ? left : 0;
+            const safeRight = Number.isFinite(right) ? Math.max(safeLeft + 16, right) : safeLeft + 64;
+            const w = Math.max(16, safeRight - safeLeft);
 
-            if (curX < minContentX) {
-                const overshoot = curX - minContentX;
-                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
-                curX = minContentX + damped;
-            } else if (curX > maxContentX) {
-                const overshoot = curX - maxContentX;
-                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.3;
-                curX = maxContentX + damped;
+            // Compute volume-preserving squash
+            const standardW = Math.max(16, baseTabWidth);
+            const stretchRatio = Math.max(0.85, Math.min(1.45, w / standardW));
+            const squashRatio = Math.max(0.82, Math.min(1.12, 1 / Math.sqrt(stretchRatio)));
+
+            if (Math.abs(lastRenderedWidth - w) >= 0.5) {
+                ind.style.width = `${w.toFixed(1)}px`;
+                lastRenderedWidth = w;
             }
-
-            let stretchX = 1;
-            const accessibleReduction = spLib && (spLib.isAccessibilityReducedMotion
-                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion());
-            if (!accessibleReduction) {
-                const speedAbs = Math.abs(dragVelocity);
-                stretchX = 1 + Math.min(0.24, Math.abs(rawX - dragStartIndicatorX) / 220 + speedAbs * 0.00015);
-            }
-            const squashY = 1 / Math.sqrt(stretchX);
-
-            dragVisualX = curX;
-            renderTransform(curX, dragStartIndicatorW, stretchX, squashY);
+            ind.style.transform = `translate3d(${safeLeft.toFixed(1)}px, 0, 0) scale(1, ${squashRatio.toFixed(3)})`;
         }
 
-        function updateCandidateHighlight() {
-            const candidate = getCandidateTab();
+        function updateCandidateHighlight(projCenter) {
+            const candidate = getCandidateTab(projCenter);
             if (cachedTabs) {
                 for (let i = 0; i < cachedTabs.length; i++) {
                     const item = cachedTabs[i];
@@ -910,104 +910,145 @@
             }
         }
 
-        // All spring callbacks render from a single coherent state. Earlier
-        // x/width/stretch callbacks overwrote each other's transform mid-frame.
-        function renderSpringFrame() {
-            if (gestureState === 'dragging' || !xSp) return;
-            const reduced = spLib && (spLib.isAccessibilityReducedMotion
-                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion());
-            const dynamicStretch = reduced ? 1
-                : 1 + Math.min(0.12, Math.abs(xSp.velocity || 0) * 0.00016);
-            const scale = Math.max(0.88, Math.min(1.18,
-                (scaleXSp ? scaleXSp.value : 1) * dynamicStretch));
-            renderTransform(xSp.value, wSp ? wSp.value : 64, scale, 1 / Math.sqrt(scale));
+        function computePhysicalDrag(clientX) {
+            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+            const rawX = fingerContentX - grabOffset;
+
+            const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
+            const speed = Math.abs(vel);
+            const isMovingRight = vel >= 0;
+
+            // Physical trailing stretch: trailing edge lags based on momentum, capped at 46px
+            const trailStretch = Math.min(46, speed * 0.032 + Math.abs(rawX - currentLeft) * 0.12);
+
+            let nextLeft = rawX;
+            let nextRight = rawX + baseTabWidth;
+
+            if (isMovingRight) {
+                // Leading edge is right, trailing edge is left
+                nextRight = rawX + baseTabWidth;
+                nextLeft = nextRight - baseTabWidth - trailStretch;
+            } else {
+                // Leading edge is left, trailing edge is right
+                nextLeft = rawX;
+                nextRight = nextLeft + baseTabWidth + trailStretch;
+            }
+
+            // Damped elastic resistance at container edges (Miuix obtainDampingDistance)
+            if (nextLeft < minContentX) {
+                const overshoot = nextLeft - minContentX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.28;
+                nextLeft = minContentX + damped;
+                nextRight = nextLeft + Math.max(24, (baseTabWidth + trailStretch) * 0.9);
+            } else if (nextRight > maxContentX) {
+                const overshoot = nextRight - maxContentX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.28;
+                nextRight = maxContentX + damped;
+                nextLeft = nextRight - Math.max(24, (baseTabWidth + trailStretch) * 0.9);
+            }
+
+            currentLeft = nextLeft;
+            currentRight = nextRight;
+
+            renderCapsule(currentLeft, currentRight);
+
+            // Projected center for predictive fling selection
+            const projCenter = (currentLeft + currentRight) / 2 + vel * 0.045;
+            updateCandidateHighlight(projCenter);
         }
 
         function ensureSprings() {
             ensureIndicator();
-            if (xSp && wSp && scaleXSp) return;
+            if (leftSpring && rightSpring) return;
             const activeTab = getActiveTab();
             const initX = activeTab ? activeTab.offsetLeft : 0;
             const initW = activeTab ? activeTab.offsetWidth : 64;
 
             if (!spLib) {
-                renderTransform(initX, initW, 1, 1);
+                currentLeft = initX;
+                currentRight = initX + initW;
+                renderCapsule(currentLeft, currentRight);
                 return;
             }
 
-            const preset = spLib.PRESETS.LIQUID_GLASS || spLib.PRESETS.TAB_PILL;
-            const stretchPreset = spLib.PRESETS.LIQUID_STRETCH || preset;
+            const edgePreset = spLib.PRESETS.EDGE_LEADING || spLib.PRESETS.LIQUID_GLASS;
+            const trailPreset = spLib.PRESETS.EDGE_TRAILING || spLib.PRESETS.LIQUID_STRETCH;
 
-            xSp = spLib.createSpring({
+            const onSpringUpdate = () => {
+                if (gestureState === 'dragging') return;
+                currentLeft = leftSpring ? leftSpring.value : currentLeft;
+                currentRight = rightSpring ? rightSpring.value : currentRight;
+                renderCapsule(currentLeft, currentRight);
+            };
+
+            leftSpring = spLib.createSpring({
                 initial: initX,
                 target: initX,
+                preset: edgePreset,
                 allowEcoMotion: true,
-                dampingRatio: preset.dampingRatio,
-                stiffness: preset.stiffness,
-                precision: 0.25,
-                onUpdate: () => renderSpringFrame()
+                precision: 0.2,
+                onUpdate: onSpringUpdate
             });
 
-            wSp = spLib.createSpring({
-                initial: initW,
-                target: initW,
+            rightSpring = spLib.createSpring({
+                initial: initX + initW,
+                target: initX + initW,
+                preset: trailPreset,
                 allowEcoMotion: true,
-                dampingRatio: preset.dampingRatio,
-                stiffness: preset.stiffness,
-                precision: 0.25,
-                onUpdate: () => renderSpringFrame()
+                precision: 0.2,
+                onUpdate: onSpringUpdate
             });
 
-            scaleXSp = spLib.createSpring({
-                initial: 1,
-                target: 1,
-                allowEcoMotion: true,
-                dampingRatio: stretchPreset.dampingRatio,
-                stiffness: stretchPreset.stiffness,
-                precision: 0.005,
-                onUpdate: () => renderSpringFrame()
-            });
-
-            renderTransform(initX, initW, 1, 1);
+            currentLeft = initX;
+            currentRight = initX + initW;
+            baseTabWidth = initW;
+            renderCapsule(currentLeft, currentRight);
         }
 
         function syncIndicator() {
             if (gestureState === 'dragging' || gestureState === 'pressed') return;
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
-            if (wasDetached) lastRenderedW = -1;
+            if (wasDetached) lastRenderedWidth = -1;
+
             const activeTab = getActiveTab();
             if (!activeTab) return;
-            const targetX = activeTab.offsetLeft;
-            const targetW = activeTab.offsetWidth;
-            if (!targetW) {
+            const targetLeft = activeTab.offsetLeft;
+            const targetWidth = activeTab.offsetWidth;
+            const targetRight = targetLeft + targetWidth;
+
+            if (!targetWidth) {
                 global.requestAnimationFrame(() => syncIndicator());
                 return;
             }
 
+            baseTabWidth = targetWidth;
             ensureSprings();
 
-            // Rebuilds via innerHTML detach the glass lens even when spring targets stay put.
-            if (wasDetached) {
-                if (xSp) xSp.snap(targetX);
-                if (wSp) wSp.snap(targetW);
-                if (scaleXSp) scaleXSp.snap(1);
-                renderTransform(targetX, targetW, 1, 1);
-                return;
-            }
-
-            if (!spLib || (spLib.isAccessibilityReducedMotion
+            if (wasDetached || !spLib || (spLib.isAccessibilityReducedMotion
                 ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion())) {
-                if (xSp) xSp.snap(targetX);
-                if (wSp) wSp.snap(targetW);
-                if (scaleXSp) scaleXSp.snap(1);
-                renderTransform(targetX, targetW, 1, 1);
+                if (leftSpring) leftSpring.snap(targetLeft);
+                if (rightSpring) rightSpring.snap(targetRight);
+                currentLeft = targetLeft;
+                currentRight = targetRight;
+                renderCapsule(targetLeft, targetRight);
                 return;
             }
 
-            xSp.setTarget(targetX);
-            wSp.setTarget(targetW);
-            scaleXSp.setTarget(1);
+            // Directional spring targeting
+            const movingRight = targetLeft > currentLeft;
+            const leadPreset = spLib.PRESETS.EDGE_LEADING;
+            const trailPreset = spLib.PRESETS.EDGE_TRAILING;
+
+            if (leftSpring && rightSpring) {
+                if (movingRight) {
+                    rightSpring.setTarget(targetRight, { dampingRatio: leadPreset.dampingRatio, stiffness: leadPreset.stiffness });
+                    leftSpring.setTarget(targetLeft, { dampingRatio: trailPreset.dampingRatio, stiffness: trailPreset.stiffness });
+                } else {
+                    leftSpring.setTarget(targetLeft, { dampingRatio: leadPreset.dampingRatio, stiffness: leadPreset.stiffness });
+                    rightSpring.setTarget(targetRight, { dampingRatio: trailPreset.dampingRatio, stiffness: trailPreset.stiffness });
+                }
+            }
         }
 
         function startAutoScroll() {
@@ -1023,26 +1064,20 @@
                 const rightBoundary = cachedNavRectRight - edgeZone;
                 let speed = 0;
 
-                if (lastPointerClientX < leftBoundary) {
-                    const ratio = Math.min(1, Math.max(0, (leftBoundary - lastPointerClientX) / edgeZone));
-                    speed = -Math.round(ratio * 14);
-                } else if (lastPointerClientX > rightBoundary) {
-                    const ratio = Math.min(1, Math.max(0, (lastPointerClientX - rightBoundary) / edgeZone));
-                    speed = Math.round(ratio * 14);
+                if (targetPointerClientX < leftBoundary) {
+                    const ratio = Math.min(1, Math.max(0, (leftBoundary - targetPointerClientX) / edgeZone));
+                    speed = -Math.round(ratio * 12);
+                } else if (targetPointerClientX > rightBoundary) {
+                    const ratio = Math.min(1, Math.max(0, (targetPointerClientX - rightBoundary) / edgeZone));
+                    speed = Math.round(ratio * 12);
                 }
 
-                if (speed === 0) {
-                    autoScrollRaf = 0;
-                    return;
-                }
                 if (speed !== 0) {
                     const maxScroll = navEl.scrollWidth - navEl.clientWidth;
                     const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
                     if (nextScroll !== navEl.scrollLeft) {
                         navEl.scrollLeft = nextScroll;
-                        // Synchronously re-render transform in the exact same frame to eliminate freeze/lag
-                        updateIndicatorPosition(lastPointerClientX);
-                        updateCandidateHighlight();
+                        computePhysicalDrag(targetPointerClientX);
                     }
                 }
 
@@ -1062,12 +1097,11 @@
         function onPointerDown(e) {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
             if (gestureState === 'dragging' || e.isPrimary === false) return;
-            // Treat the entire liquid track as one draggable surface, including
-            // the small gaps between categories. Native taps on buttons still
-            // select their categories via music.js.
+
             let pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
             const activeTab = getActiveTab();
             if (!activeTab) return;
+
             if (!pressedTab && (e.target === navEl || navEl.contains(e.target))) {
                 const rect = navEl.getBoundingClientRect();
                 const pos = e.clientX - rect.left + navEl.scrollLeft;
@@ -1076,19 +1110,19 @@
                 let minDistance = Infinity;
                 buttons.forEach(tab => {
                     const center = tab.offsetLeft + tab.offsetWidth * 0.5;
-                    const distance = Math.abs(center - pos);
-                    if (distance < minDistance) {
+                    const dist = Math.abs(center - pos);
+                    if (dist < minDistance) {
                         nearest = tab;
-                        minDistance = distance;
+                        minDistance = dist;
                     }
                 });
                 pressedTab = nearest;
             }
             if (!pressedTab || !navEl.contains(pressedTab)) return;
+
             ensureSprings();
 
-            // Computed CSS scroll-behavior is now auto; pointer ownership must
-            // cancel the previous programmatic scroll before caching geometry.
+            // Cancel any ongoing programmatic scroll
             try {
                 navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
             } catch (_) {
@@ -1098,9 +1132,12 @@
             dragPointerId = e.pointerId;
             dragStartX = e.clientX;
             dragStartY = e.clientY;
-            lastPointerClientX = e.clientX;
-            lastPointerTime = performance.now();
-            dragVelocity = 0;
+            targetPointerClientX = e.clientX;
+
+            if (velocityTracker) {
+                velocityTracker.reset();
+                velocityTracker.addPoint(e.clientX, e.clientY);
+            }
 
             const navRect = navEl.getBoundingClientRect();
             cachedNavRectLeft = navRect.left;
@@ -1115,63 +1152,57 @@
                 cat: t.dataset.cat
             }));
 
-            const activeItem = cachedTabs.find(t => t.el === activeTab);
-            // Anchor at the category under the finger. The glass starts moving
-            // toward it on press and then tracks the finger on horizontal drag.
-            const pressedItem = cachedTabs.find(t => t.el === pressedTab) || activeItem;
-            dragStartIndicatorX = pressedItem ? pressedItem.left : activeTab.offsetLeft;
-            dragStartIndicatorW = pressedItem ? pressedItem.width : activeTab.offsetWidth;
-            dragVisualX = dragStartIndicatorX;
+            const pressedItem = cachedTabs.find(t => t.el === pressedTab) || cachedTabs.find(t => t.el === activeTab);
+            baseTabWidth = pressedItem ? pressedItem.width : activeTab.offsetWidth;
+            const anchorLeft = pressedItem ? pressedItem.left : activeTab.offsetLeft;
 
             minContentX = cachedTabs.length ? cachedTabs[0].left : 0;
             maxContentX = cachedTabs.length
-                ? cachedTabs[cachedTabs.length - 1].left + cachedTabs[cachedTabs.length - 1].width - dragStartIndicatorW
-                : 300;
+                ? cachedTabs[cachedTabs.length - 1].left + cachedTabs[cachedTabs.length - 1].width
+                : 360;
 
             const fingerContentX = e.clientX - cachedNavRectLeft + navEl.scrollLeft;
-            grabOffset = fingerContentX - dragStartIndicatorX;
+            grabOffset = fingerContentX - anchorLeft;
 
             gestureState = 'pressed';
+
+            // Subtle tactile compress
             if (pressedTab !== activeTab) {
-                // Visual preview only; do not commit the playlist before release.
-                if (xSp) xSp.setTarget(dragStartIndicatorX);
-                if (wSp) wSp.setTarget(dragStartIndicatorW);
+                if (leftSpring) leftSpring.setTarget(anchorLeft);
+                if (rightSpring) rightSpring.setTarget(anchorLeft + baseTabWidth);
             }
         }
 
         function onPointerMove(e) {
             if (dragPointerId === null || e.pointerId !== dragPointerId) return;
 
-            const now = performance.now();
-            const dt = Math.max(1, now - lastPointerTime);
-            dragVelocity = (e.clientX - lastPointerClientX) / (dt / 1000);
-            lastPointerClientX = e.clientX;
-            lastPointerTime = now;
+            if (velocityTracker) {
+                velocityTracker.addPoint(e.clientX, e.clientY);
+            }
+            targetPointerClientX = e.clientX;
 
             const deltaX = e.clientX - dragStartX;
             const deltaY = e.clientY - dragStartY;
 
             if (gestureState === 'pressed') {
                 if (Math.abs(deltaY) > 7 && Math.abs(deltaY) > Math.abs(deltaX)) {
-                    // Yield gesture to native vertical scrolling
+                    // Immediate natural surrender to vertical page scroll
                     gestureState = 'idle';
                     dragPointerId = null;
-                    // A vertical page scroll cancels the uncommitted glass preview.
                     syncIndicator();
                     return;
                 }
 
-                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY) * 0.8) {
+                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY) * 0.75) {
                     gestureState = 'dragging';
                     navEl.classList.add('is-liquid-dragging');
                     if (indicator) indicator.classList.add('is-dragging');
                     try {
                         navEl.setPointerCapture(e.pointerId);
                     } catch (_) {}
-                    // Finger owns the lens now: stop outstanding spring motions.
-                    if (xSp) xSp.snap(dragVisualX);
-                    if (wSp) wSp.snap(dragStartIndicatorW);
-                    if (scaleXSp) scaleXSp.snap(1);
+                    // Halt previous springs during direct finger control
+                    if (leftSpring) leftSpring.snap(currentLeft);
+                    if (rightSpring) rightSpring.snap(currentRight);
                 }
             }
 
@@ -1179,8 +1210,14 @@
 
             e.preventDefault();
 
-            updateIndicatorPosition(e.clientX);
-            updateCandidateHighlight();
+            if (!dragRaf) {
+                dragRaf = global.requestAnimationFrame(() => {
+                    dragRaf = 0;
+                    if (gestureState === 'dragging') {
+                        computePhysicalDrag(targetPointerClientX);
+                    }
+                });
+            }
             startAutoScroll();
         }
 
@@ -1190,6 +1227,10 @@
             dragPointerId = null;
 
             stopAutoScroll();
+            if (dragRaf) {
+                global.cancelAnimationFrame(dragRaf);
+                dragRaf = 0;
+            }
 
             try {
                 if (navEl.hasPointerCapture(capturedPointerId)) {
@@ -1212,46 +1253,50 @@
             }
 
             if (wasDragging && !cancelled) {
-                const targetItem = getCandidateTab();
+                const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
+                const projCenter = (currentLeft + currentRight) / 2 + vel * 0.045;
+                const targetItem = getCandidateTab(projCenter);
                 const targetTab = targetItem ? targetItem.el : getActiveTab();
+
                 if (targetTab) {
                     const targetCat = targetTab.dataset.cat;
-                    const targetX = targetTab.offsetLeft;
-                    const targetW = targetTab.offsetWidth;
+                    const targetLeft = targetTab.offsetLeft;
+                    const targetWidth = targetTab.offsetWidth;
+                    const targetRight = targetLeft + targetWidth;
+                    baseTabWidth = targetWidth;
 
-                    if (xSp) {
-                        /* Start spring at the visually rendered (rubberband-clamped) X.
-                         * Raw pointer delta here would jump the lens on release. */
-                        xSp.snap(dragVisualX);
-                        xSp.impulse(Math.max(-2000, Math.min(2000, dragVelocity)) * 0.12);
-                        xSp.setTarget(targetX, {
+                    if (leftSpring && rightSpring) {
+                        leftSpring.snap(currentLeft);
+                        rightSpring.snap(currentRight);
+
+                        // Inherit fling impulse
+                        const impulse = Math.max(-1800, Math.min(1800, vel)) * 0.14;
+                        leftSpring.impulse(impulse);
+                        rightSpring.impulse(impulse);
+
+                        leftSpring.setTarget(targetLeft, {
                             onComplete: () => {
                                 gestureState = 'idle';
                             }
                         });
+                        rightSpring.setTarget(targetRight);
                     } else {
                         gestureState = 'idle';
-                    }
-                    if (wSp) wSp.setTarget(targetW);
-                    if (scaleXSp) {
-                        scaleXSp.snap(1.15);
-                        scaleXSp.setTarget(1);
+                        currentLeft = targetLeft;
+                        currentRight = targetRight;
+                        renderCapsule(targetLeft, targetRight);
                     }
 
                     if (typeof instance.onSelect === 'function') {
-                        // Edge auto-scroll already places the dragged category in view.
-                        // Do not start a second smooth-scroll while the spring settles.
                         instance.onSelect(targetCat, { fromLiquidDrag: true });
                     }
                 } else {
                     gestureState = 'idle';
+                    syncIndicator();
                 }
-            } else if (cancelled && wasDragging) {
-                gestureState = 'idle';
-                syncIndicator();
             } else {
                 gestureState = 'idle';
-                if (cancelled) syncIndicator();
+                syncIndicator();
             }
         }
 
@@ -1262,13 +1307,9 @@
         const onNavClick = (e) => {
             if (performance.now() < suppressClickUntil) {
                 e.preventDefault();
-                // stopPropagation doesn't block music.js's listener on this same node.
                 e.stopImmediatePropagation();
             }
-            // Native clicks are handled by music.js; onSelect is used for drags only.
         };
-        // Capture before music.js's delegated bubble listener; otherwise a
-        // post-drag synthetic click can select a different tab twice.
         navEl.addEventListener('click', onNavClick, true);
 
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
@@ -1305,6 +1346,10 @@
                     resizeObserver = null;
                 }
                 stopAutoScroll();
+                if (dragRaf) {
+                    global.cancelAnimationFrame(dragRaf);
+                    dragRaf = 0;
+                }
                 dragPointerId = null;
                 gestureState = 'idle';
                 navEl.classList.remove('is-liquid-dragging');
@@ -1314,9 +1359,9 @@
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);
                 global.removeEventListener('pointercancel', onPointerCancel);
-                if (xSp) xSp.destroy();
-                if (wSp) wSp.destroy();
-                if (scaleXSp) scaleXSp.destroy();
+                if (leftSpring) leftSpring.destroy();
+                if (rightSpring) rightSpring.destroy();
+                if (scaleYSpring) scaleYSpring.destroy();
                 liquidNavInstances.delete(navEl);
             }
         };

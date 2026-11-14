@@ -1,8 +1,8 @@
 /* ==========================================================================
-   MINKOI V3 · MIUIX SPRING PHYSICS ENGINE
+   MINKOI V4 · MIUIX NATURAL MOTION PHYSICS ENGINE
    Semi-implicit Euler spring integration (F = -kx - cv), interruptible with
-   velocity preservation and automatic sleep at equilibrium.
-   Reference: Miuix SpringUtils.kt, PressFeedback.kt, ListPopup.kt, Switch.kt
+   velocity preservation, directional edge springs, and multi-property groups.
+   Reference: Miuix SpringUtils.kt, PressFeedback.kt, ListPopup.kt, Lens.kt
    ========================================================================== */
 (function (global) {
     'use strict';
@@ -31,7 +31,12 @@
         TAB_PILL: Object.freeze({ dampingRatio: 0.85, stiffness: 480 }),
         LIQUID_GLASS: Object.freeze({ dampingRatio: 0.84, stiffness: 440 }),
         LIQUID_DRAG: Object.freeze({ dampingRatio: 0.92, stiffness: 1200 }),
-        LIQUID_STRETCH: Object.freeze({ dampingRatio: 0.76, stiffness: 520 })
+        LIQUID_STRETCH: Object.freeze({ dampingRatio: 0.76, stiffness: 520 }),
+        // V4.0 Natural Physics Additions
+        EDGE_LEADING: Object.freeze(folmeSpring(0.92, 0.26)),
+        EDGE_TRAILING: Object.freeze(folmeSpring(0.78, 0.38)),
+        HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
+        TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22))
     });
 
     const activeSprings = new Set();
@@ -281,10 +286,131 @@
         return spring;
     }
 
+    /**
+     * V4.0 High-Precision Velocity Tracker for Fluid Physical Gestures
+     */
+    function createVelocityTracker() {
+        const samples = [];
+        const MAX_WINDOW_MS = 120;
+
+        return {
+            reset() {
+                samples.length = 0;
+            },
+            addPoint(x, y) {
+                const now = performance.now();
+                samples.push({ x: Number(x) || 0, y: Number(y) || 0, time: now });
+                // Prune old samples
+                while (samples.length > 2 && (now - samples[0].time) > MAX_WINDOW_MS) {
+                    samples.shift();
+                }
+            },
+            getVelocity() {
+                if (samples.length < 2) return { vx: 0, vy: 0 };
+                const newest = samples[samples.length - 1];
+                const oldest = samples[0];
+                const dt = (newest.time - oldest.time) / 1000;
+                if (dt <= 0.005) return { vx: 0, vy: 0 };
+                return {
+                    vx: Math.max(-4000, Math.min(4000, (newest.x - oldest.x) / dt)),
+                    vy: Math.max(-4000, Math.min(4000, (newest.y - oldest.y) / dt))
+                };
+            }
+        };
+    }
+
+    /**
+     * V4.0 Coordinated Multi-Property Spring Group (Zero Transform Clashes)
+     */
+    function createSpringGroup(definitions, options) {
+        const opts = options || {};
+        const springs = {};
+        const values = {};
+        let isAnyRunning = false;
+        const keys = Object.keys(definitions || {});
+
+        const notifyRender = () => {
+            if (typeof opts.onRender === 'function') {
+                for (let i = 0; i < keys.length; i++) {
+                    values[keys[i]] = springs[keys[i]].value;
+                }
+                opts.onRender(values, springs);
+            }
+        };
+
+        for (let i = 0; i < keys.length; i++) {
+            const k = keys[i];
+            const def = definitions[k] || {};
+            springs[k] = createSpring({
+                initial: def.initial || 0,
+                target: def.target !== undefined ? def.target : (def.initial || 0),
+                preset: def.preset,
+                dampingRatio: def.dampingRatio,
+                stiffness: def.stiffness,
+                precision: def.precision,
+                velocityPrecision: def.velocityPrecision,
+                allowEcoMotion: def.allowEcoMotion !== false,
+                onUpdate: () => notifyRender(),
+                onComplete: () => {
+                    checkGroupComplete();
+                }
+            });
+            values[k] = springs[k].value;
+        }
+
+        function checkGroupComplete() {
+            let stillRunning = false;
+            for (let i = 0; i < keys.length; i++) {
+                if (springs[keys[i]].running) {
+                    stillRunning = true;
+                    break;
+                }
+            }
+            if (!stillRunning && isAnyRunning) {
+                isAnyRunning = false;
+                if (typeof opts.onComplete === 'function') {
+                    opts.onComplete(values);
+                }
+            }
+        }
+
+        return {
+            springs,
+            values,
+            setTargets(targets) {
+                isAnyRunning = true;
+                const tKeys = Object.keys(targets || {});
+                for (let i = 0; i < tKeys.length; i++) {
+                    const tk = tKeys[i];
+                    if (springs[tk]) {
+                        springs[tk].setTarget(targets[tk]);
+                    }
+                }
+            },
+            snap(targetValues) {
+                const tKeys = Object.keys(targetValues || {});
+                for (let i = 0; i < tKeys.length; i++) {
+                    const tk = tKeys[i];
+                    if (springs[tk]) {
+                        springs[tk].snap(targetValues[tk]);
+                    }
+                }
+                notifyRender();
+            },
+            destroy() {
+                for (let i = 0; i < keys.length; i++) {
+                    springs[keys[i]].destroy();
+                }
+            }
+        };
+    }
+
     global.MinkoiSpring = Object.freeze({
         PRESETS: PRESETS,
         folmeSpring: folmeSpring,
         createSpring: createSpring,
+        createSpringGroup: createSpringGroup,
+        createVelocityTracker: createVelocityTracker,
         obtainDampingDistance: obtainDampingDistance,
         isReducedMotion: shouldInstantSnap,
         isAccessibilityReducedMotion: isAccessibilityReducedMotion,

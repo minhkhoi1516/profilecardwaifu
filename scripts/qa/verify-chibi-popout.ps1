@@ -288,6 +288,11 @@ try {
     Start-Sleep -Milliseconds 400
     Save-Screenshot "docs/screenshots/v3_6_popout_sakuramiku.png"
 
+    # Switch to Kaoruko Waguri (index 2 in config.js) and take screenshot
+    [void](Eval-JS "window.setPersona(2, false)")
+    Start-Sleep -Milliseconds 400
+    Save-Screenshot "docs/screenshots/v3_6_popout_kaoruko.png"
+
     # Reset back to Alya
     [void](Eval-JS "window.setPersona(0, false)")
     Start-Sleep -Milliseconds 200
@@ -323,10 +328,17 @@ try {
             indicatorVisible: ind ? (window.getComputedStyle(ind).display !== 'none') : false,
             indicatorWidth: indR ? Math.round(indR.width) : 0,
             tabCount: tabs ? tabs.length : 0,
-            vinylArtHeight: vR ? Math.round(vR.height) : 0
+            vinylArtHeight: vR ? Math.round(vR.height) : 0,
+            indExists: !!ind,
+            indStyleWidth: ind ? ind.style.width : null,
+            indStyleTransform: ind ? ind.style.transform : null,
+            indOffsetWidth: ind ? ind.offsetWidth : null,
+            navClass: nav ? nav.className : null
         };
     })()
 '@
+
+    # Clean diagnostics
 
     $mobilePopoutPass = $mobileCheck.protrusion -ge 12
     $mobileNavPass = $mobileCheck.navVisible -and ($mobileCheck.indicatorWidth -gt 0)
@@ -351,6 +363,7 @@ try {
     if (Test-Path $brainDir) {
         Copy-Item "docs/screenshots/v3_6_popout_alya.png" (Join-Path $brainDir "v3_6_popout_alya.png") -Force
         Copy-Item "docs/screenshots/v3_6_popout_sakuramiku.png" (Join-Path $brainDir "v3_6_popout_sakuramiku.png") -Force
+        Copy-Item "docs/screenshots/v3_6_popout_kaoruko.png" (Join-Path $brainDir "v3_6_popout_kaoruko.png") -Force
         Copy-Item "docs/screenshots/v3_6_popout_mobile.png" (Join-Path $brainDir "v3_6_popout_mobile.png") -Force
         Write-Host "`nCopied screenshots to artifact directory." -ForegroundColor Gray
     }
