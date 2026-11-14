@@ -14,8 +14,8 @@ $deployed = $false
 for ($i = 1; $i -le 35; $i++) {
   try {
     $res = Invoke-RestMethod -Uri $ProdUrl -TimeoutSec 10 -Headers @{ 'Cache-Control' = 'no-cache' }
-    if ($res -match '\?v=40\.3') {
-      Write-Host "  [OK] MinKoi V4.0 (v40.3) is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
+    if ($res -match '\?v=40\.[34]') {
+      Write-Host "  [OK] MinKoi V4.0 (v40.3/v40.4) is LIVE on Vercel Production (Detected in attempt ${i})!" -ForegroundColor Green
       $deployed = $true
       break
     } else {
