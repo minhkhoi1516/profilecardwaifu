@@ -38,10 +38,15 @@
     let rafId = 0;
     let lastTimestamp = 0;
 
-    function shouldInstantSnap() {
-        if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            return true;
-        }
+    function isAccessibilityReducedMotion() {
+        return Boolean(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    }
+
+    // Eco removes expensive rendering effects; the liquid tab's lightweight
+    // physics may opt in to motion. Accessibility reduced-motion always wins.
+    function shouldInstantSnap(allowEcoMotion = false) {
+        if (isAccessibilityReducedMotion()) return true;
+        if (allowEcoMotion) return false;
         const docBody = global.document && global.document.body;
         return Boolean(docBody && (docBody.getAttribute('data-quality') === 'eco' || docBody.classList.contains('low-end')));
     }
@@ -198,6 +203,7 @@
         const initTarget = Number.isFinite(opts.target) ? opts.target : initVal;
         const spring = {
             el: opts.el || null,
+            allowEcoMotion: opts.allowEcoMotion === true,
             value: initVal,
             target: initTarget,
             velocity: 0,
@@ -217,7 +223,7 @@
                     if ('onComplete' in override) this.onComplete = override.onComplete;
                 }
                 this.target = nextTarget;
-                if (shouldInstantSnap() || (global.document && global.document.hidden)) {
+                if (shouldInstantSnap(this.allowEcoMotion) || (global.document && global.document.hidden)) {
                     activeSprings.delete(this);
                     this.value = nextTarget;
                     this.velocity = 0;
@@ -257,7 +263,7 @@
             impulse(v) {
                 if (!Number.isFinite(v)) return;
                 this.velocity += v;
-                if (!this.running && !shouldInstantSnap()) {
+                if (!this.running && !shouldInstantSnap(this.allowEcoMotion)) {
                     this.running = true;
                     activeSprings.add(this);
                     ensureLoop();
@@ -281,6 +287,7 @@
         createSpring: createSpring,
         obtainDampingDistance: obtainDampingDistance,
         isReducedMotion: shouldInstantSnap,
+        isAccessibilityReducedMotion: isAccessibilityReducedMotion,
         getActiveCount: () => activeSprings.size
     });
 })(window);

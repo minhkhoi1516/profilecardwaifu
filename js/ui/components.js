@@ -908,6 +908,19 @@
             }
         }
 
+        // All spring callbacks render from a single coherent state. Earlier
+        // x/width/stretch callbacks overwrote each other's transform mid-frame.
+        function renderSpringFrame() {
+            if (gestureState === 'dragging' || !xSp) return;
+            const reduced = spLib && (spLib.isAccessibilityReducedMotion
+                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion());
+            const dynamicStretch = reduced ? 1
+                : 1 + Math.min(0.12, Math.abs(xSp.velocity || 0) * 0.00016);
+            const scale = Math.max(0.88, Math.min(1.18,
+                (scaleXSp ? scaleXSp.value : 1) * dynamicStretch));
+            renderTransform(xSp.value, wSp ? wSp.value : 64, scale, 1 / Math.sqrt(scale));
+        }
+
         function ensureSprings() {
             ensureIndicator();
             if (xSp && wSp && scaleXSp) return;
@@ -926,43 +939,31 @@
             xSp = spLib.createSpring({
                 initial: initX,
                 target: initX,
+                allowEcoMotion: true,
                 dampingRatio: preset.dampingRatio,
                 stiffness: preset.stiffness,
                 precision: 0.25,
-                onUpdate: (x, vel) => {
-                    if (gestureState === 'dragging') return;
-                    let stretch = 1;
-                    if (!spLib.isReducedMotion()) {
-                        stretch = 1 + Math.min(0.20, Math.abs(vel) * 0.00028);
-                    }
-                    const squash = 1 / Math.sqrt(stretch);
-                    renderTransform(x, wSp ? wSp.value : initW, stretch, squash);
-                }
+                onUpdate: () => renderSpringFrame()
             });
 
             wSp = spLib.createSpring({
                 initial: initW,
                 target: initW,
+                allowEcoMotion: true,
                 dampingRatio: preset.dampingRatio,
                 stiffness: preset.stiffness,
                 precision: 0.25,
-                onUpdate: (w) => {
-                    if (gestureState === 'dragging') return;
-                    renderTransform(xSp.value, w, 1, 1);
-                }
+                onUpdate: () => renderSpringFrame()
             });
 
             scaleXSp = spLib.createSpring({
                 initial: 1,
                 target: 1,
+                allowEcoMotion: true,
                 dampingRatio: stretchPreset.dampingRatio,
                 stiffness: stretchPreset.stiffness,
                 precision: 0.005,
-                onUpdate: (sx) => {
-                    if (gestureState === 'dragging') return;
-                    const squash = 1 / Math.sqrt(Math.max(0.5, sx));
-                    renderTransform(xSp.value, wSp ? wSp.value : initW, sx, squash);
-                }
+                onUpdate: () => renderSpringFrame()
             });
 
             renderTransform(initX, initW, 1, 1);
@@ -972,6 +973,7 @@
             if (gestureState === 'dragging' || gestureState === 'pressed') return;
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
+            if (wasDetached) lastRenderedW = -1;
             const activeTab = getActiveTab();
             if (!activeTab) return;
             const targetX = activeTab.offsetLeft;
@@ -992,7 +994,8 @@
                 return;
             }
 
-            if (!spLib || spLib.isReducedMotion()) {
+            if (!spLib || (spLib.isAccessibilityReducedMotion
+                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion())) {
                 if (xSp) xSp.snap(targetX);
                 if (wSp) wSp.snap(targetW);
                 if (scaleXSp) scaleXSp.snap(1);
@@ -1026,6 +1029,10 @@
                     speed = Math.round(ratio * 14);
                 }
 
+                if (speed === 0) {
+                    autoScrollRaf = 0;
+                    return;
+                }
                 if (speed !== 0) {
                     const maxScroll = navEl.scrollWidth - navEl.clientWidth;
                     const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
@@ -1138,7 +1145,10 @@
                     try {
                         navEl.setPointerCapture(e.pointerId);
                     } catch (_) {}
-                    startAutoScroll();
+                    // Finger owns the lens now: stop outstanding spring motions.
+                    if (xSp) xSp.snap(dragVisualX);
+                    if (wSp) wSp.snap(dragStartIndicatorW);
+                    if (scaleXSp) scaleXSp.snap(1);
                 }
             }
 
@@ -1148,6 +1158,7 @@
 
             updateIndicatorPosition(e.clientX);
             updateCandidateHighlight();
+            startAutoScroll();
         }
 
         function onPointerUp(e, cancelled = false) {
