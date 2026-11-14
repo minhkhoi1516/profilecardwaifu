@@ -165,6 +165,21 @@ try {
 
     Write-Host "Initial indicator width: $($initGeom.indW)px, Tab 0 center: ($($initGeom.t0.x), $($initGeom.t0.y))" -ForegroundColor Gray
 
+    # Instrument frame-time recorder for drag FPS validation
+    Eval-JS @'
+    window.__frameDeltas = [];
+    var lastF = performance.now();
+    window.__trackActive = true;
+    function measureFrame(t) {
+        if (!window.__trackActive) return;
+        var dt = t - lastF;
+        lastF = t;
+        if (dt > 0.5 && dt < 100) window.__frameDeltas.push(Math.round(dt * 10) / 10);
+        requestAnimationFrame(measureFrame);
+    }
+    requestAnimationFrame(measureFrame);
+'@
+
     # 1. Press on tab 0
     [void](CDP 'Input.dispatchMouseEvent' @{
         type = 'mousePressed'
@@ -249,6 +264,26 @@ try {
     # Wait for spring settling (450ms)
     Start-Sleep -Milliseconds 500
 
+    # Stop frame measurement & calculate stats
+    $frameStats = Eval-JS @'
+    (function() {
+        window.__trackActive = false;
+        var deltas = window.__frameDeltas || [];
+        if (deltas.length === 0) return { avgMs: 16.6, fps: 60, p95Ms: 16.6, count: 0 };
+        var sum = deltas.reduce(function(a, b) { return a + b; }, 0);
+        var avg = sum / deltas.length;
+        deltas.sort(function(a, b) { return a - b; });
+        var p95 = deltas[Math.floor(deltas.length * 0.95)] || avg;
+        return {
+            avgMs: Math.round(avg * 10) / 10,
+            fps: Math.round(1000 / avg),
+            p95Ms: p95,
+            count: deltas.length
+        };
+    })()
+'@
+    Write-Host "  Frame Rate Metrics: Avg = $($frameStats.avgMs)ms ($($frameStats.fps) FPS), P95 = $($frameStats.p95Ms)ms (Samples: $($frameStats.count))" -ForegroundColor Green
+
     $settled = Eval-JS @'
     (function() {
         var ind = document.querySelector('#audio-category-nav .liquid-glass-indicator');
@@ -323,7 +358,33 @@ try {
         Write-Host "  Saved mobile preview screenshot ($([Math]::Round($bytesShot.Length/1024, 1)) KB)" -ForegroundColor Green
     }
 
-    $allPassed = $stretchObserved -and $springLandingPass -and ($mobileAudit.indWidth -gt 0) -and ($mobileAudit.playBtnDiameter -ge 56)
+    # ==========================================
+    # TEST 3: QUALITY MODES (HIGH, BALANCED, ECO)
+    # ==========================================
+    Write-Host "`n--- TEST 3: QUALITY MODES VERIFICATION ---" -ForegroundColor Yellow
+    $qualityResults = @{}
+    foreach ($qMode in @('high', 'balanced', 'eco')) {
+        [void](Eval-JS "document.body.setAttribute('data-quality', '$qMode'); window.dispatchEvent(new CustomEvent('minkoi:qualitychange', { detail: { quality: '$qMode' } }));")
+        Start-Sleep -Milliseconds 200
+        $qCheck = Eval-JS @'
+        (function() {
+            var ind = document.querySelector('#audio-category-nav .liquid-glass-indicator');
+            var bodyQ = document.body.getAttribute('data-quality');
+            return {
+                mode: bodyQ,
+                indWidth: ind ? Math.round(ind.getBoundingClientRect().width) : 0,
+                indVisible: ind ? (window.getComputedStyle(ind).display !== 'none') : false
+            };
+        })()
+'@
+        $qPass = $qCheck.indWidth -gt 0 -and $qCheck.indVisible
+        $qualityResults[$qMode] = $qPass
+        Write-Host "  Quality [$qMode]: Indicator Width = $($qCheck.indWidth)px, Visible = $($qCheck.indVisible) -> $(if ($qPass) { '[PASS]' } else { '[FAIL]' })" -ForegroundColor $(if ($qPass) { 'Green' } else { 'Red' })
+    }
+    # Reset to high
+    [void](Eval-JS "document.body.setAttribute('data-quality', 'high'); window.dispatchEvent(new CustomEvent('minkoi:qualitychange', { detail: { quality: 'high' } }));")
+
+    $allPassed = $stretchObserved -and $springLandingPass -and ($mobileAudit.indWidth -gt 0) -and ($mobileAudit.playBtnDiameter -ge 56) -and $qualityResults['eco'] -and $qualityResults['balanced'] -and $qualityResults['high']
 
     if ($allPassed) {
         Write-Host "`n>>> ALL V4.0 PHYSICAL LIQUID DRAG & MOBILE TESTS PASSED! <<<" -ForegroundColor Green

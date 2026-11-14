@@ -917,9 +917,15 @@
             const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
             const speed = Math.abs(vel);
 
+            // Dynamically adapt nominal width as the indicator glides across different tabs
+            const candidate = getCandidateTab(rawX + baseTabWidth / 2);
+            if (candidate && candidate.width > 0) {
+                baseTabWidth += (candidate.width - baseTabWidth) * 0.16;
+            }
+
             // Miuix Smooth Directional Edge-Lag Model:
             // Continuous lag that smoothly transitions through zero during direction reversals
-            // eliminates 100% of visual jumping or jitter.
+            // and decays to 0 when finger pauses, restoring natural capsule shape.
             const trailLag = Math.min(54, speed * 0.05 + 16 * Math.tanh(speed / 140));
             const dirWeight = Math.tanh(vel / 120); // -1.0 (moving left) to +1.0 (moving right)
 
@@ -947,8 +953,8 @@
 
             renderCapsule(currentLeft, currentRight);
 
-            // Projected center for predictive fling candidate selection
-            const projCenter = (currentLeft + currentRight) / 2 + vel * 0.055;
+            // Projected center for predictive fling candidate selection (Miuix fling tau = 0.18s)
+            const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
             updateCandidateHighlight(projCenter);
         }
 
@@ -1173,6 +1179,15 @@
             }
         }
 
+        function runDragPhysicsLoop() {
+            if (gestureState !== 'dragging') {
+                dragRaf = 0;
+                return;
+            }
+            computePhysicalDrag(targetPointerClientX);
+            dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
+        }
+
         function onPointerMove(e) {
             if (dragPointerId === null || e.pointerId !== dragPointerId) return;
 
@@ -1203,6 +1218,9 @@
                     // Halt previous springs during direct finger control
                     if (leftSpring) leftSpring.snap(currentLeft);
                     if (rightSpring) rightSpring.snap(currentRight);
+                    if (!dragRaf) {
+                        dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
+                    }
                 }
             }
 
@@ -1211,12 +1229,7 @@
             e.preventDefault();
 
             if (!dragRaf) {
-                dragRaf = global.requestAnimationFrame(() => {
-                    dragRaf = 0;
-                    if (gestureState === 'dragging') {
-                        computePhysicalDrag(targetPointerClientX);
-                    }
-                });
+                dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
             }
             startAutoScroll();
         }
@@ -1263,7 +1276,8 @@
 
             if (wasDragging && !cancelled) {
                 const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
-                const projCenter = (currentLeft + currentRight) / 2 + vel * 0.045;
+                // Miuix natural fling projection window (tau = 0.18s)
+                const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
                 const targetItem = getCandidateTab(projCenter);
                 const targetTab = targetItem ? targetItem.el : getActiveTab();
 
@@ -1279,7 +1293,7 @@
                         rightSpring.snap(currentRight);
 
                         // Inherit fling impulse with Miuix directional edge physics
-                        const impulse = Math.max(-1600, Math.min(1600, vel)) * 0.15;
+                        const impulse = Math.max(-1800, Math.min(1800, vel)) * 0.18;
                         leftSpring.impulse(impulse);
                         rightSpring.impulse(impulse);
 

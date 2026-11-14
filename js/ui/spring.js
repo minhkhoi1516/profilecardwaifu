@@ -33,9 +33,9 @@
         LIQUID_DRAG: Object.freeze({ dampingRatio: 0.92, stiffness: 1200 }),
         LIQUID_STRETCH: Object.freeze({ dampingRatio: 0.76, stiffness: 520 }),
         // V4.0 Natural Physics Additions
-        EDGE_LEADING: Object.freeze(folmeSpring(0.92, 0.26)),
-        EDGE_TRAILING: Object.freeze(folmeSpring(0.78, 0.38)),
-        NAV_FOLLOW: Object.freeze(folmeSpring(1.02, 0.16)),
+        EDGE_LEADING: Object.freeze(folmeSpring(0.90, 0.24)),
+        EDGE_TRAILING: Object.freeze(folmeSpring(0.80, 0.34)),
+        NAV_FOLLOW: Object.freeze(folmeSpring(1.00, 0.14)),
         HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
         TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22))
     });
