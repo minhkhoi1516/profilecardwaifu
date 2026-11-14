@@ -888,7 +888,9 @@
             }
 
             let stretchX = 1;
-            if (!spLib || !spLib.isReducedMotion()) {
+            const accessibleReduction = spLib && (spLib.isAccessibilityReducedMotion
+                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion());
+            if (!accessibleReduction) {
                 const speedAbs = Math.abs(dragVelocity);
                 stretchX = 1 + Math.min(0.24, Math.abs(rawX - dragStartIndicatorX) / 220 + speedAbs * 0.00015);
             }
