@@ -441,7 +441,7 @@
             trackCatEl.textContent = '';
             return;
         }
-        trackCatEl.textContent = `${persona.name} · ${persona.role}`;
+        trackCatEl.innerHTML = `<i class="fas fa-compact-disc" aria-hidden="true"></i> <span>${persona.name} · ${persona.role}</span>`;
         trackCatEl.dataset.persona = persona.key;
         trackCatEl.classList.toggle('is-dim', currentFilter !== 'all' && currentFilter !== persona.key);
         trackCatEl.title = `Xem danh sách nhạc của ${persona.name}`;
@@ -515,14 +515,19 @@
         if (zenTitle) zenTitle.textContent = track.name;
         if (zenArtist) zenArtist.textContent = track.artist;
 
-        // Visual Continuity: Sync Morphing Player Header inside Playlist
+        // Visual Continuity: Sync Morphing Player Header inside Playlist & Soundstage Platter
         const morphArt = document.getElementById('playlist-morph-art');
         const morphTitle = document.getElementById('playlist-morph-title');
         const morphArtist = document.getElementById('playlist-morph-artist');
         const pPersona = personaOf(track);
-        if (morphArt) morphArt.src = track.cover || (pPersona ? pPersona.avatar : 'assets/avatar_alya.png');
+        const resolvedCover = track.cover || (pPersona && pPersona.avatar ? pPersona.avatar : 'assets/avatar_alya.png');
+        if (morphArt) morphArt.src = resolvedCover;
         if (morphTitle) morphTitle.textContent = track.name;
         if (morphArtist) morphArtist.textContent = track.artist;
+        if (albumArt) {
+            albumArt.src = resolvedCover;
+            albumArt.alt = track.name ? `${track.name} Cover` : 'Album Cover';
+        }
 
         setSeekProgressUI(0);
 
@@ -626,6 +631,7 @@
         const playIcon = playBtn?.querySelector('i');
         if (playIcon) playIcon.className = cls;
         else if (playBtn) playBtn.innerHTML = `<i class="${cls}" aria-hidden="true"></i>`;
+        if (playBtn) playBtn.classList.toggle('is-playing', isPlaying);
         const zenIcon = zenPlayBtn?.querySelector('i');
         if (zenIcon) zenIcon.className = cls;
         else if (zenPlayBtn) zenPlayBtn.innerHTML = `<i class="${cls}" aria-hidden="true"></i>`;
@@ -792,11 +798,14 @@
 
         if (muteBtn) {
             if (clamped === 0) {
-                muteBtn.innerHTML = '<i class="fas fa-volume-xmark"></i>';
-            } else if (clamped < 50) {
-                muteBtn.innerHTML = '<i class="fas fa-volume-low"></i>';
+                muteBtn.innerHTML = '<i class="fas fa-volume-xmark" aria-hidden="true"></i>';
+                muteBtn.title = 'Bật tiếng (M)';
+            } else if (clamped < 40) {
+                muteBtn.innerHTML = '<i class="fas fa-volume-low" aria-hidden="true"></i>';
+                muteBtn.title = 'Tắt tiếng (M)';
             } else {
-                muteBtn.innerHTML = '<i class="fas fa-volume-high"></i>';
+                muteBtn.innerHTML = '<i class="fas fa-volume-high" aria-hidden="true"></i>';
+                muteBtn.title = 'Tắt tiếng (M)';
             }
         }
     }
@@ -940,6 +949,31 @@
         return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     }
 
+    // Dual-Sided Time Display with Remaining Time Mode
+    let isRemainingTimeMode = false;
+
+    function updateTimeDisplay(current, duration) {
+        if (currentTimeEl) currentTimeEl.textContent = formatTime(current);
+        if (totalTimeEl && duration && !isNaN(duration)) {
+            if (isRemainingTimeMode) {
+                const remaining = Math.max(0, duration - current);
+                totalTimeEl.textContent = `-${formatTime(remaining)}`;
+                totalTimeEl.title = 'Nhấp để xem tổng thời lượng';
+            } else {
+                totalTimeEl.textContent = formatTime(duration);
+                totalTimeEl.title = 'Nhấp để xem thời gian còn lại';
+            }
+        }
+    }
+
+    if (totalTimeEl) {
+        totalTimeEl.addEventListener('click', () => {
+            if (!audio.duration) return;
+            isRemainingTimeMode = !isRemainingTimeMode;
+            updateTimeDisplay(audio.currentTime, audio.duration);
+        });
+    }
+
     function seekToPosition(clientX, commitAudio = true) {
         if (!audio.duration || !seekContainer) return;
         const pos = getSeekPos(clientX);
@@ -948,7 +982,7 @@
             audio.currentTime = pos * audio.duration;
         }
         setSeekProgressUI(pos, isScrubbing ? 1.127 : 0.85);
-        if (currentTimeEl) currentTimeEl.textContent = formatTime(pos * audio.duration);
+        updateTimeDisplay(pos * audio.duration, audio.duration);
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
 
@@ -958,7 +992,7 @@
         const pos = audio.currentTime / audio.duration;
         const pct = pos * 100;
         setSeekProgressUI(pos, 0.85);
-        if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
+        updateTimeDisplay(audio.currentTime, audio.duration);
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', Math.round(pct).toString());
 
         // Preload next track when near end (> 85%)
@@ -969,8 +1003,8 @@
     });
 
     audio.addEventListener('loadedmetadata', () => {
-        if (totalTimeEl && audio.duration) {
-            totalTimeEl.textContent = formatTime(audio.duration);
+        if (audio.duration) {
+            updateTimeDisplay(audio.currentTime, audio.duration);
         }
     });
 
@@ -1219,15 +1253,15 @@
         function updateRepeatUI() {
             if (repeatMode === 'all') {
                 repeatBtn.className = 'ctrl-btn repeat-btn active';
-                repeatBtn.innerHTML = '<i class="fas fa-repeat"></i>';
+                repeatBtn.innerHTML = '<i class="fas fa-repeat" aria-hidden="true"></i>';
                 repeatBtn.title = 'Lặp lại: Tất cả';
             } else if (repeatMode === 'one') {
-                repeatBtn.className = 'ctrl-btn repeat-btn active';
-                repeatBtn.innerHTML = '<i class="fas fa-repeat-1"></i>';
+                repeatBtn.className = 'ctrl-btn repeat-btn active repeat-one';
+                repeatBtn.innerHTML = '<i class="fas fa-repeat" aria-hidden="true"></i><span class="repeat-one-badge" aria-hidden="true">1</span>';
                 repeatBtn.title = 'Lặp lại: 1 bài';
             } else {
                 repeatBtn.className = 'ctrl-btn repeat-btn';
-                repeatBtn.innerHTML = '<i class="fas fa-repeat"></i>';
+                repeatBtn.innerHTML = '<i class="fas fa-repeat" aria-hidden="true"></i>';
                 repeatBtn.title = 'Lặp lại: Tắt';
             }
         }
