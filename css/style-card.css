@@ -1230,6 +1230,28 @@ body.light-theme .lyrics-drawer-modal {
     max-height: 84vh;
 }
 
+/* Desktop Lyrics is a bounded music panel, not a sheet that can spill across
+   the brand header or beyond a short laptop viewport. Mobile sheet rules below
+   860px continue to own their bottom-aligned layout. */
+@media (min-width: 861px) {
+    .lyrics-drawer-modal {
+        width: min(500px, calc(100vw - 32px));
+        max-width: min(500px, calc(100vw - 32px));
+        height: min(520px, calc(100dvh - 112px));
+        max-height: calc(100dvh - 112px);
+        top: calc(50% + 22px);
+        z-index: 1200;
+        border-radius: var(--v3-radius-popup, 22px);
+    }
+}
+.lyrics-drawer-modal .lyrics-body {
+    min-height: 0;
+}
+.lyrics-drawer-modal .lyrics-drawer-header,
+.lyrics-drawer-modal .lyrics-footer {
+    flex-shrink: 0;
+}
+
 .lyrics-drawer-header {
     flex-wrap: wrap;
     row-gap: 0.55rem;

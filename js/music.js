@@ -1343,6 +1343,29 @@
         }
     }
 
+    function positionDesktopFlyout(menu, triggerBtn) {
+        if (!menu || !triggerBtn) return;
+        menu.classList.remove('is-flipped');
+        menu.style.maxHeight = '';
+        menu.style.overflowY = '';
+        if (window.innerWidth <= 860) return;
+
+        // Measure only when the flyout opens/resizes; never on pointermove.
+        const trigger = triggerBtn.getBoundingClientRect();
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        const topSafe = Math.min(84, Math.max(12, Math.round(viewportHeight * 0.10)));
+        const availableAbove = Math.max(0, trigger.top - topSafe - 10);
+        const availableBelow = Math.max(0, viewportHeight - trigger.bottom - 22);
+        const desiredHeight = Math.max(menu.scrollHeight, menu.getBoundingClientRect().height);
+        const flipUp = desiredHeight > availableBelow && availableAbove > availableBelow;
+        const available = flipUp ? availableAbove : availableBelow;
+
+        menu.classList.toggle('is-flipped', flipUp);
+        menu.style.maxHeight = Math.floor(available) + 'px';
+        menu.style.overflowY = 'auto';
+        if (flipUp) menu.style.transformOrigin = 'bottom center';
+    }
+
     function openFlyout(menu, triggerBtn, opts) {
         if (!menu) return;
         const willOpen = (opts && opts.forceOpen) ? true : !menu.classList.contains('open');
@@ -1363,6 +1386,7 @@
             }
             if (triggerBtn) triggerBtn.classList.add('is-morph-active');
             menu.classList.add('open');
+            positionDesktopFlyout(menu, triggerBtn);
             if (releaseFlyoutTrap) {
                 const prevFn = releaseFlyoutTrap;
                 releaseFlyoutTrap = null;
@@ -1906,6 +1930,13 @@
 
     window.addEventListener('resize', () => {
         mountFlyoutForViewport();
+        [
+            { menu: audioFxMenu, btn: audioFxBtn },
+            { menu: sleepTimerMenu, btn: sleepTimerBtn },
+            { menu: playlistMenu, btn: playlistToggleBtn }
+        ].forEach(({ menu, btn }) => {
+            if (menu?.classList.contains('open')) positionDesktopFlyout(menu, btn);
+        });
         syncFlyoutBackdrop();
         if (categoryNav && window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
             window.MinkoiUI.syncTabIndicator(categoryNav);

@@ -485,6 +485,14 @@
         right: 0;
         left: auto;
     }
+
+    /* When a tool menu would run below the screen, flip it upward.
+       The matching JS also caps its height to available viewport space. */
+    .track-actions-bar .dropdown-flyout.is-flipped {
+        top: auto;
+        bottom: calc(100% + 10px);
+        transform-origin: bottom center;
+    }
 }
 
 /* ========================================================
