@@ -823,9 +823,24 @@
                 tab.setAttribute('aria-selected', active ? 'true' : 'false');
             });
             const activeTab = categoryNav.querySelector('.cat-tab.active');
-            if (activeTab) {
-                const targetLeft = activeTab.offsetLeft - (categoryNav.clientWidth / 2) + (activeTab.offsetWidth / 2);
-                categoryNav.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            if (activeTab && !(options && options.fromLiquidDrag)) {
+                // Do not animate the entire category strip on every selection.
+                // Smooth-scroll only if the selected tab is actually clipped.
+                const margin = 8;
+                const viewLeft = categoryNav.scrollLeft;
+                const viewRight = viewLeft + categoryNav.clientWidth;
+                const tabLeft = activeTab.offsetLeft;
+                const tabRight = tabLeft + activeTab.offsetWidth;
+                if (tabLeft < viewLeft + margin || tabRight > viewRight - margin) {
+                    const targetLeft = tabLeft < viewLeft + margin
+                        ? tabLeft - margin
+                        : tabRight - categoryNav.clientWidth + margin;
+                    const maxLeft = Math.max(0, categoryNav.scrollWidth - categoryNav.clientWidth);
+                    categoryNav.scrollTo({
+                        left: Math.max(0, Math.min(maxLeft, targetLeft)),
+                        behavior: 'smooth'
+                    });
+                }
             }
             if (window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
                 window.requestAnimationFrame(() => window.MinkoiUI.syncTabIndicator(categoryNav, setFilter));

@@ -1194,7 +1194,9 @@
                     }
 
                     if (typeof instance.onSelect === 'function') {
-                        instance.onSelect(targetCat);
+                        // Edge auto-scroll already places the dragged category in view.
+                        // Do not start a second smooth-scroll while the spring settles.
+                        instance.onSelect(targetCat, { fromLiquidDrag: true });
                     }
                 } else {
                     gestureState = 'idle';
@@ -1219,7 +1221,9 @@
             }
             // Native clicks are handled by music.js; onSelect is used for drags only.
         };
-        navEl.addEventListener('click', onNavClick);
+        // Capture before music.js's delegated bubble listener; otherwise a
+        // post-drag synthetic click can select a different tab twice.
+        navEl.addEventListener('click', onNavClick, true);
 
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
         global.addEventListener('pointermove', onPointerMove, { passive: false });
@@ -1258,7 +1262,7 @@
                 dragPointerId = null;
                 gestureState = 'idle';
                 navEl.classList.remove('is-liquid-dragging');
-                navEl.removeEventListener('click', onNavClick);
+                navEl.removeEventListener('click', onNavClick, true);
                 navEl.removeEventListener('pointerdown', onPointerDown);
                 navEl.removeEventListener('lostpointercapture', onPointerCancel);
                 global.removeEventListener('pointermove', onPointerMove);
