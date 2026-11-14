@@ -222,6 +222,61 @@ try {
         Write-Host "  $st #$($r.index) $($r.persona): Top Protrusion = $($r.topProtrusion)px (Chibi Top: $($r.imgTop), Disc Top: $($r.discTop)), Height = $($r.imgHeight)px, Bottom Offset = $($r.bottomOffset)px" -ForegroundColor $col
     }
 
+    # Verify Avatar Hover & Zero Mask Square Box Artifact
+    $avatarHoverCheck = Eval-JS @'
+    (function() {
+        var img = document.querySelector('#char-avatar');
+        var cs = window.getComputedStyle(img);
+        var hasMask = (cs.maskImage !== 'none' && cs.maskImage !== '' && cs.webkitMaskImage !== 'none' && cs.webkitMaskImage !== '');
+        return {
+            maskImage: cs.maskImage,
+            webkitMaskImage: cs.webkitMaskImage,
+            hasMask: hasMask,
+            filter: cs.filter
+        };
+    })()
+'@
+    $maskPass = (-not $avatarHoverCheck.hasMask) -or ($avatarHoverCheck.maskImage -eq 'none')
+    $stMask = if ($maskPass) { "[PASS]" } else { "[FAIL]" }
+    $colMask = if ($maskPass) { "Green" } else { "Red" }
+    Write-Host "  $stMask Avatar Mask Image Check (No square box clamping): maskImage = $($avatarHoverCheck.maskImage)" -ForegroundColor $colMask
+    if (-not $maskPass) { $desktopPassed = $false }
+
+    # Verify Vinyl Disc Pop-Out Figurine
+    $vinylCheck = Eval-JS @'
+    (function() {
+        var stage = document.querySelector('.now-playing-stage');
+        var wrap = document.querySelector('.vinyl-disc-wrap');
+        var platter = document.querySelector('.vinyl-platter');
+        var art = document.querySelector('#player-album-art');
+        if (!stage || !wrap || !platter || !art) return { error: "Missing vinyl elements" };
+
+        var stageCs = window.getComputedStyle(stage);
+        var wrapCs = window.getComputedStyle(wrap);
+        var artCs = window.getComputedStyle(art);
+        var platterCs = window.getComputedStyle(platter);
+        var artRect = art.getBoundingClientRect();
+        var wrapRect = wrap.getBoundingClientRect();
+
+        return {
+            stageOverflow: stageCs.overflow,
+            wrapOverflow: wrapCs.overflow,
+            artHeight: Math.round(artRect.height),
+            artWidth: Math.round(artRect.width),
+            artBottom: Math.round(artRect.bottom),
+            wrapBottom: Math.round(wrapRect.bottom),
+            isPopoutHeight: artRect.height >= 70,
+            isSibling: art.parentElement === wrap && platter.parentElement === wrap,
+            hasPlatter: !!platter
+        };
+    })()
+'@
+    $vinylPass = ($vinylCheck.isPopoutHeight) -and ($vinylCheck.stageOverflow -eq 'visible') -and ($vinylCheck.isSibling)
+    $stVinyl = if ($vinylPass) { "[PASS]" } else { "[FAIL]" }
+    $colVinyl = if ($vinylPass) { "Green" } else { "Red" }
+    Write-Host "  $stVinyl Vinyl Disc Pop-Out Figurine: Height = $($vinylCheck.artHeight)px (>=70px), stageOverflow = $($vinylCheck.stageOverflow), siblingLayout = $($vinylCheck.isSibling)" -ForegroundColor $colVinyl
+    if (-not $vinylPass) { $desktopPassed = $false }
+
     # Reset to Alya (index 0) and take screenshots
     [void](Eval-JS "window.setPersona(0, false)")
     Start-Sleep -Milliseconds 400
@@ -251,11 +306,13 @@ try {
         var nav = document.querySelector('#audio-category-nav');
         var ind = document.querySelector('#audio-category-nav .liquid-glass-indicator');
         var tabs = document.querySelectorAll('#audio-category-nav .cat-tab');
+        var vinylArt = document.querySelector('#player-album-art');
 
         var dR = disc ? disc.getBoundingClientRect() : null;
         var iR = img ? img.getBoundingClientRect() : null;
         var navR = nav ? nav.getBoundingClientRect() : null;
         var indR = ind ? ind.getBoundingClientRect() : null;
+        var vR = vinylArt ? vinylArt.getBoundingClientRect() : null;
 
         return {
             protrusion: (dR && iR) ? Math.round(dR.top - iR.top) : null,
@@ -265,21 +322,26 @@ try {
             navWidth: navR ? Math.round(navR.width) : 0,
             indicatorVisible: ind ? (window.getComputedStyle(ind).display !== 'none') : false,
             indicatorWidth: indR ? Math.round(indR.width) : 0,
-            tabCount: tabs ? tabs.length : 0
+            tabCount: tabs ? tabs.length : 0,
+            vinylArtHeight: vR ? Math.round(vR.height) : 0
         };
     })()
 '@
 
     $mobilePopoutPass = $mobileCheck.protrusion -ge 12
     $mobileNavPass = $mobileCheck.navVisible -and ($mobileCheck.indicatorWidth -gt 0)
+    $mobileVinylPass = $mobileCheck.vinylArtHeight -ge 65
 
     $stPop = if ($mobilePopoutPass) { "[PASS]" } else { "[FAIL]" }
     $stNav = if ($mobileNavPass) { "[PASS]" } else { "[FAIL]" }
+    $stVinM = if ($mobileVinylPass) { "[PASS]" } else { "[FAIL]" }
     $colPop = if ($mobilePopoutPass) { "Green" } else { "Red" }
     $colNav = if ($mobileNavPass) { "Green" } else { "Red" }
+    $colVinM = if ($mobileVinylPass) { "Green" } else { "Red" }
 
-    Write-Host "  $stPop Mobile Pop-out: Protrusion = $($mobileCheck.protrusion)px, Chibi Height = $($mobileCheck.imgHeight)px, Disc Height = $($mobileCheck.discHeight)px" -ForegroundColor $colPop
+    Write-Host "  $stPop Mobile Avatar Pop-out: Protrusion = $($mobileCheck.protrusion)px, Chibi Height = $($mobileCheck.imgHeight)px, Disc Height = $($mobileCheck.discHeight)px" -ForegroundColor $colPop
     Write-Host "  $stNav Mobile Liquid Glass Nav: Visible = $($mobileCheck.navVisible), Width = $($mobileCheck.navWidth)px, Indicator Width = $($mobileCheck.indicatorWidth)px, Tabs = $($mobileCheck.tabCount)" -ForegroundColor $colNav
+    Write-Host "  $stVinM Mobile Vinyl Pop-out Figurine: Height = $($mobileCheck.vinylArtHeight)px (>=65px)" -ForegroundColor $colVinM
 
     Save-Screenshot "docs/screenshots/v3_6_popout_mobile.png"
     Save-Screenshot "docs/screenshots/mobile-preview.png"
@@ -293,7 +355,7 @@ try {
         Write-Host "`nCopied screenshots to artifact directory." -ForegroundColor Gray
     }
 
-    if ($desktopPassed -and $mobilePopoutPass -and $mobileNavPass) {
+    if ($desktopPassed -and $mobilePopoutPass -and $mobileNavPass -and $mobileVinylPass) {
         Write-Host "`nALL QA CHECKS PASSED SUCCESSFULLY!" -ForegroundColor Green
         exit 0
     } else {

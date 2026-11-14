@@ -194,16 +194,23 @@
     .now-playing-stage {
         padding: 0.95rem 1rem;
         gap: 0.95rem;
+        overflow: visible !important;
     }
 
     .vinyl-disc-wrap {
-        width: 72px;
-        height: 72px;
+        width: 78px;
+        height: 78px;
     }
 
     .vinyl-platter {
-        width: 38px;
-        height: 38px;
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .vinyl-art {
+        height: 76px;
+        max-width: 72px;
+        bottom: 3px;
     }
 
     .track-title {
