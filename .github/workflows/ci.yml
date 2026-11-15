@@ -67,6 +67,9 @@ jobs:
       - name: Verify Mobile Panel Focus and Soft Keyboard Behavior
         run: node scripts/qa/verify-mobile-panel-focus.cjs
 
+      - name: Verify Mobile Tool Panels Stay Visible
+        run: node scripts/qa/verify-mobile-tool-panel-visibility.cjs
+
       - name: Validate JavaScript Syntax
         run: |
           for f in js/*.js js/ui/*.js js/lyrics/*.js; do

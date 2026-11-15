@@ -530,7 +530,10 @@
             if (isMobile) {
                 const slidePercent = Math.max(0, (1 - clamped) * 100);
                 panelEl.style.transformOrigin = '50% 100%';
-                panelEl.style.transform = slidePercent < 0.1 ? '' : `translateY(${slidePercent.toFixed(2)}%)`;
+                // Never clear inline transform at the open position: mobile CSS defaults
+                // to translateY(100%) for closed sheets, so an empty transform
+                // makes the OPEN sheet vanish beneath its still-visible backdrop.
+                panelEl.style.transform = `translateY(${slidePercent.toFixed(2)}%)`;
                 panelEl.style.opacity = Math.min(1, clamped * 1.5).toFixed(3);
                 if (mobileBackdrop) {
                     mobileBackdrop.style.opacity = Math.min(1, clamped * 0.95).toFixed(3);
