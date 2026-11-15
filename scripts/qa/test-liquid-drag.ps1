@@ -374,12 +374,13 @@ try {
     $b64Shot = $resShot.result.data
     if ($b64Shot) {
         $bytesShot = [System.Convert]::FromBase64String($b64Shot)
-        [System.IO.File]::WriteAllBytes("docs/screenshots/mobile-preview.png", $bytesShot)
+        New-Item -ItemType Directory -Path scratch -Force | Out-Null
+        [System.IO.File]::WriteAllBytes("scratch/liquid-mobile-candidate.png", $bytesShot)
         $brainDir = "C:\Users\Admin\.gemini\antigravity\brain\676897cc-82eb-49fa-8a7e-b684c15d6e09"
         if (Test-Path $brainDir) {
             [System.IO.File]::WriteAllBytes((Join-Path $brainDir "v4_mobile_rebuilt_soundstage.png"), $bytesShot)
         }
-        Write-Host "  Saved mobile preview screenshot ($([Math]::Round($bytesShot.Length/1024, 1)) KB)" -ForegroundColor Green
+        Write-Host "  Saved unapproved scratch screenshot ($([Math]::Round($bytesShot.Length/1024, 1)) KB)" -ForegroundColor Yellow
     }
 
     # ==========================================

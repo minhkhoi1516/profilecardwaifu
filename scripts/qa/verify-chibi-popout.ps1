@@ -281,7 +281,7 @@ try {
     [void](Eval-JS "window.setPersona(0, false)")
     Start-Sleep -Milliseconds 400
     Save-Screenshot "docs/screenshots/v3_6_popout_alya.png"
-    Save-Screenshot "docs/screenshots/desktop-preview.png"
+    Save-Screenshot "scratch/chibi-desktop-candidate.png"
 
     # Switch to Sakura Miku (index 3 in config.js) and take screenshot
     [void](Eval-JS "window.setPersona(3, false)")
@@ -356,7 +356,7 @@ try {
     Write-Host "  $stVinM Mobile Vinyl Pop-out Figurine: Height = $($mobileCheck.vinylArtHeight)px (>=65px)" -ForegroundColor $colVinM
 
     Save-Screenshot "docs/screenshots/v3_6_popout_mobile.png"
-    Save-Screenshot "docs/screenshots/mobile-preview.png"
+    Save-Screenshot "scratch/chibi-mobile-candidate.png"
 
     # Copy screenshots to artifact directory
     $brainDir = "C:\Users\Admin\.gemini\antigravity\brain\676897cc-82eb-49fa-8a7e-b684c15d6e09"

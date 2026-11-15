@@ -524,13 +524,14 @@ try {
   }
 
   # ==============================================================
-  # PART 5: COPY PREVIEW SCREENSHOTS TO DOCS
+  # PART 5: SAVE UNAPPROVED CANDIDATES OUTSIDE SHOWCASE
   # ==============================================================
-  $docsScreenshotsDir = Join-Path $RepoRoot 'docs\screenshots'
+  $docsScreenshotsDir = Join-Path $RepoRoot 'scratch'
+  New-Item -ItemType Directory -Path $docsScreenshotsDir -Force | Out-Null
   if (Test-Path $docsScreenshotsDir) {
     Copy-Item $desktopPng (Join-Path $docsScreenshotsDir 'desktop-preview.png') -Force
     Copy-Item $mobilePng (Join-Path $docsScreenshotsDir 'mobile-preview.png') -Force
-    Write-Host "`n6. Updated docs/screenshots previews." -ForegroundColor Green
+    Write-Host "`n6. Saved scratch candidates; official previews require visual review." -ForegroundColor Yellow
   }
 
   Write-Host "`n==========================================================" -ForegroundColor Cyan
