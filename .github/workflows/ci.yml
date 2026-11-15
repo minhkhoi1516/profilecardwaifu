@@ -24,6 +24,9 @@ jobs:
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
+      - name: Verify Production Deploy Allowlist
+        run: node scripts/qa/verify-deploy-allowlist.cjs
+
       - name: Verify Zen compositor and paused background renderers
         run: node scripts/qa/verify-zen-compositor.cjs
 

@@ -1,0 +1,12 @@
+# MinKoi V4 — keep only files needed by the static browser runtime.
+# QA evidence, historical screenshots, editor scripts and source reports remain on
+# GitHub for review, but must not be shipped on the Vercel production CDN.
+/*
+!index.html
+!favicon.ico
+!manifest.webmanifest
+!vercel.json
+!css
+!js
+!assets
+!music
