@@ -217,7 +217,7 @@
     }
 
     function shouldPauseParticles() {
-        if (document.hidden) return true;
+        if (document.hidden || document.body?.classList.contains('zen-mode')) return true;
         if (reducedMotionMQ && reducedMotionMQ.matches) return true;
         return getQualityFactor() === 0;
     }
@@ -348,6 +348,7 @@
         initParticles();
         startParticlesIfAllowed();
     });
+    window.addEventListener('minkoi:zenchange', startParticlesIfAllowed);
 
     if (reducedMotionMQ && typeof reducedMotionMQ.addEventListener === 'function') {
         reducedMotionMQ.addEventListener('change', () => startParticlesIfAllowed());

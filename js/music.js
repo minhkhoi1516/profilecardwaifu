@@ -244,7 +244,7 @@
         function loop(now) {
             const quality = document.body.dataset.quality;
             const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (audio.paused || document.hidden || !analyser || quality === 'eco' || reduced) {
+            if (audio.paused || document.hidden || document.body.classList.contains('zen-mode') || !analyser || quality === 'eco' || reduced) {
                 visualizerFrameId = null;
                 if (bars.length > 0) {
                     for (let i = 0; i < bars.length; i++) {
@@ -335,6 +335,15 @@
         }
         visualizerFrameId = requestAnimationFrame(loop);
     }
+
+    window.addEventListener('minkoi:zenchange', () => {
+        if (document.body.classList.contains('zen-mode')) {
+            if (visualizerFrameId != null) cancelAnimationFrame(visualizerFrameId);
+            visualizerFrameId = null;
+        } else if (!audio.paused && analyser && !document.hidden) {
+            startVisualizerLoop();
+        }
+    });
 
     function applyEqPreset(presetId) {
         currentAudioFx = presetId;

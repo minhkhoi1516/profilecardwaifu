@@ -24,6 +24,9 @@ jobs:
           npm install --global pnpm@11.25.0
           pnpm install --frozen-lockfile
           pnpm exec playwright install --with-deps chromium
+      - name: Verify Zen compositor and paused background renderers
+        run: node scripts/qa/verify-zen-compositor.cjs
+
       - name: Syntax, CSS, assets, catalogue and metadata
         run: pnpm qa:integrity
       - name: Real browser regression tests

@@ -48,6 +48,13 @@
     // layers so even same-persona randomizations (Zen mode) crossfade cleanly.
     // ------------------------------------------------------------------
     let bannerLoadSeq = 0;
+    let bannerReleaseTimer = null;
+    function releaseInactiveBannerTextures() {
+        if (bannerStage) bannerStage.querySelectorAll('.banner-layer:not(.active)').forEach(layer => {
+            layer.style.backgroundImage = 'none';
+        });
+        bannerReleaseTimer = null;
+    }
 
     function pickBanner(persona) {
         const pool = bannerPool(persona);
@@ -153,7 +160,7 @@
     function ensureBannerLayers() {
         if (!bannerStage) return;
         const currentLayers = bannerStage.querySelectorAll('.banner-layer');
-        const needed = Math.max(2, personas.length);
+        const needed = 2;
         if (currentLayers.length < needed) {
             for (let i = currentLayers.length; i < needed; i++) {
                 const layer = document.createElement('div');
@@ -161,6 +168,8 @@
                 layer.dataset.index = i;
                 bannerStage.appendChild(layer);
             }
+        } else if (currentLayers.length > needed) {
+            currentLayers.forEach((layer, i) => { if (i >= needed) layer.remove(); });
         }
     }
 
@@ -181,20 +190,23 @@
                     layer.style.backgroundImage = src ? `url('${src}')` : 'none';
                 }
             });
+            clearTimeout(bannerReleaseTimer);
+            releaseInactiveBannerTextures();
             return;
         }
 
         // Always swap to an inactive standby buffer layer for true crossfade even within same persona
         const standby = layers.find(l => !l.classList.contains('active')) || layers.find(l => l !== currentActive) || layers[0];
         standby.style.backgroundImage = src ? `url('${src}')` : 'none';
-        // Restart gentle atmospheric settle animation smoothly
+        // Keep the inactive standby buffer without forcing a sync layout flush.
         standby.classList.remove('active');
-        void standby.offsetWidth;
 
         window.requestAnimationFrame(() => {
             layers.forEach((layer) => {
                 layer.classList.toggle('active', layer === standby);
             });
+            clearTimeout(bannerReleaseTimer);
+            bannerReleaseTimer = setTimeout(releaseInactiveBannerTextures, 1150);
         });
     }
 

@@ -31,10 +31,8 @@
     background-position: center 22%;
     background-repeat: no-repeat;
     opacity: 0;
-    transform: scale(1.045) translateZ(0);
-    transition:
-        opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 7.5s cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateZ(0);
+    transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1);
     /* Gentle analog film softness: dials back digital over-saturation & plastic sharpening */
     filter: brightness(0.94) contrast(0.97) saturate(0.94);
 }
@@ -42,12 +40,10 @@
 .banner-layer.active {
     opacity: 1;
     z-index: 1;
-    transform: scale(1) translateZ(0);
+    transform: translateZ(0);
 }
 
-body.zen-mode .banner-layer {
-    filter: brightness(0.98) contrast(0.98) saturate(0.97);
-}
+/* Zen retains the same decoded backdrop; its vignette changes below. */
 
 /* Subtle organic micro-grain & persona atmospheric color wash to soften synthetic edges */
 .banner-stage::before {
@@ -76,6 +72,9 @@ body.zen-mode .banner-layer {
     transition: opacity 0.6s ease, background 0.6s ease;
 }
 
+body.zen-mode .banner-stage::before { display: none; }
+body.zen-mode .fluid-bg-canvas,
+body.zen-mode .starry-bg { display: none; }
 body.zen-mode .banner-stage::after {
     background:
         radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.08) 0%, rgba(3, 5, 12, 0.52) 100%),

@@ -202,7 +202,7 @@
     const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
     function shouldPauseFluid() {
-        if (document.hidden) return true;
+        if (document.hidden || document.body?.classList.contains('zen-mode')) return true;
         if (reducedMotionMQ && reducedMotionMQ.matches) return true;
         const q = document.body ? document.body.getAttribute('data-quality') : '';
         return q === 'eco' || Boolean(document.body && document.body.classList.contains('low-end'));
@@ -281,6 +281,10 @@
     });
 
     window.addEventListener('minkoi:qualitychange', () => {
+        if (shouldPauseFluid()) stopLoop();
+        else startLoop();
+    });
+    window.addEventListener('minkoi:zenchange', () => {
         if (shouldPauseFluid()) stopLoop();
         else startLoop();
     });

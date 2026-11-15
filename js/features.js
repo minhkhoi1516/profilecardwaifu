@@ -248,6 +248,10 @@
             if (isZen === document.body.classList.contains('zen-mode')) return;
             window.MinkoiUI?.closeAllOverlays(null, { instant: true, restoreFocus: false });
             document.body.classList.toggle('zen-mode', isZen);
+            // Stop hidden rendering work before the Zen wallpaper swap.
+            window.dispatchEvent(new CustomEvent('minkoi:zenchange', {
+                detail: { enabled: isZen }
+            }));
             document.querySelector('.card-wrapper').inert = isZen;
             document.querySelector('.site-brand-header').inert = isZen;
             document.getElementById('zen-mini-dock').inert = !isZen;
@@ -271,7 +275,8 @@
                 if (typeof window.syncZenPlayer === 'function') {
                     window.syncZenPlayer();
                 }
-                showToast('Chế độ màn hình chờ · Đã đổi hình nền ngẫu nhiên', 'fa-sparkles');
+                // The Zen hint already explains the mode; avoid a second
+                // floating toast over the wallpaper and playback controls.
                 playChimeSFX();
             } else {
                 window.MinkoiUI?.unlockBodyScroll();
