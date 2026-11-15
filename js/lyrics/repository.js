@@ -313,9 +313,9 @@
             ]
         },
         // Track 13 verified from MP3 ID3 tags: Artist is Tatsuya Kitani (vocal OP), NOT Harada Moeki OST instrumental
-        13: { trackId: 13, title: "まなざしは光 (Manazashi wa Hikari)", artist: "キタニタツヤ (Tatsuya Kitani)", version: "original", durationMs: 207500, syncLevel: "unavailable", source: "none-verified", confidence: "none", lines: [] },
+        13: { trackId: 13, spotifyTrackId: "0HI4lUmOWpFzxPB5NMlAXW", title: "まなざしは光 (Manazashi wa Hikari)", artist: "キタニタツヤ (Tatsuya Kitani)", version: "original", durationMs: 207500, syncLevel: "unavailable", source: "none-verified", confidence: "none", lines: [] },
         14: { trackId: 14, spotifyTrackId: "4JIUxHpkvZWNzhQX84fd8q", title: "ひとひら (Hitohira)", artist: "原田萌喜 (Kaoru Hana OST)", version: "instrumental", durationMs: 282400, isInstrumental: true, syncLevel: "instrumental", source: "minkoi-curated-meta" },
-        15: { trackId: 15, spotifyTrackId: "2C2SxTwvnaVqzWBsAxGXlI", title: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "原田萌喜 (Kaoru Hana OST)", version: "instrumental", durationMs: 98000, isInstrumental: true, syncLevel: "instrumental", source: "minkoi-curated-meta" },
+        15: { trackId: 15, spotifyTrackId: "0OZlguQeZGqf56prXBmKEM", title: "凛太郎と薫子 (Rintaro to Kaoruko)", artist: "原田萌喜 (Kaoru Hana OST)", version: "instrumental", durationMs: 98000, isInstrumental: true, syncLevel: "instrumental", source: "minkoi-curated-meta" },
         16: {
             trackId: 16,
             spotifyTrackId: "1SsnLip8KKG2aYsXlGH29n",

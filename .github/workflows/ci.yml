@@ -35,6 +35,9 @@ jobs:
             test -f "$f" || (echo "Missing JavaScript file: $f" && exit 1)
           done
 
+      - name: Audit Lyrics Catalogue and Spotify References
+        run: node scripts/qa/verify-lyrics-catalog.cjs
+
       - name: Validate Lyrics Engine Modules
         run: |
           for f in js/lyrics/normalizer.js js/lyrics/parser.js js/lyrics/matcher.js js/lyrics/cache.js js/lyrics/diagnostics.js js/lyrics/repository.js js/lyrics/provider.js js/lyrics/sync-engine.js js/lyrics/renderer.js js/lyrics/editor.js js/lyrics/index.js; do
