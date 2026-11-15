@@ -963,22 +963,45 @@
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-deep);
     backdrop-filter: blur(20px);
-    z-index: 100;
+    z-index: 1050;
     padding: 0.85rem;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(8px) scale(0.96);
-    transform-origin: bottom right;
-    transition: opacity 0.2s cubic-bezier(0.2, 0.8, 0.25, 1), transform 0.24s cubic-bezier(0.34, 1.4, 0.64, 1), visibility 0.2s ease;
+    transform: scale(0.85);
+    transform-origin: var(--popup-origin-x, bottom right) var(--popup-origin-y, bottom right);
+    will-change: transform, opacity;
+}
+
+.dropdown-flyout.playlist-menu {
+    width: 350px;
+}
+
+.dropdown-flyout.audio-fx-menu {
+    width: 330px;
+}
+
+.dropdown-flyout.sleep-timer-menu {
+    width: 280px;
 }
 
 .dropdown-flyout.open {
-    opacity: 1;
     visibility: visible;
-    transform: translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dropdown-flyout:not(.open) {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transform: none !important;
+    }
+    .dropdown-flyout.open {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+    }
 }
 
 /* Preserve the popup heading while the content scrolls on shorter screens. */

@@ -155,10 +155,10 @@
         overlayRegistry.set(id, handlers);
     }
 
-    function closeAllOverlays(exceptId) {
+    function closeAllOverlays(exceptId, opts) {
         overlayRegistry.forEach((h, id) => {
             if (id !== exceptId && typeof h.isOpen === 'function' && h.isOpen()) {
-                h.close({ restoreFocus: false });
+                h.close(opts || { restoreFocus: false });
             }
         });
     }
@@ -473,14 +473,390 @@
     }
 
     // ----------------------------------------------------------------------
-    // 5. MIUIX BOTTOM SHEET SWIPE & DISMISS HELPER (Mobile <= 768px)
+    // 4b. UNIFIED MIUIX TOOL PANEL OVERLAY CONTROLLER
+    // (#sleep-timer-menu, #audio-fx-menu, #playlist-menu, #lyrics-modal)
+    // ----------------------------------------------------------------------
+    const toolPanelControllers = new Map();
+
+    function getPanelController(id) {
+        return toolPanelControllers.get(id) || null;
+    }
+
+    function createMiuixPanelOverlay(config) {
+        if (!config || !config.panelEl) return null;
+        const id = config.id || config.panelEl.id;
+        const panelEl = config.panelEl;
+        const triggerBtn = config.triggerBtn || null;
+        const isCenterModal = Boolean(config.isCenterModal);
+        const align = config.align || 'auto';
+
+        let panelState = 'closed'; // 'closed' | 'opening' | 'open' | 'closing'
+        let transitionGen = 0;
+        let releaseTrap = null;
+        let originX = '50%';
+        let originY = '0%';
+
+        let mobileBackdrop = doc.getElementById('mobile-flyout-backdrop');
+        if (!mobileBackdrop) {
+            mobileBackdrop = doc.createElement('div');
+            mobileBackdrop.id = 'mobile-flyout-backdrop';
+            mobileBackdrop.className = 'mobile-flyout-backdrop';
+            mobileBackdrop.setAttribute('aria-hidden', 'true');
+            doc.body.appendChild(mobileBackdrop);
+        }
+
+        function setPanelState(nextState) {
+            panelState = nextState;
+            panelEl.dataset.panelState = nextState;
+            const expanded = nextState === 'opening' || nextState === 'open';
+            panelEl.classList.toggle('open', expanded);
+            if (triggerBtn) {
+                triggerBtn.classList.toggle('is-morph-active', expanded);
+                triggerBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            }
+        }
+        setPanelState('closed');
+
+        const spLib = Spring();
+        const applyFraction = (f) => {
+            const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
+            const clamped = Math.max(0, Math.min(1.04, f));
+
+            if (isMobile) {
+                const slidePercent = Math.max(0, (1 - clamped) * 100);
+                panelEl.style.transformOrigin = '50% 100%';
+                panelEl.style.transform = slidePercent < 0.1 ? '' : `translateY(${slidePercent.toFixed(2)}%)`;
+                panelEl.style.opacity = Math.min(1, clamped * 1.5).toFixed(3);
+                if (mobileBackdrop) {
+                    mobileBackdrop.style.opacity = Math.min(1, clamped * 0.95).toFixed(3);
+                }
+            } else if (isCenterModal) {
+                const scaleVal = 0.88 + 0.12 * clamped;
+                const alpha = Math.max(0, Math.min(1, clamped * 1.35));
+                panelEl.style.transformOrigin = '50% 50%';
+                panelEl.style.transform = `translate(-50%, -50%) scale(${scaleVal.toFixed(4)})`;
+                panelEl.style.opacity = alpha.toFixed(3);
+                if (mobileBackdrop) {
+                    mobileBackdrop.style.opacity = Math.min(1, clamped * 0.95).toFixed(3);
+                }
+            } else {
+                const scaleVal = 0.85 + 0.15 * clamped;
+                const alpha = Math.max(0, Math.min(1, clamped * 1.35));
+                panelEl.style.transformOrigin = `${originX} ${originY}`;
+                panelEl.style.transform = `scale(${scaleVal.toFixed(4)})`;
+                panelEl.style.opacity = alpha.toFixed(3);
+            }
+        };
+
+        const fractionSpring = spLib
+            ? spLib.createSpring({
+                initial: 0,
+                target: 0,
+                preset: spLib.PRESETS.LIST_POPUP,
+                precision: 0.01,
+                velocityPrecision: 0.05,
+                onUpdate: applyFraction
+            })
+            : null;
+
+        function computeAnchor() {
+            const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
+            const vw = global.innerWidth || doc.documentElement.clientWidth;
+            const vh = global.innerHeight || doc.documentElement.clientHeight;
+
+            if (isMobile) {
+                if (panelEl.parentElement !== doc.body) {
+                    doc.body.appendChild(panelEl);
+                }
+                panelEl.style.top = '';
+                panelEl.style.bottom = '';
+                panelEl.style.left = '';
+                panelEl.style.right = '';
+                panelEl.style.maxHeight = '';
+                panelEl.style.overflowY = '';
+                return;
+            }
+
+            if (!isCenterModal && triggerBtn) {
+                const wrapper = triggerBtn.closest('.dropdown-wrapper');
+                if (wrapper && panelEl.parentElement !== wrapper) {
+                    wrapper.appendChild(panelEl);
+                }
+            }
+
+            if (isCenterModal) {
+                panelEl.style.top = '50%';
+                panelEl.style.left = '50%';
+                panelEl.style.bottom = 'auto';
+                panelEl.style.right = 'auto';
+                panelEl.style.maxHeight = 'min(580px, 85vh)';
+                panelEl.style.overflowY = 'auto';
+                originX = '50%';
+                originY = '50%';
+                return;
+            }
+
+            if (!triggerBtn) return;
+
+            const btnRect = triggerBtn.getBoundingClientRect();
+            const headerEl = doc.querySelector('.site-brand-header');
+            const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 56;
+            const safeTopMargin = Math.max(8, headerBottom + 8);
+            const safeBottomMargin = vh - 12;
+
+            const menuW = Math.max(260, panelEl.offsetWidth || (id === 'playlist-menu' ? 350 : (id === 'audio-fx-menu' ? 330 : 280)));
+            const menuH = Math.max(160, panelEl.offsetHeight || 280);
+
+            const spaceBelow = safeBottomMargin - btnRect.bottom - 10;
+            const spaceAbove = btnRect.top - 10 - safeTopMargin;
+
+            const flipAbove = (spaceBelow < menuH && spaceAbove > spaceBelow) ||
+                              (btnRect.bottom + 10 + menuH > vh - 12 && btnRect.top - 10 - menuH > safeTopMargin);
+
+            if (flipAbove) {
+                panelEl.style.top = 'auto';
+                panelEl.style.bottom = 'calc(100% + 10px)';
+                originY = '100%';
+                if (menuH > spaceAbove || spaceAbove < 260) {
+                    panelEl.style.maxHeight = `${Math.max(120, Math.floor(spaceAbove))}px`;
+                    panelEl.style.overflowY = 'auto';
+                } else {
+                    panelEl.style.maxHeight = '';
+                    panelEl.style.overflowY = '';
+                }
+            } else {
+                panelEl.style.top = 'calc(100% + 10px)';
+                panelEl.style.bottom = 'auto';
+                originY = '0px';
+                if (menuH > spaceBelow || spaceBelow < 260) {
+                    panelEl.style.maxHeight = `${Math.max(120, Math.floor(spaceBelow))}px`;
+                    panelEl.style.overflowY = 'auto';
+                } else {
+                    panelEl.style.maxHeight = '';
+                    panelEl.style.overflowY = '';
+                }
+            }
+
+            if (align === 'right' || id === 'playlist-menu') {
+                panelEl.style.right = '0px';
+                panelEl.style.left = 'auto';
+                originX = `${menuW - 20}px`;
+            } else if (align === 'left' || id === 'sleep-timer-menu') {
+                panelEl.style.left = '0px';
+                panelEl.style.right = 'auto';
+                originX = '20px';
+            } else {
+                const centerShift = Math.round((menuW - btnRect.width) / 2);
+                const rawLeft = btnRect.left - centerShift;
+                const rawRight = rawLeft + menuW;
+                let leftStyle = `calc(50% - ${centerShift}px)`;
+
+                if (rawRight > vw - 12) {
+                    const overshoot = rawRight - (vw - 12);
+                    leftStyle = `calc(50% - ${centerShift + overshoot}px)`;
+                } else if (rawLeft < 12) {
+                    const undershoot = 12 - rawLeft;
+                    leftStyle = `calc(50% - ${centerShift - undershoot}px)`;
+                }
+                panelEl.style.left = leftStyle;
+                panelEl.style.right = 'auto';
+                originX = `${Math.round(menuW / 2)}px`;
+            }
+        }
+
+        function releaseCurrentTrap(restoreFocus) {
+            if (!releaseTrap) return;
+            const fn = releaseTrap;
+            releaseTrap = null;
+            fn({ restoreFocus: restoreFocus !== false });
+            if (restoreFocus === false && doc.activeElement && panelEl.contains(doc.activeElement)) {
+                try { doc.activeElement.blur(); } catch (_) {}
+            }
+        }
+
+        function open(opts) {
+            if (panelState === 'opening' || panelState === 'open') return;
+            const myGen = ++transitionGen;
+
+            if (fractionSpring) {
+                fractionSpring.onComplete = null;
+            }
+
+            closeAllOverlays(id);
+
+            if (typeof config.onBeforeOpen === 'function') {
+                try { config.onBeforeOpen(); } catch (_) {}
+            }
+
+            computeAnchor();
+            setPanelState('opening');
+
+            panelEl.style.visibility = 'visible';
+            panelEl.style.pointerEvents = 'auto';
+
+            const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
+            if (isMobile || isCenterModal) {
+                mobileBackdrop.classList.add('active');
+                if (isMobile) lockBodyScroll();
+            }
+
+            releaseCurrentTrap(false);
+            releaseTrap = pushFocusTrap(panelEl, triggerBtn, { initialFocus: !isMobile && id === 'playlist-menu' ? false : true });
+
+            let openFallbackTimer = null;
+            const openDone = () => {
+                if (openFallbackTimer) clearTimeout(openFallbackTimer);
+                if (myGen !== transitionGen || panelState !== 'opening') return;
+                setPanelState('open');
+                applyFraction(1);
+                if (typeof config.onAfterOpen === 'function') {
+                    try { config.onAfterOpen(); } catch (_) {}
+                }
+            };
+            openFallbackTimer = setTimeout(openDone, 650);
+
+            if (fractionSpring && !(spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
+                fractionSpring.setTarget(1, { onComplete: openDone });
+            } else {
+                applyFraction(1);
+                openDone();
+            }
+        }
+
+        function close(opts) {
+            const options = opts || {};
+            if (panelState === 'closed') return;
+            if (panelState === 'closing' && !options.instant) return;
+            const myGen = ++transitionGen;
+
+            if (fractionSpring) {
+                fractionSpring.onComplete = null;
+            }
+
+            if (typeof config.onBeforeClose === 'function') {
+                try { config.onBeforeClose(); } catch (_) {}
+            }
+
+            setPanelState('closing');
+
+            const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
+            if (isMobile) unlockBodyScroll();
+
+            releaseCurrentTrap(options.restoreFocus !== false);
+
+            let fallbackTimer = null;
+            const closeDone = () => {
+                if (fallbackTimer) clearTimeout(fallbackTimer);
+                if (myGen !== transitionGen || panelState !== 'closing') return;
+                setPanelState('closed');
+                panelEl.style.visibility = 'hidden';
+                panelEl.style.pointerEvents = 'none';
+                panelEl.style.transform = '';
+                panelEl.style.opacity = '';
+                panelEl.style.maxHeight = '';
+                panelEl.style.overflowY = '';
+                if (mobileBackdrop) {
+                    let anyOther = false;
+                    toolPanelControllers.forEach(ctrl => {
+                        if (ctrl !== controller && ctrl.isOpen()) anyOther = true;
+                    });
+                    if (!anyOther) {
+                        mobileBackdrop.classList.remove('active');
+                        mobileBackdrop.style.opacity = '';
+                    }
+                }
+                if (typeof config.onAfterClose === 'function') {
+                    try { config.onAfterClose(); } catch (_) {}
+                }
+            };
+
+            fallbackTimer = setTimeout(closeDone, 650);
+
+            if (options.instant || !fractionSpring || (spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
+                if (fractionSpring) fractionSpring.snap(0);
+                applyFraction(0);
+                closeDone();
+            } else {
+                fractionSpring.setTarget(0, { onComplete: closeDone });
+            }
+        }
+
+        function toggle(opts) {
+            if (panelState === 'opening' || panelState === 'open') {
+                close(opts);
+            } else {
+                open(opts);
+            }
+        }
+
+        const controller = {
+            id,
+            panelEl,
+            triggerBtn,
+            open,
+            close,
+            toggle,
+            isOpen: () => panelState === 'opening' || panelState === 'open',
+            getState: () => panelState,
+            recomputeAnchor: computeAnchor
+        };
+
+        doc.addEventListener('click', (e) => {
+            if (panelState !== 'opening' && panelState !== 'open') return;
+            if (panelEl.contains(e.target) || (triggerBtn && triggerBtn.contains(e.target))) return;
+            if (e.target.closest('#sleep-timer-btn, #audio-fx-btn, #lyrics-toggle-btn, #playlist-toggle-btn, #top-more-btn')) return;
+            close({ restoreFocus: false });
+        });
+
+        doc.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && (panelState === 'opening' || panelState === 'open')) {
+                e.preventDefault();
+                e.stopPropagation();
+                close({ restoreFocus: true });
+            }
+        });
+
+        panelEl.addEventListener('click', (e) => {
+            if (e.target.closest('.flyout-close-btn, .lyrics-close-btn')) {
+                e.stopPropagation();
+                close({ restoreFocus: true });
+            }
+        });
+
+        if (mobileBackdrop) {
+            mobileBackdrop.addEventListener('click', () => {
+                if (panelState === 'opening' || panelState === 'open') {
+                    close({ restoreFocus: false });
+                }
+            });
+        }
+
+        global.addEventListener('resize', () => {
+            if (panelState === 'opening' || panelState === 'open') {
+                computeAnchor();
+            }
+        }, { passive: true });
+
+        bindBottomSheetSwipe(panelEl, () => close({ restoreFocus: false }));
+
+        registerOverlay(id, {
+            isOpen: controller.isOpen,
+            close: controller.close
+        });
+
+        toolPanelControllers.set(id, controller);
+        return controller;
+    }
+
+    // ----------------------------------------------------------------------
+    // 5. MIUIX BOTTOM SHEET SWIPE & DISMISS HELPER (Mobile <= 860px)
     // ----------------------------------------------------------------------
     const bottomSheetStates = new WeakMap();
 
     function bindBottomSheetSwipe(sheetEl, onDismiss) {
         if (!sheetEl) return;
 
-        const handles = Array.from(sheetEl.querySelectorAll('.sheet-drag-handle, .menu-header, .playlist-header-top'));
+        const handles = Array.from(sheetEl.querySelectorAll('.sheet-drag-handle, .menu-header, .playlist-header-top, .lyrics-drawer-header'));
         if (!handles.length) return;
 
         const spLib = Spring();
@@ -624,7 +1000,7 @@
             handle.dataset.swipeHandleBound = 'true';
 
             handle.addEventListener('pointerdown', (e) => {
-                if ((global.innerWidth || 1024) > 768) return;
+                if ((global.innerWidth || 1024) > 860) return;
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 if (e.target.closest('button, input, a, select, textarea') && !e.target.closest('.sheet-drag-handle')) return;
                 if (hasScrolledContent(e.target)) return;
@@ -1456,6 +1832,8 @@
         bindMiuixSwitch: bindMiuixSwitch,
         syncTabIndicator: syncTabIndicator,
         syncLiquidGlassNav: syncTabIndicator,
-        initLiquidGlassNav: initLiquidGlassNav
+        initLiquidGlassNav: initLiquidGlassNav,
+        createMiuixPanelOverlay: createMiuixPanelOverlay,
+        getPanelController: getPanelController
     });
 })(window);

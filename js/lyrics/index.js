@@ -216,8 +216,39 @@
         }
 
         let releaseLyricsTrap = null;
+        let lyricsController = null;
+
+        if (global.MinkoiUI && typeof global.MinkoiUI.createMiuixPanelOverlay === 'function' && lyricsModal) {
+            lyricsController = global.MinkoiUI.createMiuixPanelOverlay({
+                id: 'lyrics',
+                panelEl: lyricsModal,
+                triggerBtn: lyricsToggleBtn,
+                isCenterModal: true,
+                onBeforeOpen: () => {
+                    const track = getActiveTrackFromPlayer();
+                    if (track && (!currentTrack || currentTrack.id !== track.id || currentTrack.file !== track.file)) {
+                        loadLyricsForTrack(track);
+                    }
+                    syncEngine.forceSync(true);
+                    if (!audio.paused) syncEngine.startLoop();
+                    if (typeof global.playChimeSFX === 'function') {
+                        global.playChimeSFX(track?.persona || 'alya');
+                    }
+                },
+                onBeforeClose: () => {
+                    editor.close();
+                    if (!document.body.classList.contains('zen-mode')) {
+                        syncEngine.stopLoop();
+                    }
+                }
+            });
+        }
 
         function openLyrics() {
+            if (lyricsController) {
+                lyricsController.open();
+                return;
+            }
             if (!lyricsModal) return;
             if (global.MinkoiUI && typeof global.MinkoiUI.closeAllOverlays === 'function') {
                 global.MinkoiUI.closeAllOverlays('lyrics');
@@ -243,6 +274,10 @@
         }
 
         function closeLyrics(opts) {
+            if (lyricsController) {
+                lyricsController.close(opts);
+                return;
+            }
             if (!lyricsModal) return;
             lyricsModal.classList.remove('open');
             if (lyricsToggleBtn) {
@@ -260,7 +295,7 @@
             }
         }
 
-        if (global.MinkoiUI && typeof global.MinkoiUI.registerOverlay === 'function') {
+        if (!lyricsController && global.MinkoiUI && typeof global.MinkoiUI.registerOverlay === 'function') {
             global.MinkoiUI.registerOverlay('lyrics', {
                 isOpen: () => Boolean(lyricsModal && lyricsModal.classList.contains('open')),
                 close: closeLyrics
@@ -268,6 +303,10 @@
         }
 
         function toggleLyrics() {
+            if (lyricsController) {
+                lyricsController.toggle();
+                return;
+            }
             if (lyricsModal?.classList.contains('open')) closeLyrics();
             else openLyrics();
         }

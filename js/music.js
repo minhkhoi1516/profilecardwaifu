@@ -1378,8 +1378,76 @@
         menu.style.transformOrigin = flipUp ? 'bottom center' : 'top center';
     }
 
+    let sleepTimerOverlay = null;
+    let audioFxOverlay = null;
+    let playlistOverlay = null;
+
+    function initToolPanelControllers() {
+        if (!window.MinkoiUI || typeof window.MinkoiUI.createMiuixPanelOverlay !== 'function') return;
+
+        if (sleepTimerMenu && !sleepTimerOverlay) {
+            sleepTimerOverlay = window.MinkoiUI.createMiuixPanelOverlay({
+                id: 'sleep-timer-menu',
+                panelEl: sleepTimerMenu,
+                triggerBtn: sleepTimerBtn,
+                align: 'left',
+                onBeforeOpen: () => {
+                    renderSleepTimerMenu();
+                    positionDesktopFlyout(sleepTimerMenu, sleepTimerBtn);
+                }
+            });
+        }
+
+        if (audioFxMenu && !audioFxOverlay) {
+            audioFxOverlay = window.MinkoiUI.createMiuixPanelOverlay({
+                id: 'audio-fx-menu',
+                panelEl: audioFxMenu,
+                triggerBtn: audioFxBtn,
+                align: 'center',
+                onBeforeOpen: () => {
+                    renderFxMenu();
+                    positionDesktopFlyout(audioFxMenu, audioFxBtn);
+                }
+            });
+        }
+
+        if (playlistMenu && !playlistOverlay) {
+            playlistOverlay = window.MinkoiUI.createMiuixPanelOverlay({
+                id: 'playlist-menu',
+                panelEl: playlistMenu,
+                triggerBtn: playlistToggleBtn,
+                align: 'right',
+                onBeforeOpen: () => {
+                    if (!document.getElementById('playlist-items-scroll')) {
+                        buildPlaylistShell();
+                    }
+                    updatePlaylistItems();
+                    positionDesktopFlyout(playlistMenu, playlistToggleBtn);
+                },
+                onAfterOpen: () => {
+                    const input = document.getElementById('playlist-search-input');
+                    if (input && window.innerWidth > 768) {
+                        setTimeout(() => input.focus({ preventScroll: true }), 80);
+                    }
+                }
+            });
+        }
+    }
+
     function openFlyout(menu, triggerBtn, opts) {
         if (!menu) return;
+        const ctrl = window.MinkoiUI && typeof window.MinkoiUI.getPanelController === 'function'
+            ? window.MinkoiUI.getPanelController(menu.id)
+            : null;
+        if (ctrl) {
+            if (opts && opts.forceOpen) {
+                ctrl.open();
+            } else {
+                ctrl.toggle();
+            }
+            return;
+        }
+
         const willOpen = (opts && opts.forceOpen) ? true : !menu.classList.contains('open');
         if (window.MinkoiUI && typeof window.MinkoiUI.closeAllOverlays === 'function') {
             window.MinkoiUI.closeAllOverlays(menu.id);
@@ -1809,6 +1877,10 @@
     }
 
     function closeAllFlyouts(exceptThisOne, opts) {
+        if (window.MinkoiUI && typeof window.MinkoiUI.closeAllOverlays === 'function') {
+            window.MinkoiUI.closeAllOverlays(exceptThisOne ? exceptThisOne.id : null, opts);
+            return;
+        }
         if (playlistMenu && playlistMenu !== exceptThisOne) {
             playlistMenu.classList.remove('open');
             playlistToggleBtn?.classList.remove('is-morph-active');
@@ -1829,7 +1901,7 @@
         syncFlyoutBackdrop();
     }
 
-    if (window.MinkoiUI && typeof window.MinkoiUI.registerOverlay === 'function') {
+    if (!sleepTimerOverlay && window.MinkoiUI && typeof window.MinkoiUI.registerOverlay === 'function') {
         [
             { id: 'audio-fx-menu', el: audioFxMenu },
             { id: 'sleep-timer-menu', el: sleepTimerMenu },
@@ -1960,6 +2032,7 @@
     renderCategoryTabs();
     renderFxMenu();
     renderSleepTimerMenu();
+    initToolPanelControllers();
     mountFlyoutForViewport();
     if (categoryNav && window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
         window.MinkoiUI.syncTabIndicator(categoryNav, setFilter);

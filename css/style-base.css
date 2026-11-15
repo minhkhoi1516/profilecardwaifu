@@ -112,6 +112,14 @@ body {
     position: relative;
 }
 
+/* Prevent negative overflow cut-off on short viewports */
+@media (max-height: 760px) {
+    body {
+        justify-content: flex-start;
+        padding-top: max(0.75rem, env(safe-area-inset-top));
+    }
+}
+
 /* Accessibility: Skip Link */
 .skip-link {
     position: fixed;

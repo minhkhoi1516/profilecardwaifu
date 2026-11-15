@@ -799,7 +799,7 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -46%) scale(0.95);
+    transform: translate(-50%, -50%) scale(0.88);
     width: 90%;
     max-width: 480px;
     height: 520px;
@@ -810,19 +810,32 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     border: 1px solid var(--color-border-active);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px var(--color-accent-glow);
     border-radius: var(--radius-lg);
-    z-index: 150;
+    z-index: 1050;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
 }
 
 .lyrics-drawer-modal.open {
-    opacity: 1;
+    visibility: visible;
     pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lyrics-drawer-modal:not(.open) {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        transform: translate(-50%, -50%) !important;
+    }
+    .lyrics-drawer-modal.open {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: translate(-50%, -50%) !important;
+    }
 }
 
 .lyrics-drawer-header {

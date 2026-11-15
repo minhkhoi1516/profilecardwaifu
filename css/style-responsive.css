@@ -637,10 +637,14 @@
         backdrop-filter: blur(28px) saturate(180%) !important;
         -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
         box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.85) !important;
-        padding: 1.25rem 1.15rem 2rem !important;
+        padding: 1.25rem 1.15rem max(1.25rem, env(safe-area-inset-bottom, 0px)) !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         z-index: 2000 !important;
+        transform: translateY(100%);
+        opacity: 0;
+        visibility: hidden;
+        will-change: transform, opacity;
     }
 
     /* Mobile Flyout Backdrop Dimmer */
@@ -654,12 +658,10 @@
         z-index: 1990;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .mobile-flyout-backdrop.active {
         display: block;
-        opacity: 1;
         pointer-events: auto;
     }
 
@@ -697,14 +699,12 @@
         box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.85) !important;
         z-index: 2050 !important;
         transform: translateY(100%) !important;
-        transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
         opacity: 0 !important;
         visibility: hidden !important;
+        will-change: transform, opacity;
     }
 
     .lyrics-drawer-modal.open {
-        transform: translateY(0) !important;
-        opacity: 1 !important;
         visibility: visible !important;
     }
 
