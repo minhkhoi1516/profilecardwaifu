@@ -19,21 +19,33 @@ check(backgrounds.includes('body.zen-mode .banner-stage::before {') &&
 check(tokens.includes('body.light-mode.zen-mode .banner-stage::after'),
       'Light Mode is overriding the intended Zen vignette');
 check(backgrounds.includes('body.zen-mode .fluid-bg-canvas'),'Zen must hide WebGL layer');
-check(backgrounds.includes('body.zen-mode .starry-bg'),'Zen must hide particles layer');
+check(!backgrounds.includes('body.zen-mode .starry-bg'),'Zen must preserve waifu signature particles layer');
 check(cards.includes('visibility: hidden;'),'Zen underlying UI still composited');
 for(const s of [feature,fluid,stars,music])check(s.includes('minkoi:zenchange'),'Missing Zen event coordination');
-for(const [name,source,signature,marker,func] of [
- ['fluid',fluid,'    function shouldPauseFluid() {','    function render(now) {','shouldPauseFluid'],
- ['stars',stars,'    function shouldPauseParticles() {','    function render(now) {','shouldPauseParticles']
-]){
- const start=source.indexOf(signature),end=source.indexOf(marker,start);
- check(start>=0&&end>start,name+' pause guard unavailable');
+
+// Fluid WebGL must pause in Zen mode to conserve GPU bandwidth
+{
+ const start=fluid.indexOf('    function shouldPauseFluid() {'),end=fluid.indexOf('    function render(now) {',start);
+ check(start>=0&&end>start,'fluid pause guard unavailable');
  let zen=false;
- const doc={hidden:false,body:{classList:{contains:k=>k==='zen-mode'&&zen},getAttribute:()=> 'high'}};
- const body=source.slice(start,end)+'\nreturn '+func+';';
+ const doc={hidden:false,body:{classList:{contains:k=>k==='zen-mode'&&zen},getAttribute:()=>'high'}};
+ const body=fluid.slice(start,end)+'\nreturn shouldPauseFluid;';
  const shouldPause=new Function('document','reducedMotionMQ','getQualityFactor',body)(doc,{matches:false},()=>1);
- check(shouldPause()===false,name+' incorrectly stops outside Zen');
- zen=true;check(shouldPause()===true,name+' does not stop in Zen');
- zen=false;doc.hidden=true;check(shouldPause()===true,name+' does not stop while hidden');
+ check(shouldPause()===false,'fluid incorrectly stops outside Zen');
+ zen=true;check(shouldPause()===true,'fluid does not stop in Zen');
+ zen=false;doc.hidden=true;check(shouldPause()===true,'fluid does not stop while hidden');
 }
-console.log('PASS Zen: two buffers, no long GPU zoom, paused background RAFs, hidden UI.');
+
+// Stars waifu particles must CONTINUE in Zen mode for signature waifu atmosphere
+{
+ const start=stars.indexOf('    function shouldPauseParticles() {'),end=stars.indexOf('    function render(now) {',start);
+ check(start>=0&&end>start,'stars pause guard unavailable');
+ let zen=false;
+ const doc={hidden:false,body:{classList:{contains:k=>k==='zen-mode'&&zen},getAttribute:()=>'high'}};
+ const body=stars.slice(start,end)+'\nreturn shouldPauseParticles;';
+ const shouldPause=new Function('document','reducedMotionMQ','getQualityFactor',body)(doc,{matches:false},()=>1);
+ check(shouldPause()===false,'stars incorrectly stops outside Zen');
+ zen=true;check(shouldPause()===false,'stars must NOT stop in Zen mode');
+ zen=false;doc.hidden=true;check(shouldPause()===true,'stars does not stop while hidden');
+}
+console.log('PASS Zen: two buffers, active waifu particles, paused WebGL fluid, hidden UI.');

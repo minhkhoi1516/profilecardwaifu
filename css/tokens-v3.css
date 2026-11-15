@@ -134,9 +134,7 @@ body.low-end {
     --v3-canvas-opacity: 0;
 }
 
-body[data-quality="eco"] .starry-bg,
 body[data-quality="eco"] .fluid-bg-canvas,
-body.low-end .starry-bg,
 body.low-end .fluid-bg-canvas {
     display: none;
     opacity: 0;

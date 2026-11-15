@@ -224,13 +224,13 @@ try {
     })()
 '@
     Write-Host "  Pause Audit: $($pauseAudit | ConvertTo-Json -Compress)"
-    if ($pauseAudit.fluidDisplay -ne 'none' -or $pauseAudit.starryDisplay -ne 'none') {
-        throw "Canvas elements not hidden in Zen mode (display: none expected)!"
+    if ($pauseAudit.fluidDisplay -ne 'none' -or $pauseAudit.starryDisplay -eq 'none') {
+        throw "Canvas elements state error in Zen mode: fluid should be hidden ('none') and starry active ('block')!"
     }
     if ($pauseAudit.bannerLayerCount -ne 2) {
         throw "Expected exactly 2 banner buffers, got $($pauseAudit.bannerLayerCount)!"
     }
-    Write-Host "  [PASS] Fluid & Starry canvas hidden; exactly 2 banner buffers active!" -ForegroundColor Green
+    Write-Host "  [PASS] WebGL fluid paused; waifu signature particles active in Zen; exactly 2 banner buffers active!" -ForegroundColor Green
 
     # ========================================================
     # TEST 2B: DESKTOP VIEWPORT (1440x900) ZEN AUDIT & CAPTURE

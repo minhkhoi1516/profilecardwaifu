@@ -83,8 +83,7 @@ body.zen-mode .banner-stage::before {
     opacity: 0.38;
     mix-blend-mode: normal;
 }
-body.zen-mode .fluid-bg-canvas,
-body.zen-mode .starry-bg { display: none; }
+body.zen-mode .fluid-bg-canvas { display: none; }
 body.zen-mode .banner-stage::after {
     background:
         radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.08) 0%, rgba(3, 5, 12, 0.52) 100%),
@@ -139,8 +138,8 @@ body.low-end .banner-layer {
 }
 
 body.light-mode .starry-bg {
-    opacity: 0.22;
-    mix-blend-mode: multiply;
+    opacity: 0.82;
+    mix-blend-mode: normal;
 }
 
 /* WebGL Audio-Reactive Fluid Atmosphere */
