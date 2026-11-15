@@ -675,47 +675,10 @@ body.zen-mode .zen-hint-toast {
 
 /* ========================================================
    ZEN FLOATING ENTRY POINT (mobile / tablet)
+   Deprecated in favor of top-header zen toggle & dedicated zen dock
 ======================================================== */
 .zen-fab {
-    position: fixed;
-    right: 16px;
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
-    width: 46px;
-    height: 46px;
-    border-radius: 50%;
     display: none;
-    align-items: center;
-    justify-content: center;
-    background: var(--surface-1);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid var(--color-border-active);
-    color: var(--color-accent);
-    font-size: 0.95rem;
-    cursor: pointer;
-    z-index: 90;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px var(--color-accent-glow);
-    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.zen-fab:hover,
-.zen-fab:active {
-    transform: scale(1.06);
-    border-color: var(--color-accent);
-}
-
-@media (max-width: 900px) {
-    .zen-fab {
-        display: inline-flex;
-    }
-}
-
-body.zen-mode .zen-fab,
-body:has(.dropdown-flyout.open) .zen-fab,
-body:has(.lyrics-drawer-modal.open) .zen-fab {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px) scale(0.9);
 }
 
 /* Mini dock dims and retreats with spring physics when idle in zen mode */

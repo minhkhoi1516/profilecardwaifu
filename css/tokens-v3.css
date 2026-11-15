@@ -765,7 +765,7 @@ body.light-mode.low-end .tab-sliding-pill {
    ZEN MODE CLICK-TO-EXIT & MOBILE OVERLAP ELIMINATION
    ========================================================================== */
 .zen-fab {
-    display: none !important;
+    display: none;
 }
 
 body.zen-mode .banner-stage {

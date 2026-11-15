@@ -111,15 +111,15 @@ body.light-mode .banner-stage::after {
     to { opacity: 0.48; }
 }
 @media (prefers-reduced-motion: no-preference) {
-    body.zen-mode[data-quality="high"]:not(.low-end) .banner-layer.active {
+    body.zen-mode:is([data-quality="high"], :not([data-quality])):not(.low-end) .banner-layer.active {
         animation: zenCinematicDrift 24s ease-in-out infinite alternate;
     }
-    body.zen-mode:is([data-quality="high"], [data-quality="balanced"]):not(.low-end) .banner-stage::before {
+    body.zen-mode:is([data-quality="high"], [data-quality="balanced"], :not([data-quality])):not(.low-end) .banner-stage::before {
         animation: zenLightBreathing 10s ease-in-out infinite alternate;
     }
 }
 @media (max-width: 860px) {
-    body.zen-mode[data-quality="high"]:not(.low-end) .banner-layer.active {
+    body.zen-mode:is([data-quality="high"], :not([data-quality])):not(.low-end) .banner-layer.active {
         animation-duration: 32s;
     }
 }

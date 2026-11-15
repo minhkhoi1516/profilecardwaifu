@@ -225,7 +225,9 @@
             return src;
         }
 
-        // Pre-decode image asynchronously before starting opacity crossfade to eliminate AI art harsh pop-in
+        // Pre-decode image asynchronously before starting opacity crossfade to eliminate AI art harsh pop-in.
+        // Clear any lingering release timer so standby texture isn't wiped during async decode:
+        clearTimeout(bannerReleaseTimer);
         const loader = new Image();
         loader.decoding = 'async';
         loader.src = src;
