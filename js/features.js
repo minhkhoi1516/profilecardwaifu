@@ -287,6 +287,7 @@
             }
         }
         document.getElementById('zen-mini-dock').inert = true;
+        window.toggleZenMode = toggleZenMode;
 
         if (zenFab) {
             zenFab.addEventListener('click', (e) => {
