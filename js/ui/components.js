@@ -187,10 +187,51 @@
             '.persona-chip',
             '.social-link-pill',
             '.quality-option-btn',
-            '.fx-preset-btn'
+            '.fx-preset-btn',
+            '.top-more-item',
+            '.zen-ctrl-btn',
+            '.zen-fab',
+            '.lyrics-close-btn',
+            '.crossfade-toggle'
         ].join(',');
 
         const springs = new WeakMap();
+        const hapticToggle = doc.getElementById('haptic-feedback-toggle');
+        const hapticState = doc.getElementById('haptic-feedback-state');
+        const hapticSupported = typeof global.navigator?.vibrate === 'function';
+        let hapticEnabled = hapticSupported;
+        let lastHapticAt = -Infinity;
+        try {
+            const saved = global.localStorage?.getItem('minkoi_haptic_feedback');
+            if (saved !== null && saved !== undefined) hapticEnabled = hapticSupported && saved === 'on';
+        } catch (_) {}
+
+        function syncHapticSetting() {
+            if (!hapticToggle) return;
+            hapticToggle.disabled = !hapticSupported;
+            hapticToggle.setAttribute('aria-checked', hapticEnabled ? 'true' : 'false');
+            if (hapticState) hapticState.textContent = !hapticSupported ? 'Không hỗ trợ' : (hapticEnabled ? 'Bật' : 'Tắt');
+        }
+        syncHapticSetting();
+        hapticToggle?.addEventListener('click', () => {
+            if (!hapticSupported) return;
+            hapticEnabled = !hapticEnabled;
+            try { global.localStorage?.setItem('minkoi_haptic_feedback', hapticEnabled ? 'on' : 'off'); } catch (_) {}
+            syncHapticSetting();
+        });
+
+        function vibrateTap(e, el) {
+            if (!hapticEnabled || !hapticSupported || e?.pointerType !== 'touch') return;
+            const now = global.performance?.now?.() ?? Date.now();
+            if (now - lastHapticAt < 85) return;
+            lastHapticAt = now;
+            try {
+                const pulse = el.id === 'play-pause' || el.classList.contains('play-hero-btn') ? 12 : 8;
+                global.navigator.vibrate(pulse);
+            } catch (_) {
+                // Vibration is optional; unsupported engines must remain usable.
+            }
+        }
 
         function getScaleSpring(el, tier) {
             let sp = springs.get(el);
@@ -214,12 +255,20 @@
         }
 
         let activeEl = null;
+        let activePointerId = null;
+        let tapX = 0;
+        let tapY = 0;
+        let moved = false;
 
         doc.addEventListener('pointerdown', (e) => {
             if (e.button && e.button !== 0) return;
             const target = e.target && e.target.closest ? e.target.closest(selector) : null;
             if (!target || target.disabled) return;
             activeEl = target;
+            activePointerId = e.pointerId;
+            tapX = e.clientX;
+            tapY = e.clientY;
+            moved = false;
 
             // Tier 1: Expressive (Play/Pause hero)
             if (target.id === 'play-pause' || target.classList.contains('play-hero-btn')) {
@@ -235,12 +284,23 @@
             }
         }, { passive: true });
 
-        const release = () => {
+        doc.addEventListener('pointermove', (e) => {
+            if (!activeEl || e.pointerId !== activePointerId) return;
+            if (Math.hypot(e.clientX - tapX, e.clientY - tapY) > 11) moved = true;
+        }, { passive: true });
+
+        const release = (e) => {
             if (!activeEl) return;
             const el = activeEl;
+            const isTap = e?.type === 'pointerup' && !moved &&
+                e.pointerId === activePointerId &&
+                (e.target === el || el.contains(e.target));
             activeEl = null;
+            activePointerId = null;
+            moved = false;
             const tier = (el.id === 'play-pause' || el.classList.contains('play-hero-btn')) ? 1 : 2;
             getScaleSpring(el, tier).setTarget(1);
+            if (isTap) vibrateTap(e, el);
         };
 
         doc.addEventListener('pointerup', release, { passive: true });

@@ -99,6 +99,30 @@ body.light-mode .banner-stage::after {
     );
 }
 
+/* Preserve the original crossfade while adding low-cost cinematic motion.
+   Only High animates the visible wallpaper texture. Mid animates the opacity
+   of one already-composited lighting overlay. Eco stays static. */
+@keyframes zenCinematicDrift {
+    from { transform: translate3d(0, 0, 0) scale(1.018); }
+    to { transform: translate3d(-0.3%, -0.25%, 0) scale(1.038); }
+}
+@keyframes zenLightBreathing {
+    from { opacity: 0.24; }
+    to { opacity: 0.48; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    body.zen-mode[data-quality="high"]:not(.low-end) .banner-layer.active {
+        animation: zenCinematicDrift 24s ease-in-out infinite alternate;
+    }
+    body.zen-mode:is([data-quality="high"], [data-quality="balanced"]):not(.low-end) .banner-stage::before {
+        animation: zenLightBreathing 10s ease-in-out infinite alternate;
+    }
+}
+@media (max-width: 860px) {
+    body.zen-mode[data-quality="high"]:not(.low-end) .banner-layer.active {
+        animation-duration: 32s;
+    }
+}
 body.low-end .banner-stage::before {
     display: none;
 }

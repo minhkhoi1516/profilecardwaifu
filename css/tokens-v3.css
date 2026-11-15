@@ -383,6 +383,18 @@ body.light-mode.zen-mode .banner-stage::after {
     color: var(--color-accent);
 }
 
+/* Optional tactile feedback setting in the More menu. */
+#haptic-feedback-toggle .haptic-feedback-state {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+#haptic-feedback-toggle[aria-checked="true"] .haptic-feedback-state {
+    color: var(--color-accent);
+}
+#haptic-feedback-toggle:disabled { opacity: 0.55; cursor: default; }
+
 /* Miuix Switch (49dp x 28dp proportion with 20dp thumb) */
 .crossfade-toggle {
     width: 49px !important;
