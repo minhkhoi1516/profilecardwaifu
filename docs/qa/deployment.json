@@ -1,0 +1,18 @@
+{
+  "checkedAt": "2026-11-15T11:42:28.293Z",
+  "source": "Authenticated Vercel get_deployment response and live HTTP/browser checks",
+  "projectId": "prj_BT8MaopPlZmce8gNK3XXEzEYggNC",
+  "deploymentId": "dpl_GAekvTfpMC7TT9jjWfMLUGxZXGEW",
+  "url": "https://pro5-waifu-minkoi-9udfxthq8-minhkhoi1516s-projects.vercel.app",
+  "target": "production",
+  "state": "READY",
+  "githubCommitRef": "main",
+  "githubCommitSha": "021dadf8820489072866d2ef5468d57671162e11",
+  "domains": [
+    "pro5-waifu-minkoi.vercel.app",
+    "pro5waifu-minkoi.duckdns.org"
+  ],
+  "buildingAt": 1794742549132,
+  "readyAt": 1794742557391,
+  "runtimeLogScan": "NOT TESTED; static hosting; browser console assertions passed in smoke tests"
+}

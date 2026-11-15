@@ -1,0 +1,12 @@
+{
+  "baseURL": "https://pro5-waifu-minkoi.vercel.app/",
+  "commit": "021dadf8820489072866d2ef5468d57671162e11",
+  "stats": {
+    "startTime": "2026-11-15T11:36:53.295Z",
+    "duration": 68563.897,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

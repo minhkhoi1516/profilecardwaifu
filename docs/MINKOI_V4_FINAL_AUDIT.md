@@ -2,7 +2,7 @@
 
 Ngày thực hiện: 15/11/2026 (Asia/Ho_Chi_Minh). Bản cơ sở: `50382d783e3b4a6d88477a198b7ae2a553b651ac`. Working tree ban đầu sạch; đã fetch và fast-forward `main` từ `26edebe` lên commit này trước khi sửa. Không reset về bản cũ, không tạo nhánh thường trực, không force-push.
 
-**Local QA đã qua; trạng thái GitHub/Vercel đang chờ xác minh sau push.** Không suy thành công từ HTTP 200 hoặc Vercel READY.
+**Đã phát hành bản sửa UI 40.13 và xác minh production.** Local QA và live smoke đã qua trong phạm vi dưới đây. **GitHub Actions chưa có run; thiết bị vật lý và độ khớp lời chưa được chứng nhận.** Không tuyên bố V4 hoàn tất trên mọi thiết bị.
 
 ## 1. Vấn đề ban đầu và nguyên nhân
 
@@ -95,6 +95,8 @@ SHA-256 đã duyệt:
 
 [Manifest và biên bản duyệt](screenshots/capture.json) giữ nguyên HEAD `50382d7`, `dirty:true` vì chụp working tree trước commit, marker `40.13` và SHA-256 các nguồn chuẩn hóa LF xác định bản đã chụp. Không sửa metadata thành một commit chưa tồn tại lúc capture. README giữ tỉ lệ, mô tả full-page và dùng query version mới tránh cache ảnh cũ; đã bỏ marketing hiệu năng và bảng phiên bản browser chưa kiểm chứng.
 
+Sau commit, đã so toàn bộ SHA nguồn trong manifest với git blob của `021dadf`: tất cả khớp. Chỉ hai PNG đã duyệt được thay thế; ảnh light/Eco/Zen và panel kiểm tra nằm trong thư mục QA tạm, không thêm vào showcase.
+
 ## 8. CI, commit và triển khai
 
 Trước sửa: GitHub API trả workflow `417866358` active nhưng **0 run và 0 check-run cho commit cơ sở**. Chỉ có status Vercel success; không coi đó là Actions đã chạy.
@@ -103,7 +105,20 @@ Workflow mới cài dependencies QA riêng, chạy syntax/CSS/assets/catalogue, 
 
 Trước phát hành, connector xác nhận project `pro5-waifu-minkoi`, team `team_PRqdq2OSsTAUVQAd6yWC9mTp`, deployment `dpl_9JYZDdmJ1K5hGq17tzqLH2NHjFNX` gắn `50382d7`. Hai domain đều HTTP 200, cùng HTML/ETag/assets; MP3 range 0–1023 trả 206, 1024 byte và Content-Range đúng. Bản mới có marker 40.13 và phiên bản asset thay đổi tương ứng.
 
-Commit mới, trạng thái Actions và xác minh Vercel sau push: **PENDING**. Chưa tuyên bố deploy thành công.
+Đã commit và push trực tiếp `main`:
+
+- [e9cb224 — cô lập script chụp cũ, cleanup nhỏ](https://github.com/minhkhoi1516/profilecardwaifu/commit/e9cb224).
+- [021dadf8820489072866d2ef5468d57671162e11 — UI/QA/preview release](https://github.com/minhkhoi1516/profilecardwaifu/commit/021dadf8820489072866d2ef5468d57671162e11). GitHub API xác nhận SHA và commit URL tồn tại.
+
+Vercel connector xác nhận deployment **`dpl_GAekvTfpMC7TT9jjWfMLUGxZXGEW`**, target **production**, READY, Git SHA **021dadf**, branch main, hai alias đúng; build khoảng **8,3 giây**. [Bằng chứng deployment](qa/deployment.json).
+
+`verify-release.cjs` đối chiếu byte thực với git blob: HTML và **28 CSS/JS trên mỗi domain** khớp SHA-256 commit. Cả hai root trả HTML marker 40.13, cache `max-age=0,must-revalidate`; MP3 trả 206, 1024 byte, Content-Range `bytes 0-1023/3617674`, cache asset nay đúng `max-age=86400,must-revalidate`. [Kết quả từng URL](qa/live-release.json).
+
+Smoke browser trên production: **5/5 pass** ở domain Vercel (desktop/mobile bốn panel, playback/volume/seek/speed/8 persona, Zen/light/reduced-motion/menu, Android desktop-site); **2/2 pass** ở DuckDNS (mobile bốn panel và playback/volume/seek/speed/persona). Không có runtime/console error trong các assertion này. [Domain chính](qa/live-smoke-primary.json) · [Domain phụ](qa/live-smoke-secondary.json). Không thực hiện quét runtime log/monitoring account; không suy từ static hosting rằng mọi production log đều sạch.
+
+**CI GitHub: chưa xác nhận thực thi.** API sau push vẫn trả **0 workflow run, 0 check-run cho 021dadf**, dù workflow active. Connector không có capability dispatch. Đã thử kiểm tra UI nhưng Windows Computer Use tự dừng vì không xác định URL trình duyệt đủ tin cậy để áp dụng policy; không tiếp tục thao tác, không dispatch và không thay quyền/cài đặt. Chưa xác định được nguyên nhân GitHub không tạo run, nên không gán thành “Actions disabled” hoặc “thiếu quyền” khi chưa có chứng cứ. [Snapshot API/blocker](qa/github-actions.json). Bộ local 20/20 và live smoke **không được trình bày thành Actions xanh**.
+
+Commit tài liệu/bằng chứng tiếp theo không đổi HTML/CSS/JS/PNG; việc xác minh deployment mới nhất sau commit tài liệu được thực hiện thêm, không sửa hồi tố metadata lúc capture.
 
 ## 9. Kiểm kê và cleanup
 
@@ -140,7 +155,12 @@ Giữ ảnh V3.x và báo cáo lịch sử vì còn tham chiếu trong script/t�
 | Thêm | `docs/MINKOI_V4_FINAL_AUDIT.md` |
 | Thêm | `docs/PREVIEW_QA.md` |
 | Thêm | `docs/qa/browser-results.json` |
+| Thêm | `docs/qa/deployment.json` |
+| Thêm | `docs/qa/github-actions.json` |
 | Thêm | `docs/qa/glass-interactions.json` |
+| Thêm | `docs/qa/live-release.json` |
+| Thêm | `docs/qa/live-smoke-primary.json` |
+| Thêm | `docs/qa/live-smoke-secondary.json` |
 | Thêm | `docs/qa/performance-baseline.json` |
 | Thêm | `docs/qa/performance-release-playing.json` |
 | Thêm | `docs/qa/performance-release.json` |

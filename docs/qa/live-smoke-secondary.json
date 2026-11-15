@@ -1,0 +1,12 @@
+{
+  "baseURL": "https://pro5waifu-minkoi.duckdns.org/",
+  "commit": "021dadf8820489072866d2ef5468d57671162e11",
+  "stats": {
+    "startTime": "2026-11-15T11:38:41.355Z",
+    "duration": 36391.780999999995,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-11-15T11:42:28.295Z",
+  "commit": "021dadf8820489072866d2ef5468d57671162e11",
+  "endpoints": [
+    {
+      "endpoint": "actions/workflows",
+      "status": 200,
+      "body": {
+        "total_count": 1,
+        "workflows": [
+          {
+            "id": 417866358,
+            "node_id": "W_kwDOVHtwKc4Y6CJ2",
+            "name": "Repository and Browser QA",
+            "path": ".github/workflows/ci.yml",
+            "state": "active",
+            "created_at": "2026-11-13T23:50:13.000Z",
+            "updated_at": "2026-11-15T11:35:47.000Z",
+            "url": "https://api.github.com/repos/minhkhoi1516/profilecardwaifu/actions/workflows/417866358",
+            "html_url": "https://github.com/minhkhoi1516/profilecardwaifu/blob/main/.github/workflows/ci.yml",
+            "badge_url": "https://github.com/minhkhoi1516/profilecardwaifu/workflows/Repository%20and%20Browser%20QA/badge.svg"
+          }
+        ]
+      }
+    },
+    {
+      "endpoint": "actions/runs?head_sha=021dadf8820489072866d2ef5468d57671162e11",
+      "status": 200,
+      "body": {
+        "total_count": 0,
+        "workflow_runs": []
+      }
+    },
+    {
+      "endpoint": "commits/021dadf8820489072866d2ef5468d57671162e11/check-runs",
+      "status": 200,
+      "body": {
+        "total_count": 0,
+        "check_runs": []
+      }
+    }
+  ],
+  "uiBlocker": "Windows Computer Use stopped because it could not determine the current browser URL with sufficient policy confidence. No UI dispatch was performed."
+}

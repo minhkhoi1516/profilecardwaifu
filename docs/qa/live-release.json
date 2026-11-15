@@ -1,0 +1,492 @@
+{
+  "checkedAt": "2026-11-15T11:36:40.942Z",
+  "expectedCommit": "021dadf8820489072866d2ef5468d57671162e11",
+  "domains": [
+    {
+      "base": "https://pro5-waifu-minkoi.vercel.app/",
+      "assets": [
+        {
+          "path": "/",
+          "status": 200,
+          "sha256": "10b3820c4fbcfe7741431373f39a55930ec9d6fae1ada29b087080642f322bc3",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-base.css?v=40.8",
+          "status": 200,
+          "sha256": "59c41f4531e61309ce979f5dbbb8cba5fb32c78d618b7f49066700a74cdb8db2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-backgrounds.css?v=40.13",
+          "status": 200,
+          "sha256": "ac23c01a4057e29b5595f078f702a3c2a176d0f11870829cce27e3cd6246b48d",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-card.css?v=40.13",
+          "status": 200,
+          "sha256": "c748236708340b9e596c88be581a4366e49f8146bc69b580a3cc5fc194cd936d",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-left.css?v=40.13",
+          "status": 200,
+          "sha256": "1887797c3b8ab9a1ee7b1f4b450db52e492918e5f491021efc8b271b42126911",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-right.css?v=40.13",
+          "status": 200,
+          "sha256": "d468584730353217486cb8348c475eef878ba26af04bf54adfe4939201d11679",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/style-responsive.css?v=40.13",
+          "status": 200,
+          "sha256": "78d818d6ba0f257635306c9367b1c0f85291a290b28de694c6d99ad92999854a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "css/tokens-v3.css?v=40.13",
+          "status": 200,
+          "sha256": "e6f7fd5bd8a6174a9943646c272d68940f951d66e3624418f7564de66f9f0fc6",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/config.js?v=40.12",
+          "status": 200,
+          "sha256": "eb12d9dd324ea305d7e0f4729116bc12735b1dc9c25400cf11f491c5575fec0a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/ui/spring.js?v=40.8",
+          "status": 200,
+          "sha256": "ac9c68adacc08e263deb7528c85272f42fd1a5d6fe88a948d9cd900e8198f9b9",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/ui/squircle.js?v=40.8",
+          "status": 200,
+          "sha256": "8d50e3b9553bd0c30c54e250fea5ad082ae436099023f5a94a26a996405b2bbc",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/ui/components.js?v=40.13",
+          "status": 200,
+          "sha256": "b66a00578cc9c69b91e8859af848d04ce102104b988e33abbc1e483230ef0b04",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/stars.js?v=40.8",
+          "status": 200,
+          "sha256": "fde37861b41f62ca92f421407fa50710b2f7dc2bb6c939f1109e205e724ec328",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/fluid-bg.js?v=40.8",
+          "status": 200,
+          "sha256": "14404ad15d0662356ebcb9423a4ec5e3152b1c615a26f39aced2feeb17acb651",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/avatar.js?v=40.13",
+          "status": 200,
+          "sha256": "e800ee4c1aac55e7554e905e402b25a939fdb014f5ba5271026f1afc134a571c",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/music.js?v=40.13",
+          "status": 200,
+          "sha256": "7d8611a53ef056269cf5c7a740b6248f9a2a836cb89ca336900bab9548cf773f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/normalizer.js?v=40.8",
+          "status": 200,
+          "sha256": "279aafa67d78e14e23cdf913cff458ce163ed5cf0a6a71fd9120ad1616a48b5f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/parser.js?v=40.8",
+          "status": 200,
+          "sha256": "58afe7090e834d6cd2a3c0fe18ae4434581c4794857d6b19b06292331bf45c82",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/matcher.js?v=40.8",
+          "status": 200,
+          "sha256": "42a54610d6659fb4c2bc6eac94c67c07d6cc7d0ecf03706aaea2f2259e70b42f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/cache.js?v=40.8",
+          "status": 200,
+          "sha256": "5945776376adba73cc59a41b6c86402eb2d1c7c2c581827bc34f96c8ff95d356",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/diagnostics.js?v=40.8",
+          "status": 200,
+          "sha256": "61921110ed01418ddd6c07feac49daa53035f0cfc1e0b6119c943a298bdd4811",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/repository.js?v=40.12",
+          "status": 200,
+          "sha256": "0e8cb7cadb77e9c8f77d596dd6f3afe29b32919cda92a24a7d1177daf2b3f242",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/provider.js?v=40.8",
+          "status": 200,
+          "sha256": "d92eae0c6032600bc31c686f8848df63e6debf4e80ee328a31a0815fb8074517",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/sync-engine.js?v=40.8",
+          "status": 200,
+          "sha256": "af8754e7a62b6bb583a3b4c3534565b05fba6dbdd73d96cb0bc0aaf748d4c36a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/renderer.js?v=40.8",
+          "status": 200,
+          "sha256": "9c183635ab496afc0dc1d2e58b1e5481e2bcab6cc6ca3912fa93d0eb4c146fea",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/editor.js?v=40.8",
+          "status": 200,
+          "sha256": "85e8e277895c4e55315e4b17c57d98279efb8eabc616f050f907e35c2e4f21e2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/lyrics/index.js?v=40.8",
+          "status": 200,
+          "sha256": "fd6382547c7c5f9720468a13138dffbf9e077e30d99eaf91835600024edee935",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/snapshot.js?v=40.8",
+          "status": 200,
+          "sha256": "29783566b181204f4d713a838bb3e63370d88df0d248f7edd9ee604d7183cff2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        },
+        {
+          "path": "js/features.js?v=40.13",
+          "status": 200,
+          "sha256": "3b1e0fcece8f629c7e0d348cfab63c78a955392eaf451b9cab443c430cb3c4c7",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "0"
+        }
+      ],
+      "range": {
+        "status": 206,
+        "bytes": 1024,
+        "contentRange": "bytes 0-1023/3617674",
+        "cacheControl": "public, max-age=86400, must-revalidate"
+      }
+    },
+    {
+      "base": "https://pro5waifu-minkoi.duckdns.org/",
+      "assets": [
+        {
+          "path": "/",
+          "status": 200,
+          "sha256": "10b3820c4fbcfe7741431373f39a55930ec9d6fae1ada29b087080642f322bc3",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "12"
+        },
+        {
+          "path": "css/style-base.css?v=40.8",
+          "status": 200,
+          "sha256": "59c41f4531e61309ce979f5dbbb8cba5fb32c78d618b7f49066700a74cdb8db2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "12"
+        },
+        {
+          "path": "css/style-backgrounds.css?v=40.13",
+          "status": 200,
+          "sha256": "ac23c01a4057e29b5595f078f702a3c2a176d0f11870829cce27e3cd6246b48d",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "11"
+        },
+        {
+          "path": "css/style-card.css?v=40.13",
+          "status": 200,
+          "sha256": "c748236708340b9e596c88be581a4366e49f8146bc69b580a3cc5fc194cd936d",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "11"
+        },
+        {
+          "path": "css/style-left.css?v=40.13",
+          "status": 200,
+          "sha256": "1887797c3b8ab9a1ee7b1f4b450db52e492918e5f491021efc8b271b42126911",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "11"
+        },
+        {
+          "path": "css/style-right.css?v=40.13",
+          "status": 200,
+          "sha256": "d468584730353217486cb8348c475eef878ba26af04bf54adfe4939201d11679",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "10"
+        },
+        {
+          "path": "css/style-responsive.css?v=40.13",
+          "status": 200,
+          "sha256": "78d818d6ba0f257635306c9367b1c0f85291a290b28de694c6d99ad92999854a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "10"
+        },
+        {
+          "path": "css/tokens-v3.css?v=40.13",
+          "status": 200,
+          "sha256": "e6f7fd5bd8a6174a9943646c272d68940f951d66e3624418f7564de66f9f0fc6",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "10"
+        },
+        {
+          "path": "js/config.js?v=40.12",
+          "status": 200,
+          "sha256": "eb12d9dd324ea305d7e0f4729116bc12735b1dc9c25400cf11f491c5575fec0a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "10"
+        },
+        {
+          "path": "js/ui/spring.js?v=40.8",
+          "status": 200,
+          "sha256": "ac9c68adacc08e263deb7528c85272f42fd1a5d6fe88a948d9cd900e8198f9b9",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "9"
+        },
+        {
+          "path": "js/ui/squircle.js?v=40.8",
+          "status": 200,
+          "sha256": "8d50e3b9553bd0c30c54e250fea5ad082ae436099023f5a94a26a996405b2bbc",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "9"
+        },
+        {
+          "path": "js/ui/components.js?v=40.13",
+          "status": 200,
+          "sha256": "b66a00578cc9c69b91e8859af848d04ce102104b988e33abbc1e483230ef0b04",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "9"
+        },
+        {
+          "path": "js/stars.js?v=40.8",
+          "status": 200,
+          "sha256": "fde37861b41f62ca92f421407fa50710b2f7dc2bb6c939f1109e205e724ec328",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "9"
+        },
+        {
+          "path": "js/fluid-bg.js?v=40.8",
+          "status": 200,
+          "sha256": "14404ad15d0662356ebcb9423a4ec5e3152b1c615a26f39aced2feeb17acb651",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "8"
+        },
+        {
+          "path": "js/avatar.js?v=40.13",
+          "status": 200,
+          "sha256": "e800ee4c1aac55e7554e905e402b25a939fdb014f5ba5271026f1afc134a571c",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "8"
+        },
+        {
+          "path": "js/music.js?v=40.13",
+          "status": 200,
+          "sha256": "7d8611a53ef056269cf5c7a740b6248f9a2a836cb89ca336900bab9548cf773f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "7"
+        },
+        {
+          "path": "js/lyrics/normalizer.js?v=40.8",
+          "status": 200,
+          "sha256": "279aafa67d78e14e23cdf913cff458ce163ed5cf0a6a71fd9120ad1616a48b5f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "7"
+        },
+        {
+          "path": "js/lyrics/parser.js?v=40.8",
+          "status": 200,
+          "sha256": "58afe7090e834d6cd2a3c0fe18ae4434581c4794857d6b19b06292331bf45c82",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "7"
+        },
+        {
+          "path": "js/lyrics/matcher.js?v=40.8",
+          "status": 200,
+          "sha256": "42a54610d6659fb4c2bc6eac94c67c07d6cc7d0ecf03706aaea2f2259e70b42f",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "7"
+        },
+        {
+          "path": "js/lyrics/cache.js?v=40.8",
+          "status": 200,
+          "sha256": "5945776376adba73cc59a41b6c86402eb2d1c7c2c581827bc34f96c8ff95d356",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "6"
+        },
+        {
+          "path": "js/lyrics/diagnostics.js?v=40.8",
+          "status": 200,
+          "sha256": "61921110ed01418ddd6c07feac49daa53035f0cfc1e0b6119c943a298bdd4811",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "6"
+        },
+        {
+          "path": "js/lyrics/repository.js?v=40.12",
+          "status": 200,
+          "sha256": "0e8cb7cadb77e9c8f77d596dd6f3afe29b32919cda92a24a7d1177daf2b3f242",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "6"
+        },
+        {
+          "path": "js/lyrics/provider.js?v=40.8",
+          "status": 200,
+          "sha256": "d92eae0c6032600bc31c686f8848df63e6debf4e80ee328a31a0815fb8074517",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "6"
+        },
+        {
+          "path": "js/lyrics/sync-engine.js?v=40.8",
+          "status": 200,
+          "sha256": "af8754e7a62b6bb583a3b4c3534565b05fba6dbdd73d96cb0bc0aaf748d4c36a",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        },
+        {
+          "path": "js/lyrics/renderer.js?v=40.8",
+          "status": 200,
+          "sha256": "9c183635ab496afc0dc1d2e58b1e5481e2bcab6cc6ca3912fa93d0eb4c146fea",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        },
+        {
+          "path": "js/lyrics/editor.js?v=40.8",
+          "status": 200,
+          "sha256": "85e8e277895c4e55315e4b17c57d98279efb8eabc616f050f907e35c2e4f21e2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        },
+        {
+          "path": "js/lyrics/index.js?v=40.8",
+          "status": 200,
+          "sha256": "fd6382547c7c5f9720468a13138dffbf9e077e30d99eaf91835600024edee935",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        },
+        {
+          "path": "js/snapshot.js?v=40.8",
+          "status": 200,
+          "sha256": "29783566b181204f4d713a838bb3e63370d88df0d248f7edd9ee604d7183cff2",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        },
+        {
+          "path": "js/features.js?v=40.13",
+          "status": 200,
+          "sha256": "3b1e0fcece8f629c7e0d348cfab63c78a955392eaf451b9cab443c430cb3c4c7",
+          "matchesCommit": true,
+          "cacheControl": "public, max-age=0, must-revalidate",
+          "age": "5"
+        }
+      ],
+      "range": {
+        "status": 206,
+        "bytes": 1024,
+        "contentRange": "bytes 0-1023/3617674",
+        "cacheControl": "public, max-age=86400, must-revalidate"
+      }
+    }
+  ]
+}
