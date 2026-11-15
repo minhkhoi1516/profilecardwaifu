@@ -64,6 +64,9 @@ jobs:
       - name: Verify Desktop/Mobile Overlay Bounds
         run: node scripts/qa/verify-overlay-bounds.cjs
 
+      - name: Verify Mobile Panel Focus and Soft Keyboard Behavior
+        run: node scripts/qa/verify-mobile-panel-focus.cjs
+
       - name: Validate JavaScript Syntax
         run: |
           for f in js/*.js js/ui/*.js js/lyrics/*.js; do

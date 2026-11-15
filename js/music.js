@@ -1382,6 +1382,14 @@
     let audioFxOverlay = null;
     let playlistOverlay = null;
 
+    function shouldAutoFocusPlaylistSearch() {
+        // Android desktop-site mode may expose a wide CSS viewport, but still
+        // has a touch pointer and on-screen keyboard.
+        return window.innerWidth > 860 &&
+            !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) &&
+            !(window.navigator && window.navigator.maxTouchPoints > 0);
+    }
+
     function initToolPanelControllers() {
         if (!window.MinkoiUI || typeof window.MinkoiUI.createMiuixPanelOverlay !== 'function') return;
 
@@ -1426,8 +1434,12 @@
                 },
                 onAfterOpen: () => {
                     const input = document.getElementById('playlist-search-input');
-                    if (input && window.innerWidth > 768) {
-                        setTimeout(() => input.focus({ preventScroll: true }), 80);
+                    if (input && shouldAutoFocusPlaylistSearch()) {
+                        setTimeout(() => {
+                            if (playlistOverlay?.isOpen() && shouldAutoFocusPlaylistSearch()) {
+                                input.focus({ preventScroll: true });
+                            }
+                        }, 80);
                     }
                 }
             });
@@ -1921,11 +1933,8 @@
             openFlyout(playlistMenu, playlistToggleBtn);
             if (playlistMenu.classList.contains('open')) {
                 updatePlaylistItems();
-                const input = document.getElementById('playlist-search-input');
-                // Chỉ auto-focus trên Desktop để tránh bật bàn phím ảo đẩy trôi màn hình trên điện thoại
-                if (input && window.innerWidth > 768) {
-                    setTimeout(() => input.focus({ preventScroll: true }), 80);
-                }
+                // The overlay controller manages focus after opening. Do not
+                // separately focus the search input during its opening spring.
             }
         });
     }

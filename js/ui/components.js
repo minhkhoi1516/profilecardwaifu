@@ -131,7 +131,12 @@
         };
         entry.cleanupOnly = detachOnly;
 
-        if (opts.initialFocus) {
+        if (opts.initialFocus === 'container') {
+            // Mobile search inputs should not summon the soft keyboard until
+            // the user intentionally taps them. Focus the dialog container.
+            if (!container.hasAttribute('tabindex')) container.setAttribute('tabindex', '-1');
+            try { container.focus({ preventScroll: true }); } catch (_) {}
+        } else if (opts.initialFocus) {
             focusFallback(false);
         }
 
@@ -699,7 +704,9 @@
             }
 
             releaseCurrentTrap(false);
-            releaseTrap = pushFocusTrap(panelEl, triggerBtn, { initialFocus: !isMobile && id === 'playlist-menu' ? false : true });
+            releaseTrap = pushFocusTrap(panelEl, triggerBtn, {
+                initialFocus: isMobile ? 'container' : id !== 'playlist-menu'
+            });
 
             let openFallbackTimer = null;
             const openDone = () => {
