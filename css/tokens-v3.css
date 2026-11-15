@@ -148,6 +148,10 @@ body.low-end * {
     -webkit-backdrop-filter: none !important;
 }
 
+body[data-quality="eco"] :is(.ripple-ground span, .halo-rotate, .vinyl-platter, .zen-dock-disc) {
+    animation: none;
+}
+
 /* Continuous CSS Squircle Progressive Enhancement */
 @supports (corner-shape: squircle) {
     .card-container,
@@ -270,6 +274,11 @@ body.light-mode .banner-stage::after {
 }
 
 /* Accessible Focus Rings */
+[data-panel-state="closed"],
+.top-more-dropdown[data-popup-state="closed"] {
+    display: none;
+}
+
 :is(button, a, input, [tabindex]):focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -299,7 +308,7 @@ body.light-mode .banner-stage::after {
     min-width: 228px;
     max-width: min(296px, calc(100vw - 16px));
     padding: 0.45rem;
-    z-index: 1050;
+    z-index: 1200;
     visibility: hidden;
     opacity: 0;
     pointer-events: none;
@@ -505,7 +514,7 @@ body.light-mode .tab-sliding-pill {
         transparent 60%,
         color-mix(in srgb, var(--color-accent) 22%, transparent) 100%
     );
-    opacity: 0.9;
+    opacity: 0.35;
 }
 
 .liquid-glass-indicator.is-dragging {

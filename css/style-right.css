@@ -1427,7 +1427,7 @@
 }
 
 .eq-band {
-    padding: 8px 10px;
+    padding: 8px 0;
     touch-action: none;
     display: flex;
     justify-content: center;
@@ -1439,9 +1439,9 @@
     direction: rtl;
     -webkit-appearance: none;
     appearance: none;
-    width: 14px;
+    width: 44px;
     height: 64px;
-    background: transparent;
+    background: linear-gradient(var(--color-text-muted), var(--color-text-muted)) center / 3px 100% no-repeat;
     cursor: pointer;
     accent-color: var(--color-accent);
 }

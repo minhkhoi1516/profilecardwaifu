@@ -221,8 +221,9 @@
             analyser.connect(audioCtx.destination);
 
             // Set initial volume on GainNode
-            const currentVol = parseInt(volumeCtrl?.value || '45', 10);
-            gainNode.gain.setValueAtTime(currentVol / 100, audioCtx.currentTime);
+            // Compensate only when the browser ignores media volume (iOS).
+            // Applying the requested volume to both nodes would square it.
+            gainNode.gain.setValueAtTime(volumeGainTarget(), audioCtx.currentTime);
 
             applyEqPreset(currentAudioFx);
             window.__minkoiAnalyser = analyser;
@@ -238,9 +239,12 @@
         const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
         const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
         const waifuCtx = waifuCanvas ? waifuCanvas.getContext('2d') : null;
+        let lastPaint = 0;
 
-        function loop() {
-            if (audio.paused || document.hidden || !analyser) {
+        function loop(now) {
+            const quality = document.body.dataset.quality;
+            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (audio.paused || document.hidden || !analyser || quality === 'eco' || reduced) {
                 visualizerFrameId = null;
                 if (bars.length > 0) {
                     for (let i = 0; i < bars.length; i++) {
@@ -249,14 +253,11 @@
                 }
                 if (vinyl) {
                     vinyl.style.boxShadow = '';
-                    vinyl.style.transform = '';
+                    vinyl.style.scale = '';
                 }
                 if (avatarBackdrop) {
                     avatarBackdrop.style.boxShadow = '';
                     avatarBackdrop.style.transform = '';
-                }
-                if (charAvatar) {
-                    charAvatar.style.transform = '';
                 }
                 if (waifuCtx && waifuCanvas) {
                     waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
@@ -265,6 +266,8 @@
             }
 
             visualizerFrameId = requestAnimationFrame(loop);
+            if ((quality === 'balanced' || window.innerWidth <= 860) && now - lastPaint < 32) return;
+            lastPaint = now;
             analyser.getByteFrequencyData(visualizerData);
 
             if (bars.length > 0) {
@@ -284,7 +287,7 @@
                 const glowSpread = Math.floor(bass * 26);
                 const scaleAmp = 1 + (bass * 0.035);
                 vinyl.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${10 + glowSpread}px var(--color-accent-glow), 0 0 ${Math.floor(mid * 14)}px rgba(255, 255, 255, 0.12)`;
-                vinyl.style.transform = `scale(${scaleAmp.toFixed(3)})`;
+                vinyl.style.scale = scaleAmp.toFixed(3);
             }
 
             // Ambient Waifu Reactive Aura (Glow & Subtle Pulse on Avatar)
@@ -292,9 +295,6 @@
                 const auraGlow = Math.floor(bass * 32);
                 avatarBackdrop.style.boxShadow = `0 12px 28px -4px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 0 ${20 + auraGlow}px var(--color-accent-glow)`;
                 avatarBackdrop.style.transform = `translate(-50%, -50%) scale(${(1 + bass * 0.04).toFixed(3)})`;
-            }
-            if (charAvatar) {
-                charAvatar.style.transform = `translateX(-50%) scale(${(1 + bass * 0.022).toFixed(3)})`;
             }
 
             // [TÍNH NĂNG 2] 64 Radial Bars Visualizer with Dynamic HSL Colors
@@ -598,7 +598,7 @@
         }
         if (isCrossfadeActive && audioCtx && gainNode && !audio.paused && audio.currentTime > 0) {
             const now = audioCtx.currentTime;
-            const targetVol = isMuted ? 0 : (parseInt(volumeCtrl?.value || '45', 10) / 100);
+            const targetVol = volumeGainTarget();
 
             // Fade-out êm dịu trong 0.48s
             gainNode.gain.cancelScheduledValues(now);
@@ -695,7 +695,7 @@
         if (vinylDisc) {
             vinylDisc.classList.remove('spinning');
             vinylDisc.style.boxShadow = '';
-            vinylDisc.style.transform = '';
+            vinylDisc.style.scale = '';
         }
         if (zenDisc) zenDisc.classList.remove('spinning');
         const avatarZone = document.getElementById('avatar-zone-wrap');
@@ -776,13 +776,17 @@
         playTrackAt((pos - 1 + list.length) % list.length, true);
     }
 
+    function volumeGainTarget(value = Number(volumeCtrl?.value || '45')) {
+        const requested = value / 100;
+        return audio.volume > 0 ? Math.min(1, requested / audio.volume) : 1;
+    }
+
     function setVolume(val) {
         const clamped = Math.max(0, Math.min(100, val));
         audio.volume = clamped / 100;
-
-        // Also control Web Audio GainNode for iOS Safari compatibility
         if (gainNode && audioCtx) {
-            gainNode.gain.setValueAtTime(clamped / 100, audioCtx.currentTime);
+            gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(volumeGainTarget(clamped), audioCtx.currentTime);
         }
 
         if (volumeCtrl) {
@@ -1221,20 +1225,30 @@
 
     if (volumeCtrl) {
         const volumeDock = volumeCtrl.closest('.volume-slider-dock');
+        const volumeFeel = window.MinkoiSpring?.createSpring({
+            initial: 1, target: 1, allowEcoMotion: true,
+            preset: window.MinkoiSpring.PRESETS.SLIDER_SETTLE,
+            onUpdate: value => { if (volumeDock) volumeDock.style.scale = `1 ${value.toFixed(4)}`; }
+        });
         volumeCtrl.addEventListener('input', (e) => {
             setVolume(parseInt(e.target.value, 10));
         });
-        volumeCtrl.addEventListener('pointerdown', () => {
+        volumeCtrl.addEventListener('pointerdown', (event) => {
+            try { volumeCtrl.setPointerCapture(event.pointerId); } catch (_) {}
             volumeCtrl.classList.add('is-scrubbing');
             if (volumeDock) volumeDock.classList.add('is-scrubbing');
+            volumeFeel?.setTarget(1.035);
         });
         const stopVolScrub = () => {
             volumeCtrl.classList.remove('is-scrubbing');
             if (volumeDock) volumeDock.classList.remove('is-scrubbing');
+            volumeFeel?.setTarget(1);
         };
         volumeCtrl.addEventListener('pointerup', stopVolScrub);
         volumeCtrl.addEventListener('pointercancel', stopVolScrub);
         volumeCtrl.addEventListener('blur', stopVolScrub);
+        volumeCtrl.addEventListener('lostpointercapture', stopVolScrub);
+        window.addEventListener('pointerup', stopVolScrub, { passive: true });
     }
 
     if (shuffleBtn) {
@@ -1318,6 +1332,8 @@
     let releaseFlyoutTrap = null;
 
     function syncFlyoutBackdrop() {
+        // Unified controllers own the backdrop and scroll lock, including Lyrics.
+        if (window.MinkoiUI?.getPanelController('playlist-menu')) return;
         const backdrop = document.getElementById('mobile-flyout-backdrop');
         const hasOpen = !!(
             playlistMenu?.classList.contains('open') ||
@@ -1645,8 +1661,7 @@
             gainNode.gain.linearRampToValueAtTime(0.0001, now + durationSec);
             setTimeout(() => {
                 pauseAudio();
-                const curVol = parseInt(volumeCtrl?.value || '45', 10);
-                gainNode.gain.setValueAtTime(curVol / 100, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(volumeGainTarget(), audioCtx.currentTime);
             }, (durationSec * 1000) + 150);
         } else {
             const originalVol = audio.volume;
@@ -1683,6 +1698,7 @@
 
         const mins = parseInt(optionId, 10);
         sleepTimerTargetTime = Date.now() + mins * 60 * 1000;
+        if (sleepTimerBtn) sleepTimerBtn.title = `Hẹn giờ: còn ${mins} phút`;
 
         if (typeof window.showToast === 'function') {
             window.showToast(`Hẹn giờ tắt sau ${mins} phút`, 'fa-clock');
@@ -2019,6 +2035,12 @@
         } else if (!audio.paused) {
             startVisualizerLoop();
         }
+    });
+    window.addEventListener('minkoi:qualitychange', () => {
+        if (!audio.paused) startVisualizerLoop();
+    });
+    window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
+        if (!audio.paused) startVisualizerLoop();
     });
 
     window.addEventListener('resize', () => {

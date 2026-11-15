@@ -1,0 +1,12 @@
+const fs=require('node:fs'),path=require('node:path'),{execFileSync}=require('node:child_process'),postcss=require('postcss');
+const root=path.resolve(__dirname,'../..');
+for(const dir of ['js','js/ui','js/lyrics']) for(const file of fs.readdirSync(path.join(root,dir)).filter(f=>f.endsWith('.js'))) execFileSync(process.execPath,['--check',path.join(root,dir,file)]);
+for(const file of fs.readdirSync(path.join(root,'css')).filter(f=>f.endsWith('.css')))postcss.parse(fs.readFileSync(path.join(root,'css',file),'utf8'),{from:file});
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+for(const match of html.matchAll(/(?:src|href)="((?:css|js|assets)\/[^"?]+)(?:\?[^" ]*)?"/g))if(!fs.existsSync(path.join(root,match[1])))throw Error('Missing entrypoint asset '+match[1]);
+const win={};new Function('window',fs.readFileSync(path.join(root,'js/config.js'),'utf8'))(win);
+if(win.CONFIG.personas.filter(p=>p.available).length!==8)throw Error('Expected 8 available personas');
+for(const p of win.CONFIG.personas.filter(p=>p.available))for(const file of [p.avatar,...p.banners.pc,...p.banners.phone])if(!fs.existsSync(path.join(root,file)))throw Error('Missing persona asset '+file);
+for(const file of ['vercel.json','manifest.webmanifest','tools/durations.json'])JSON.parse(fs.readFileSync(path.join(root,file),'utf8').replace(/^\uFEFF/,''));
+for(const script of ['verify-mobile-css.cjs','verify-overlay-bounds.cjs','verify-mobile-panel-focus.cjs','verify-mobile-tool-panel-visibility.cjs','verify-lyrics-catalog.cjs'])execFileSync(process.execPath,[path.join(__dirname,script)],{stdio:'inherit'});
+console.log('PASS: JavaScript syntax, CSS parsing, JSON, entrypoints and all configured persona assets.');

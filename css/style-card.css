@@ -362,6 +362,15 @@ body.light-mode .theme-toggle-btn .icon-moon {
     pointer-events: none;
 }
 
+/* Zen notifications stay above the scene, away from the playback dock. */
+body.zen-mode .toast-region {
+    top: max(5.5rem, calc(env(safe-area-inset-top) + 5.5rem));
+    bottom: auto;
+    left: 1rem;
+    right: 1rem;
+    align-items: center;
+}
+
 .luxury-toast {
     display: inline-flex;
     align-items: center;
@@ -631,9 +640,9 @@ body.zen-mode .zen-mini-dock {
     opacity: 0;
     pointer-events: none;
     padding: 0.45rem 1rem;
-    background: rgba(8, 10, 20, 0.7);
+    background: var(--surface-popup);
     backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--color-border-active);
     border-radius: var(--radius-full);
     font-size: 0.72rem;
     color: var(--color-text-secondary);

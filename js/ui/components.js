@@ -223,7 +223,7 @@
 
             // Tier 1: Expressive (Play/Pause hero)
             if (target.id === 'play-pause' || target.classList.contains('play-hero-btn')) {
-                getScaleSpring(target, 1).setTarget(0.88);
+                getScaleSpring(target, 1).setTarget(0.95);
             }
             // Tier 3: Minimal feedback (category tabs, pills, chips)
             else if (target.classList.contains('cat-tab') || target.classList.contains('quality-option-btn') || target.classList.contains('social-link-pill')) {
@@ -231,7 +231,7 @@
             }
             // Tier 2: Functional (control buttons, top buttons, persona chips)
             else {
-                getScaleSpring(target, 2).setTarget(0.93);
+                getScaleSpring(target, 2).setTarget(0.97);
             }
         }, { passive: true });
 
@@ -245,6 +245,7 @@
 
         doc.addEventListener('pointerup', release, { passive: true });
         doc.addEventListener('pointercancel', release, { passive: true });
+        global.addEventListener('blur', release);
     }
 
     // ----------------------------------------------------------------------
@@ -255,6 +256,8 @@
         const btn = doc.getElementById('top-more-btn');
         const dropdown = doc.getElementById('top-more-dropdown');
         if (!wrap || !btn || !dropdown) return;
+        // Escape the header's stacking context: the scrim is a body sibling.
+        doc.body.appendChild(dropdown);
 
         let scrim = doc.getElementById('miuix-popup-scrim');
         if (!scrim) {
@@ -277,6 +280,7 @@
             dropdown.dataset.popupState = nextState;
             const expanded = nextState === 'opening' || nextState === 'open';
             wrap.classList.toggle('open', expanded);
+            dropdown.inert = !expanded;
             btn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
         }
         setPopupState('closed');
@@ -311,32 +315,31 @@
             const vh = global.innerHeight || doc.documentElement.clientHeight;
             const margin = 8;
 
-            dropdown.style.left = '';
-            dropdown.style.right = '0px';
-            dropdown.style.top = 'calc(100% + 8px)';
-            dropdown.style.bottom = '';
+            dropdown.style.position = 'fixed';
+            dropdown.style.maxWidth = `${vw - margin * 2}px`;
+            dropdown.style.maxHeight = `${vh - margin * 2}px`;
+            dropdown.style.overflowY = 'auto';
 
             // Use unscaled layout box dimensions (offsetWidth/offsetHeight) instead of scaled rect
             const menuW = Math.max(228, dropdown.offsetWidth || 240);
-            const projectedLeft = btnRect.right - menuW;
-            if (projectedLeft < margin) {
-                const shiftRight = margin - projectedLeft;
-                dropdown.style.right = `${-shiftRight}px`;
-            }
+            const finalLeft = Math.max(margin, Math.min(vw - menuW - margin, btnRect.right - menuW));
+            dropdown.style.left = `${finalLeft}px`;
+            dropdown.style.right = 'auto';
 
             const centerX = btnRect.left + btnRect.width / 2;
-            const finalLeft = Math.max(margin, btnRect.right - menuW);
             const relX = Math.max(12, Math.min(menuW - 12, centerX - finalLeft));
             popupOriginX = `${relX.toFixed(0)}px`;
             popupOriginY = '0px';
 
             // Flip above trigger if near bottom edge
             const menuH = dropdown.offsetHeight || 280;
-            if (btnRect.bottom + 8 + menuH > vh - margin && btnRect.top - 8 - menuH > margin) {
-                dropdown.style.top = 'auto';
-                dropdown.style.bottom = 'calc(100% + 8px)';
+            let top = btnRect.bottom + 8;
+            if (top + menuH > vh - margin && btnRect.top - 8 - menuH > margin) {
+                top = btnRect.top - 8 - menuH;
                 popupOriginY = '100%';
             }
+            dropdown.style.top = `${Math.max(margin, Math.min(top, vh - menuH - margin))}px`;
+            dropdown.style.bottom = 'auto';
             if (menuW > vw - margin * 2) {
                 dropdown.style.maxWidth = `${vw - margin * 2}px`;
             }
@@ -359,10 +362,9 @@
             if (fractionSpring) {
                 fractionSpring.onComplete = null;
             }
-            closeAllOverlays('top-more');
-            computeAnchor();
-
+            closeAllOverlays('top-more', { instant: true, restoreFocus: false });
             setPopupState('opening');
+            computeAnchor();
             dropdown.style.visibility = 'visible';
             dropdown.style.pointerEvents = 'auto';
             scrim.classList.add('active');
@@ -404,7 +406,11 @@
                 dropdown.style.clipPath = '';
             };
 
-            if (fractionSpring) {
+            if (options.instant) {
+                if (fractionSpring) fractionSpring.snap(0);
+                applyFraction(0);
+                hideDone();
+            } else if (fractionSpring) {
                 fractionSpring.setTarget(0, { onComplete: hideDone });
             } else {
                 applyFraction(0);
@@ -429,7 +435,7 @@
 
         doc.addEventListener('click', (e) => {
             if (popupState !== 'opening' && popupState !== 'open') return;
-            if (!wrap.contains(e.target) && e.target !== scrim) {
+            if (!wrap.contains(e.target) && !dropdown.contains(e.target) && e.target !== scrim) {
                 closeMenu({ restoreFocus: false });
             }
         });
@@ -484,7 +490,7 @@
     const toolPanelControllers = new Map();
 
     function getPanelController(id) {
-        return toolPanelControllers.get(id) || null;
+        return toolPanelControllers.get(id) || Array.from(toolPanelControllers.values()).find(ctrl => ctrl.panelEl.id === id) || null;
     }
 
     function createMiuixPanelOverlay(config) {
@@ -500,6 +506,8 @@
         let releaseTrap = null;
         let originX = '50%';
         let originY = '0%';
+        let currentFraction = 0;
+        let ownsScrollLock = false;
 
         let mobileBackdrop = doc.getElementById('mobile-flyout-backdrop');
         if (!mobileBackdrop) {
@@ -515,6 +523,7 @@
             panelEl.dataset.panelState = nextState;
             const expanded = nextState === 'opening' || nextState === 'open';
             panelEl.classList.toggle('open', expanded);
+            panelEl.inert = !expanded;
             if (triggerBtn) {
                 triggerBtn.classList.toggle('is-morph-active', expanded);
                 triggerBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -524,6 +533,7 @@
 
         const spLib = Spring();
         const applyFraction = (f) => {
+            currentFraction = f;
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
             const clamped = Math.max(0, Math.min(1.04, f));
 
@@ -570,7 +580,8 @@
         function computeAnchor() {
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
             const vw = global.innerWidth || doc.documentElement.clientWidth;
-            const vh = global.innerHeight || doc.documentElement.clientHeight;
+            const vh = global.visualViewport?.height || global.innerHeight || doc.documentElement.clientHeight;
+            panelEl.style.setProperty('--panel-viewport-height', `${vh}px`);
 
             if (isMobile) {
                 if (panelEl.parentElement !== doc.body) {
@@ -688,14 +699,14 @@
                 fractionSpring.onComplete = null;
             }
 
-            closeAllOverlays(id);
+            closeAllOverlays(id, { instant: true, restoreFocus: false });
 
             if (typeof config.onBeforeOpen === 'function') {
                 try { config.onBeforeOpen(); } catch (_) {}
             }
 
-            computeAnchor();
             setPanelState('opening');
+            computeAnchor();
 
             panelEl.style.visibility = 'visible';
             panelEl.style.pointerEvents = 'auto';
@@ -703,7 +714,10 @@
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
             if (isMobile || isCenterModal) {
                 mobileBackdrop.classList.add('active');
-                if (isMobile) lockBodyScroll();
+                if (isMobile && !ownsScrollLock) {
+                    lockBodyScroll();
+                    ownsScrollLock = true;
+                }
             }
 
             releaseCurrentTrap(false);
@@ -748,7 +762,10 @@
             setPanelState('closing');
 
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
-            if (isMobile) unlockBodyScroll();
+            if (ownsScrollLock) {
+                unlockBodyScroll();
+                ownsScrollLock = false;
+            }
 
             releaseCurrentTrap(options.restoreFocus !== false);
 
@@ -806,6 +823,13 @@
             toggle,
             isOpen: () => panelState === 'opening' || panelState === 'open',
             getState: () => panelState,
+            prepareSwipe: () => {
+                if (panelState !== 'opening' && panelState !== 'open') return false;
+                if (fractionSpring) fractionSpring.snap(1);
+                setPanelState('open');
+                applyFraction(1);
+                return true;
+            },
             recomputeAnchor: computeAnchor
         };
 
@@ -839,13 +863,20 @@
             });
         }
 
-        global.addEventListener('resize', () => {
+        const onViewportChange = () => {
             if (panelState === 'opening' || panelState === 'open') {
                 computeAnchor();
+                const mobile = global.innerWidth <= 860;
+                if (mobile && !ownsScrollLock) { lockBodyScroll(); ownsScrollLock = true; }
+                if (!mobile && ownsScrollLock) { unlockBodyScroll(); ownsScrollLock = false; }
+                mobileBackdrop.classList.toggle('active', mobile || isCenterModal);
+                applyFraction(currentFraction);
             }
-        }, { passive: true });
+        };
+        global.addEventListener('resize', onViewportChange, { passive: true });
+        global.visualViewport?.addEventListener('resize', onViewportChange, { passive: true });
 
-        bindBottomSheetSwipe(panelEl, () => close({ restoreFocus: false }));
+        bindBottomSheetSwipe(panelEl, () => close({ instant: true, restoreFocus: false }));
 
         registerOverlay(id, {
             isOpen: controller.isOpen,
@@ -898,7 +929,7 @@
                             sheetEl.style.transform = '';
                             return;
                         }
-                        sheetEl.style.transform = Math.abs(y) < 0.2 ? '' : `translateY(${y.toFixed(1)}px)`;
+                        sheetEl.style.transform = `translateY(${Math.abs(y) < 0.2 ? 0 : y.toFixed(1)}px)`;
                         if (state.exiting && Number.isFinite(state.exitTarget) && y >= state.exitTarget - 8 && typeof state.activeFinalize === 'function') {
                             state.activeFinalize();
                         }
@@ -955,11 +986,13 @@
                         state.spring.onComplete = null;
                         state.spring.snap(exitTarget);
                     }
-                    if (typeof state.onDismiss === 'function') state.onDismiss();
+                    const controller = getPanelController(sheetEl.id);
+                    if (controller) controller.close({ instant: true, restoreFocus: false });
+                    else if (typeof state.onDismiss === 'function') state.onDismiss();
                     global.requestAnimationFrame(() => {
                         if (exitGen !== state.gestureGen || state.dragging || state.exiting) return;
                         sheetEl.classList.remove('sheet-swiping');
-                        sheetEl.style.transform = '';
+                        sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
                         state.currentY = 0;
                         if (state.spring) state.spring.snap(0);
                     });
@@ -993,12 +1026,12 @@
                     onComplete: () => {
                         if (settleGen !== state.gestureGen || state.dragging || state.exiting) return;
                         sheetEl.classList.remove('sheet-swiping');
-                        sheetEl.style.transform = '';
+                        sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
                     }
                 });
             } else {
                 sheetEl.classList.remove('sheet-swiping');
-                sheetEl.style.transform = '';
+                sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
                 state.currentY = 0;
             }
         };
@@ -1012,6 +1045,8 @@
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
                 if (e.target.closest('button, input, a, select, textarea') && !e.target.closest('.sheet-drag-handle')) return;
                 if (hasScrolledContent(e.target)) return;
+                const controller = getPanelController(sheetEl.id);
+                if (controller && !controller.prepareSwipe()) return;
                 if (state.dragging && state.activePointerId !== null && state.activePointerId !== e.pointerId) return;
 
                 // Interrupt any active settle or exit animation smoothly from currentY
@@ -1274,7 +1309,7 @@
 
             // Compute volume-preserving squash
             const standardW = Math.max(16, baseTabWidth);
-            const stretchRatio = Math.max(0.85, Math.min(1.45, w / standardW));
+            const stretchRatio = Math.max(0.9, Math.min(1.18, w / standardW));
             const squashRatio = Math.max(0.82, Math.min(1.12, 1 / Math.sqrt(stretchRatio)));
 
             if (Math.abs(lastRenderedWidth - w) >= 0.5) {
@@ -1311,7 +1346,7 @@
             // Continuous lag that smoothly transitions through zero during direction reversals
             // and decays to 0 when finger pauses, restoring natural capsule shape.
             const stationaryFactor = Math.min(1, speed / 30);
-            const trailLag = Math.min(54, (speed * 0.08 + 18 * Math.tanh(speed / 90) + 4.5) * stationaryFactor);
+            const trailLag = Math.min(18, (speed * 0.025 + 5 * Math.tanh(speed / 90)) * stationaryFactor);
             const dirWeight = Math.tanh(vel / 120); // -1.0 (moving left) to +1.0 (moving right)
 
             let nextLeft = rawX;
@@ -1444,7 +1479,13 @@
 
         function startAutoScroll() {
             if (autoScrollRaf) return;
-            const step = () => {
+            let previousTime = 0;
+            const step = (now) => {
+                // RAF's timestamp can precede performance.now() from the input
+                // handler in the same frame. A zero first step must not be
+                // mistaken for reaching the content boundary.
+                const frameScale = previousTime ? Math.min(2, Math.max(0.1, (now - previousTime) / (1000 / 60))) : 1;
+                previousTime = now;
                 if (gestureState !== 'dragging') {
                     autoScrollRaf = 0;
                     return;
@@ -1470,7 +1511,7 @@
                     return;
                 }
                 const maxScroll = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
-                const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed));
+                const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed * frameScale));
                 if (nextScroll === navEl.scrollLeft) {
                     autoScrollRaf = 0;
                     return;
@@ -1617,6 +1658,9 @@
             if (gestureState !== 'dragging') return;
 
             e.preventDefault();
+            // Pointer movement updates geometry immediately; RAF only maintains
+            // stationary relaxation and edge scrolling between input events.
+            computePhysicalDrag(targetPointerClientX);
 
             if (!dragRaf) {
                 dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);

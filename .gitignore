@@ -23,6 +23,8 @@ scratch/
 *.tmp
 local-test-*
 test-results/
+node_modules/
+playwright-report/
 
 # Archives & dumps
 *.zip

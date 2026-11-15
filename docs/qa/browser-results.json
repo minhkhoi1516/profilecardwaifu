@@ -1,0 +1,115 @@
+{
+  "release": "40.13",
+  "environment": "Windows, Edge headless; browser/mobile emulation; physical phones not tested",
+  "command": "QA_CHANNEL=msedge playwright test",
+  "stats": {
+    "startTime": "2026-11-15T11:12:56.762Z",
+    "duration": 423308.417,
+    "expected": 20,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "1440x900: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 21304
+    },
+    {
+      "title": "1280x720: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 16640
+    },
+    {
+      "title": "1920x1080: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 14816
+    },
+    {
+      "title": "1024x768: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 17214
+    },
+    {
+      "title": "390x844: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 16758
+    },
+    {
+      "title": "320x720: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 16157
+    },
+    {
+      "title": "360x800: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 15449
+    },
+    {
+      "title": "375x812: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 14708
+    },
+    {
+      "title": "430x932: layout and four visible tools",
+      "status": "expected",
+      "durationMs": 14249
+    },
+    {
+      "title": "panel reversal, fast switching, focus restoration and outside dismissal",
+      "status": "expected",
+      "durationMs": 38411
+    },
+    {
+      "title": "open panels survive crossing breakpoints and keyboard-sized viewport",
+      "status": "expected",
+      "durationMs": 42280
+    },
+    {
+      "title": "sheet short swipe returns visibly; long swipe dismisses cleanly",
+      "status": "expected",
+      "durationMs": 26441
+    },
+    {
+      "title": "playback, immediate volume, seek, speed and persona preservation",
+      "status": "expected",
+      "durationMs": 28672
+    },
+    {
+      "title": "Zen mobile dock, exit focus, light theme, reduced motion and more menu",
+      "status": "expected",
+      "durationMs": 17860
+    },
+    {
+      "title": "Android desktop-site emulation does not autofocus playlist",
+      "status": "expected",
+      "durationMs": 10243
+    },
+    {
+      "title": "existing lyrics engine regression",
+      "status": "expected",
+      "durationMs": 1924
+    },
+    {
+      "title": "all persona artwork preserves transparent edges within the card",
+      "status": "expected",
+      "durationMs": 16540
+    },
+    {
+      "title": "all MP3 routes, EQ inputs and timer selection",
+      "status": "expected",
+      "durationMs": 9279
+    },
+    {
+      "title": "real touch: glass tracking, reversal, edge scroll, cancel, all quality modes",
+      "status": "expected",
+      "durationMs": 55866
+    },
+    {
+      "title": "record a real touch drag and reversal",
+      "status": "expected",
+      "durationMs": 7098
+    }
+  ]
+}

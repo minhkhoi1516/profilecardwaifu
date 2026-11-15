@@ -245,7 +245,12 @@
 
         function toggleZenMode(enable) {
             const isZen = typeof enable === 'boolean' ? enable : !document.body.classList.contains('zen-mode');
+            if (isZen === document.body.classList.contains('zen-mode')) return;
+            window.MinkoiUI?.closeAllOverlays(null, { instant: true, restoreFocus: false });
             document.body.classList.toggle('zen-mode', isZen);
+            document.querySelector('.card-wrapper').inert = isZen;
+            document.querySelector('.site-brand-header').inert = isZen;
+            document.getElementById('zen-mini-dock').inert = !isZen;
 
             if (zenBtn) {
                 zenBtn.classList.toggle('active', isZen);
@@ -255,6 +260,8 @@
             }
 
             if (isZen) {
+                window.MinkoiUI?.lockBodyScroll();
+                zenExitBtn?.focus({ preventScroll: true });
                 document.body.classList.remove('zen-idle');
                 requestWakeLock();
                 wakeZenDock();
@@ -267,11 +274,14 @@
                 showToast('Chế độ màn hình chờ · Đã đổi hình nền ngẫu nhiên', 'fa-sparkles');
                 playChimeSFX();
             } else {
+                window.MinkoiUI?.unlockBodyScroll();
+                zenBtn?.focus({ preventScroll: true });
                 releaseWakeLock();
                 clearTimeout(idleTimer);
                 document.body.classList.remove('zen-idle');
             }
         }
+        document.getElementById('zen-mini-dock').inert = true;
 
         if (zenFab) {
             zenFab.addEventListener('click', (e) => {

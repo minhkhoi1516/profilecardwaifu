@@ -1,0 +1,18 @@
+{
+  "name": "minkoi-studio",
+  "private": true,
+  "packageManager": "pnpm@11.25.0",
+  "version": "4.0.0",
+  "description": "Static anime music studio; packages are QA tools only.",
+  "scripts": {
+    "test": "node scripts/qa/integrity.cjs && playwright test",
+    "test:ui": "playwright test",
+    "qa:integrity": "node scripts/qa/integrity.cjs",
+    "qa:previews": "node scripts/qa/validate-previews.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "postcss": "8.5.6",
+    "sharp": "0.34.5"
+  }
+}

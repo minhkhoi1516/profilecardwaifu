@@ -65,15 +65,10 @@
 
     // Progressive idle preload: load active persona first, others when idle
     function preloadAssets() {
-        const mode = isMobileViewport() ? 'phone' : 'pc';
         const active = personas[currentIndex];
-        if (active) {
-            (active.banners?.[mode] || []).forEach(src => {
-                const img = new Image();
-                img.decoding = 'async';
-                img.src = src;
-            });
-        }
+        // Wallpapers decode on demand in updateBannerLayers. Loading every
+        // variant here wastes bandwidth and decoded image memory on phones.
+        if (navigator.connection?.saveData) return;
 
         const idleLoad = () => {
             personas.filter(p => p.available && p !== active).forEach(p => {
@@ -82,11 +77,6 @@
                     av.decoding = 'async';
                     av.src = p.avatar;
                 }
-                (p.banners?.[mode] || []).forEach(src => {
-                    const img = new Image();
-                    img.decoding = 'async';
-                    img.src = src;
-                });
             });
         };
 

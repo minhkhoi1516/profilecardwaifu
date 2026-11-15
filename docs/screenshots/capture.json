@@ -1,0 +1,467 @@
+{
+  "generatedAt": "2026-11-15T11:29:37.417Z",
+  "commit": "50382d783e3b4a6d88477a198b7ae2a553b651ac",
+  "dirty": true,
+  "source": "http://127.0.0.1:8080",
+  "images": [
+    {
+      "file": "desktop-preview.png",
+      "sha256": "7d1a54bd023d5e6347eebe74a7f63145db2d76523fafaa3723e43f5059955136",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "fullPage": false,
+      "state": {
+        "release": "40.13",
+        "width": 1440,
+        "height": 900,
+        "dpr": 1,
+        "zoom": "1",
+        "scrollWidth": 1440,
+        "scrollHeight": 914,
+        "openPanels": 0,
+        "required": [
+          {
+            "id": "site-brand-header",
+            "text": "MK\n            \n                MINKOI\n                DABBLING & RESEARCHING\n            \n        \n\n        \n            \n                \n                18:29:40\n                ICT\n            \n\n            \n                \n                AVAILABLE",
+            "rect": {
+              "x": 200,
+              "y": 20,
+              "width": 1040,
+              "height": 63.59375,
+              "top": 20,
+              "right": 1240,
+              "bottom": 83.59375,
+              "left": 200
+            }
+          },
+          {
+            "id": "main-card",
+            "text": "MinKoi\n                            \n                        \n                        @minkoi\n                        Solitary Princess · Alya Sometimes Hides Her Feelings in Russian\n                    \n\n                    \n                    \n                        Tuturu tôi chỉ muốn bình yên ☺\n                    \n\n                    \n                    \n                        \n                            \n                                \n                                Discord\n                            \n                            \n                        \n                        \n                            \n                                \n                                GitHub\n                            \n                            \n                        \n                        \n                            \n                                \n                                TikTok\n                            \n                            \n                        \n                    \n\n                \n\n                \n                \n                    \n                    \n                        \n                        \n                            \n                                STUDIO AUDIO SUITE\n                            \n                            \n                                \n                                \n                                    \n                                    1.0x\n                                \n                                \n                                    1 / 31\n                                \n                            \n                        \n\n                        \n                         All (31) Alya Kujou4 Shiina Mahiru7 Waguri Kaoruko4 Sakura Miku2 Shinobu Uzuki2 Konohana Hinako2 Asanagi Umi2 Nakano Miku8\n\n                        \n                        \n                            \n                                \n                                \n                            \n                            \n                                可愛くてごめん (Kawaikute Gomen)\n                                Alya Kujou\n                                \n                                     Alya Kujou · Solitary Princess\n                                    \n                                        \n                                        \n                                        \n                                        \n                                    \n                                \n                            \n                        \n\n                        \n                        \n                            \n                            \n                                \n                                    \n                                \n                                \n            \n            \n                 HẸN GIỜ TẮT NHẠC\n                \n            \n            \n                \n                    \n                        \n                        \n                            Tắt hẹn giờ\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            15 phút\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            30 phút\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            45 phút\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            60 phút\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Hết bài hiện tại\n                        \n                        \n                    \n                \n            \n        \n                            \n\n                            \n                            \n                                \n                                    \n                                \n                                \n            \n            \n                 STUDIO 5-BAND EQUALIZER\n                \n            \n\n            \n            \n                \n                    \n                        0dB\n                        \n                            \n                        \n                        60Hz\n                    \n                \n                    \n                        0dB\n                        \n                            \n                        \n                        250Hz\n                    \n                \n                    \n                        0dB\n                        \n                            \n                        \n                        1kHz\n                    \n                \n                    \n                        0dB\n                        \n                            \n                        \n                        4kHz\n                    \n                \n                    \n                        0dB\n                        \n                            \n                        \n                        12kHz\n                    \n                \n            \n\n            \n            \n                CÁC BỘ LỌC TỐI ƯU SẴN (PRESETS)\n            \n            \n                \n                    \n                        \n                        \n                            Studio Reference\n                            Cân bằng phẳng tiêu chuẩn (Flat Bypass)\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Super Bass Boost\n                            Tăng cường âm trầm & lực đập kick (+7dB)\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Anime Idol Vocal\n                            Tôn giọng hát trong trẻo ngọt ngào (+5dB Mid)\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Acoustic & Piano\n                            Dịu êm, mộc mạc cho nhạc cụ hòa tấu\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Crystal Treble\n                            Âm bổng trong vắt, sắc nét & sôi động\n                        \n                        \n                    \n                \n                    \n                        \n                        \n                            Lo-Fi Vintage Tape\n                            Ấm áp, cắt bớt tần số chói phong cách hoài niệm\n                        \n                        \n                    \n                \n            \n\n            \n            \n                \n                     Chuyển bài êm dịu (Crossfade)\n                    Tự động hòa âm mượt mà khi đổi bài\n                \n                \n                    \n                \n            \n        \n                            \n\n                            \n                            \n                                \n                            \n\n                            \n                            \n                                \n                                    \n                                \n                                \n            \n            \n                \n                    ALYA KUJOU · 4 TRACKS\n                    \n                \n                \n                \n                    \n                        \n                    \n                    \n                        可愛くてごめん (Kawaikute Gomen)\n                        Alya Kujou\n                    \n                     NOW\n                \n                \n                    \n                    \n                \n            \n            \n                \n                    \n                    \n                        可愛くてごめん (Kawaikute Gomen)\n                        Alya Kujou\n                    \n                    \n                        \n                    \n                    3:35\n                \n            \n                \n                    2\n                    \n                        小さな恋のうた (Chiisana Koi no Uta)\n                        Alya Kujou\n                    \n                    \n                        \n                    \n                    4:09\n                \n            \n                \n                    3\n                    \n                        ワールドイズマイン (World is Mine)\n                        Alya Kujou\n                    \n                    \n                        \n                    \n                    4:12\n                \n            \n                \n                    4\n                    \n                        CHE.R.RY\n                        Alya Kujou\n                    \n                    \n                        \n                    \n                    3:29\n                \n            \n        \n                            \n                        \n\n                        \n                        \n                            \n                                0:00\n                                /\n                                3:35\n                            \n                            \n                                \n                                0:00\n                            \n                        \n\n                        \n                        \n                            \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                            \n                        \n\n                        \n                        \n                            \n                            \n                        \n\n                        \n                        \n                        Audio currently unavailable\n                    \n\n                    \n                    \n                        \n                             WAIFU & THEME COLLECTION\n                            8 PERSONAS · CLICK TO EQUIP\n                        \n                        \n                    \n                        \n                    \n                    \n                        Alya Kujou\n                        Solitary Princess\n                    \n                \n                    \n                        \n                    \n                    \n                        Shiina Mahiru\n                        Angel of Light\n                    \n                \n                    \n                        \n                    \n                    \n                        Waguri Kaoruko\n                        Blooming Camellia\n                    \n                \n                    \n                        \n                    \n                    \n                        Sakura Miku\n                        Spring Blossom Idol\n                    \n                \n                    \n                        \n                    \n                    \n                        Shinobu Uzuki\n                        Midnight Announcer\n                    \n                \n                    \n                        \n                    \n                    \n                        Konohana Hinako\n                        Midnight Storyteller\n                    \n                \n                    \n                        \n                    \n                    \n                        Asanagi Umi\n                        Tide of Dawn\n                    \n                \n                    \n                        \n                    \n                    \n                        Nakano Miku\n                        No. 3 Sister · Headphones\n                    \n                \n                    \n                        \n                    \n                    \n                        New Persona\n                        Add your waifu\n                    \n                \n                    \n\n                    \n                    \n                        \n                            \n                            Nếu nhạc bị rè/ngắt trên iQOO, hãy vào Cài đặt > Ứng dụng > Trình duyệt > Pin > Không hạn chế.\n                        \n                        \n                            \n                        \n                    \n\n                    \n                    \n                        © 2026 MINKOI STUDIO · ALL RIGHTS RESERVED\n                        VIETNAM · BESPOKE DIGITAL IDENTITY",
+            "rect": {
+              "x": 200,
+              "y": 98.78125,
+              "width": 1040,
+              "height": 795.0625,
+              "top": 98.78125,
+              "right": 1240,
+              "bottom": 893.84375,
+              "left": 200
+            }
+          },
+          {
+            "id": "char-avatar",
+            "text": "",
+            "rect": {
+              "x": 318.5,
+              "y": 284.765625,
+              "width": 144,
+              "height": 148,
+              "top": 284.765625,
+              "right": 462.5,
+              "bottom": 432.765625,
+              "left": 318.5
+            }
+          },
+          {
+            "id": "audio-suite-title",
+            "text": "STUDIO AUDIO SUITE",
+            "rect": {
+              "x": 613,
+              "y": 123.96875,
+              "width": 154.515625,
+              "height": 17.390625,
+              "top": 123.96875,
+              "right": 767.515625,
+              "bottom": 141.359375,
+              "left": 613
+            }
+          },
+          {
+            "id": "audio-category-nav",
+            "text": "All (31) Alya Kujou4 Shiina Mahiru7 Waguri Kaoruko4 Sakura Miku2 Shinobu Uzuki2 Konohana Hinako2 Asanagi Umi2 Nakano Miku8",
+            "rect": {
+              "x": 613,
+              "y": 157.546875,
+              "width": 594,
+              "height": 39.375,
+              "top": 157.546875,
+              "right": 1207,
+              "bottom": 196.921875,
+              "left": 613
+            }
+          },
+          {
+            "id": "track-name",
+            "text": "可愛くてごめん (Kawaikute Gomen)",
+            "rect": {
+              "x": 747.1875,
+              "y": 232.421875,
+              "width": 437.21875,
+              "height": 25.59375,
+              "top": 232.421875,
+              "right": 1184.40625,
+              "bottom": 258.015625,
+              "left": 747.1875
+            }
+          },
+          {
+            "id": "play-pause",
+            "text": "",
+            "rect": {
+              "x": 881,
+              "y": 471.296875,
+              "width": 58,
+              "height": 58,
+              "top": 471.296875,
+              "right": 939,
+              "bottom": 529.296875,
+              "left": 881
+            }
+          },
+          {
+            "id": "volume-slider-dock",
+            "text": "",
+            "rect": {
+              "x": 613,
+              "y": 548.484375,
+              "width": 594,
+              "height": 54,
+              "top": 548.484375,
+              "right": 1207,
+              "bottom": 602.484375,
+              "left": 613
+            }
+          }
+        ],
+        "assets": [
+          "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap",
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
+          "css/style-base.css?v=40.8",
+          "css/style-backgrounds.css?v=40.13",
+          "css/style-card.css?v=40.13",
+          "css/style-left.css?v=40.13",
+          "css/style-right.css?v=40.13",
+          "css/style-responsive.css?v=40.13",
+          "css/tokens-v3.css?v=40.13",
+          "js/config.js?v=40.12",
+          "js/ui/spring.js?v=40.8",
+          "js/ui/squircle.js?v=40.8",
+          "js/ui/components.js?v=40.13",
+          "js/stars.js?v=40.8",
+          "js/fluid-bg.js?v=40.8",
+          "js/avatar.js?v=40.13",
+          "js/music.js?v=40.13",
+          "js/lyrics/normalizer.js?v=40.8",
+          "js/lyrics/parser.js?v=40.8",
+          "js/lyrics/matcher.js?v=40.8",
+          "js/lyrics/cache.js?v=40.8",
+          "js/lyrics/diagnostics.js?v=40.8",
+          "js/lyrics/repository.js?v=40.12",
+          "js/lyrics/provider.js?v=40.8",
+          "js/lyrics/sync-engine.js?v=40.8",
+          "js/lyrics/renderer.js?v=40.8",
+          "js/lyrics/editor.js?v=40.8",
+          "js/lyrics/index.js?v=40.8",
+          "js/snapshot.js?v=40.8",
+          "js/features.js?v=40.13"
+        ]
+      }
+    },
+    {
+      "file": "mobile-preview.png",
+      "sha256": "dfdc122ea678a988864b0e5f2f2984f5c2794445443e225f9d5f94e085ab9d5e",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "fullPage": true,
+      "state": {
+        "release": "40.13",
+        "width": 390,
+        "height": 844,
+        "dpr": 1,
+        "zoom": "1",
+        "scrollWidth": 390,
+        "scrollHeight": 1482,
+        "openPanels": 0,
+        "required": [
+          {
+            "id": "site-brand-header",
+            "text": "MK\n            \n                MINKOI\n                DABBLING & RESEARCHING\n            \n        \n\n        \n            \n                \n                18:29:44\n                ICT\n            \n\n            \n                \n                AVAILABLE",
+            "rect": {
+              "x": 5.59375,
+              "y": 8,
+              "width": 378.8125,
+              "height": 58.78125,
+              "top": 8,
+              "right": 384.40625,
+              "bottom": 66.78125,
+              "left": 5.59375
+            }
+          },
+          {
+            "id": "main-card",
+            "text": "MinKoi\n                            \n                        \n                        @minkoi\n                        Solitary Princess · Alya Sometimes Hides Her Feelings in Russian\n                    \n\n                    \n                    \n                        Tuturu tôi chỉ muốn bình yên ☺\n                    \n\n                    \n                    \n                        \n                            \n                                \n                                Discord\n                            \n                            \n                        \n                        \n                            \n                                \n                                GitHub\n                            \n                            \n                        \n                        \n                            \n                                \n                                TikTok\n                            \n                            \n                        \n                    \n\n                \n\n                \n                \n                    \n                    \n                        \n                        \n                            \n                                STUDIO AUDIO SUITE\n                            \n                            \n                                \n                                \n                                    \n                                    1.0x\n                                \n                                \n                                    1 / 31\n                                \n                            \n                        \n\n                        \n                         All (31) Alya Kujou4 Shiina Mahiru7 Waguri Kaoruko4 Sakura Miku2 Shinobu Uzuki2 Konohana Hinako2 Asanagi Umi2 Nakano Miku8\n\n                        \n                        \n                            \n                                \n                                \n                            \n                            \n                                可愛くてごめん (Kawaikute Gomen)\n                                Alya Kujou\n                                \n                                     Alya Kujou · Solitary Princess\n                                    \n                                        \n                                        \n                                        \n                                        \n                                    \n                                \n                            \n                        \n\n                        \n                        \n                            \n                            \n                                \n                                    \n                                \n                                \n                            \n\n                            \n                            \n                                \n                                    \n                                \n                                \n                            \n\n                            \n                            \n                                \n                            \n\n                            \n                            \n                                \n                                    \n                                \n                                \n                            \n                        \n\n                        \n                        \n                            \n                                0:00\n                                /\n                                3:35\n                            \n                            \n                                \n                                0:00\n                            \n                        \n\n                        \n                        \n                            \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                                    \n                                \n                                \n                            \n                        \n\n                        \n                        \n                            \n                            \n                        \n\n                        \n                        \n                        Audio currently unavailable\n                    \n\n                    \n                    \n                        \n                             WAIFU & THEME COLLECTION\n                            8 PERSONAS · CLICK TO EQUIP\n                        \n                        \n                    \n                        \n                    \n                    \n                        Alya Kujou\n                        Solitary Princess\n                    \n                \n                    \n                        \n                    \n                    \n                        Shiina Mahiru\n                        Angel of Light\n                    \n                \n                    \n                        \n                    \n                    \n                        Waguri Kaoruko\n                        Blooming Camellia\n                    \n                \n                    \n                        \n                    \n                    \n                        Sakura Miku\n                        Spring Blossom Idol\n                    \n                \n                    \n                        \n                    \n                    \n                        Shinobu Uzuki\n                        Midnight Announcer\n                    \n                \n                    \n                        \n                    \n                    \n                        Konohana Hinako\n                        Midnight Storyteller\n                    \n                \n                    \n                        \n                    \n                    \n                        Asanagi Umi\n                        Tide of Dawn\n                    \n                \n                    \n                        \n                    \n                    \n                        Nakano Miku\n                        No. 3 Sister · Headphones\n                    \n                \n                    \n                        \n                    \n                    \n                        New Persona\n                        Add your waifu\n                    \n                \n                    \n\n                    \n                    \n                        \n                            \n                            Nếu nhạc bị rè/ngắt trên iQOO, hãy vào Cài đặt > Ứng dụng > Trình duyệt > Pin > Không hạn chế.\n                        \n                        \n                            \n                        \n                    \n\n                    \n                    \n                        © 2026 MINKOI STUDIO · ALL RIGHTS RESERVED\n                        VIETNAM · BESPOKE DIGITAL IDENTITY",
+            "rect": {
+              "x": 5.59375,
+              "y": 75.578125,
+              "width": 378.8125,
+              "height": 1378.328125,
+              "top": 75.578125,
+              "right": 384.40625,
+              "bottom": 1453.90625,
+              "left": 5.59375
+            }
+          },
+          {
+            "id": "char-avatar",
+            "text": "",
+            "rect": {
+              "x": 17.6875,
+              "y": 94.15625,
+              "width": 119,
+              "height": 124,
+              "top": 94.15625,
+              "right": 136.6875,
+              "bottom": 218.15625,
+              "left": 17.6875
+            }
+          },
+          {
+            "id": "audio-suite-title",
+            "text": "STUDIO AUDIO SUITE",
+            "rect": {
+              "x": 26.59375,
+              "y": 307.859375,
+              "width": 125.34375,
+              "height": 15.34375,
+              "top": 307.859375,
+              "right": 151.9375,
+              "bottom": 323.203125,
+              "left": 26.59375
+            }
+          },
+          {
+            "id": "audio-category-nav",
+            "text": "All (31) Alya Kujou4 Shiina Mahiru7 Waguri Kaoruko4 Sakura Miku2 Shinobu Uzuki2 Konohana Hinako2 Asanagi Umi2 Nakano Miku8",
+            "rect": {
+              "x": 22.59375,
+              "y": 344.71875,
+              "width": 344.8125,
+              "height": 48,
+              "top": 344.71875,
+              "right": 367.40625,
+              "bottom": 392.71875,
+              "left": 22.59375
+            }
+          },
+          {
+            "id": "track-name",
+            "text": "可愛くてごめん (Kawaikute Gomen)",
+            "rect": {
+              "x": 139.984375,
+              "y": 424.90625,
+              "width": 208.03125,
+              "height": 23.921875,
+              "top": 424.90625,
+              "right": 348.015625,
+              "bottom": 448.828125,
+              "left": 139.984375
+            }
+          },
+          {
+            "id": "play-pause",
+            "text": "",
+            "rect": {
+              "x": 165,
+              "y": 679.421875,
+              "width": 60,
+              "height": 60,
+              "top": 679.421875,
+              "right": 225,
+              "bottom": 739.421875,
+              "left": 165
+            }
+          },
+          {
+            "id": "volume-slider-dock",
+            "text": "",
+            "rect": {
+              "x": 22.59375,
+              "y": 759.421875,
+              "width": 344.8125,
+              "height": 60.375,
+              "top": 759.421875,
+              "right": 367.40625,
+              "bottom": 819.796875,
+              "left": 22.59375
+            }
+          }
+        ],
+        "assets": [
+          "https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap",
+          "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css",
+          "css/style-base.css?v=40.8",
+          "css/style-backgrounds.css?v=40.13",
+          "css/style-card.css?v=40.13",
+          "css/style-left.css?v=40.13",
+          "css/style-right.css?v=40.13",
+          "css/style-responsive.css?v=40.13",
+          "css/tokens-v3.css?v=40.13",
+          "js/config.js?v=40.12",
+          "js/ui/spring.js?v=40.8",
+          "js/ui/squircle.js?v=40.8",
+          "js/ui/components.js?v=40.13",
+          "js/stars.js?v=40.8",
+          "js/fluid-bg.js?v=40.8",
+          "js/avatar.js?v=40.13",
+          "js/music.js?v=40.13",
+          "js/lyrics/normalizer.js?v=40.8",
+          "js/lyrics/parser.js?v=40.8",
+          "js/lyrics/matcher.js?v=40.8",
+          "js/lyrics/cache.js?v=40.8",
+          "js/lyrics/diagnostics.js?v=40.8",
+          "js/lyrics/repository.js?v=40.12",
+          "js/lyrics/provider.js?v=40.8",
+          "js/lyrics/sync-engine.js?v=40.8",
+          "js/lyrics/renderer.js?v=40.8",
+          "js/lyrics/editor.js?v=40.8",
+          "js/lyrics/index.js?v=40.8",
+          "js/snapshot.js?v=40.8",
+          "js/features.js?v=40.13"
+        ]
+      }
+    }
+  ],
+  "sourceFiles": [
+    {
+      "file": "index.html",
+      "sha256": "10b3820c4fbcfe7741431373f39a55930ec9d6fae1ada29b087080642f322bc3"
+    },
+    {
+      "file": "css/style-base.css",
+      "sha256": "59c41f4531e61309ce979f5dbbb8cba5fb32c78d618b7f49066700a74cdb8db2"
+    },
+    {
+      "file": "css/style-backgrounds.css",
+      "sha256": "ac23c01a4057e29b5595f078f702a3c2a176d0f11870829cce27e3cd6246b48d"
+    },
+    {
+      "file": "css/style-card.css",
+      "sha256": "c748236708340b9e596c88be581a4366e49f8146bc69b580a3cc5fc194cd936d"
+    },
+    {
+      "file": "css/style-left.css",
+      "sha256": "1887797c3b8ab9a1ee7b1f4b450db52e492918e5f491021efc8b271b42126911"
+    },
+    {
+      "file": "css/style-right.css",
+      "sha256": "d468584730353217486cb8348c475eef878ba26af04bf54adfe4939201d11679"
+    },
+    {
+      "file": "css/style-responsive.css",
+      "sha256": "78d818d6ba0f257635306c9367b1c0f85291a290b28de694c6d99ad92999854a"
+    },
+    {
+      "file": "css/tokens-v3.css",
+      "sha256": "e6f7fd5bd8a6174a9943646c272d68940f951d66e3624418f7564de66f9f0fc6"
+    },
+    {
+      "file": "js/config.js",
+      "sha256": "eb12d9dd324ea305d7e0f4729116bc12735b1dc9c25400cf11f491c5575fec0a"
+    },
+    {
+      "file": "js/ui/spring.js",
+      "sha256": "ac9c68adacc08e263deb7528c85272f42fd1a5d6fe88a948d9cd900e8198f9b9"
+    },
+    {
+      "file": "js/ui/squircle.js",
+      "sha256": "8d50e3b9553bd0c30c54e250fea5ad082ae436099023f5a94a26a996405b2bbc"
+    },
+    {
+      "file": "js/ui/components.js",
+      "sha256": "b66a00578cc9c69b91e8859af848d04ce102104b988e33abbc1e483230ef0b04"
+    },
+    {
+      "file": "js/stars.js",
+      "sha256": "fde37861b41f62ca92f421407fa50710b2f7dc2bb6c939f1109e205e724ec328"
+    },
+    {
+      "file": "js/fluid-bg.js",
+      "sha256": "14404ad15d0662356ebcb9423a4ec5e3152b1c615a26f39aced2feeb17acb651"
+    },
+    {
+      "file": "js/avatar.js",
+      "sha256": "e800ee4c1aac55e7554e905e402b25a939fdb014f5ba5271026f1afc134a571c"
+    },
+    {
+      "file": "js/music.js",
+      "sha256": "7d8611a53ef056269cf5c7a740b6248f9a2a836cb89ca336900bab9548cf773f"
+    },
+    {
+      "file": "js/lyrics/normalizer.js",
+      "sha256": "279aafa67d78e14e23cdf913cff458ce163ed5cf0a6a71fd9120ad1616a48b5f"
+    },
+    {
+      "file": "js/lyrics/parser.js",
+      "sha256": "58afe7090e834d6cd2a3c0fe18ae4434581c4794857d6b19b06292331bf45c82"
+    },
+    {
+      "file": "js/lyrics/matcher.js",
+      "sha256": "42a54610d6659fb4c2bc6eac94c67c07d6cc7d0ecf03706aaea2f2259e70b42f"
+    },
+    {
+      "file": "js/lyrics/cache.js",
+      "sha256": "5945776376adba73cc59a41b6c86402eb2d1c7c2c581827bc34f96c8ff95d356"
+    },
+    {
+      "file": "js/lyrics/diagnostics.js",
+      "sha256": "61921110ed01418ddd6c07feac49daa53035f0cfc1e0b6119c943a298bdd4811"
+    },
+    {
+      "file": "js/lyrics/repository.js",
+      "sha256": "0e8cb7cadb77e9c8f77d596dd6f3afe29b32919cda92a24a7d1177daf2b3f242"
+    },
+    {
+      "file": "js/lyrics/provider.js",
+      "sha256": "d92eae0c6032600bc31c686f8848df63e6debf4e80ee328a31a0815fb8074517"
+    },
+    {
+      "file": "js/lyrics/sync-engine.js",
+      "sha256": "af8754e7a62b6bb583a3b4c3534565b05fba6dbdd73d96cb0bc0aaf748d4c36a"
+    },
+    {
+      "file": "js/lyrics/renderer.js",
+      "sha256": "9c183635ab496afc0dc1d2e58b1e5481e2bcab6cc6ca3912fa93d0eb4c146fea"
+    },
+    {
+      "file": "js/lyrics/editor.js",
+      "sha256": "85e8e277895c4e55315e4b17c57d98279efb8eabc616f050f907e35c2e4f21e2"
+    },
+    {
+      "file": "js/lyrics/index.js",
+      "sha256": "fd6382547c7c5f9720468a13138dffbf9e077e30d99eaf91835600024edee935"
+    },
+    {
+      "file": "js/snapshot.js",
+      "sha256": "29783566b181204f4d713a838bb3e63370d88df0d248f7edd9ee604d7183cff2"
+    },
+    {
+      "file": "js/features.js",
+      "sha256": "3b1e0fcece8f629c7e0d348cfab63c78a955392eaf451b9cab443c430cb3c4c7"
+    }
+  ],
+  "visualReview": {
+    "reviewedAt": "2026-11-15T11:33:57.322Z",
+    "reviewer": "Codex: direct PNG inspection",
+    "checks": [
+      "Both final PNGs opened; compared against DOM capture geometry and previous images",
+      "All four edges inspected; whole desktop card and footer, whole mobile page retained",
+      "No repeated panels, unintended blank regions, loading state, browser chrome or debug UI",
+      "Portrait/disc artwork, navigation, active song, playback and volume visible",
+      "Light EQ, Eco light and mobile Zen inspected separately; Zen notifications do not cover dock"
+    ]
+  }
+}

@@ -1,0 +1,572 @@
+{
+  "environment": "Windows headless Chromium/Edge; mobile emulation; no CPU throttling; 5-second sample; host load affects results; timeline sums are CPU time across threads, not GPU time",
+  "results": [
+    {
+      "mode": "high",
+      "baseline": true,
+      "playing": false,
+      "windowMs": 5000,
+      "frames": 301,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.800000000000182,
+      "p99Ms": 16.80000000000109,
+      "intervalsOver25ms": 0,
+      "delta": {
+        "TaskDuration": 1.234307,
+        "ScriptDuration": 0.161077,
+        "LayoutDuration": 0,
+        "RecalcStyleDuration": 0.17694400000000002,
+        "LayoutCount": 0,
+        "RecalcStyleCount": 304
+      },
+      "timeline": {
+        "Layerize": {
+          "count": 309,
+          "cpuMs": 112.70700000000001
+        },
+        "RasterTask": {
+          "count": 1235,
+          "cpuMs": 740.0470000000009
+        },
+        "UpdateLayoutTree": {
+          "count": 308,
+          "cpuMs": 178.39800000000008
+        },
+        "Paint": {
+          "count": 1540,
+          "cpuMs": 150.18699999999998
+        }
+      },
+      "longTasks": [],
+      "heap": 3002845,
+      "images": [
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 39.100000001490116
+        },
+        {
+          "name": "/assets/banner_alya_pc.jpg",
+          "bytes": 173120,
+          "duration": 51.100000001490116
+        },
+        {
+          "name": "/assets/avatar_mahiru.png",
+          "bytes": 423048,
+          "duration": 39.70000000298023
+        },
+        {
+          "name": "/assets/avatar_kaoruko.png",
+          "bytes": 255583,
+          "duration": 84.69999999925494
+        },
+        {
+          "name": "/assets/avatar_sakuramiku.png",
+          "bytes": 402109,
+          "duration": 87.40000000223517
+        },
+        {
+          "name": "/assets/avatar_shinobu.png",
+          "bytes": 416260,
+          "duration": 88.30000000074506
+        },
+        {
+          "name": "/assets/avatar_hinako.png",
+          "bytes": 206449,
+          "duration": 92.19999999925494
+        },
+        {
+          "name": "/assets/avatar_umi.png",
+          "bytes": 225392,
+          "duration": 96.90000000223517
+        },
+        {
+          "name": "/assets/avatar_nakanomiku.png",
+          "bytes": 391227,
+          "duration": 102.40000000223517
+        },
+        {
+          "name": "/assets/banner_alya_phone2.jpg",
+          "bytes": 137300,
+          "duration": 98.80000000074506
+        },
+        {
+          "name": "/assets/banner_alya_phone.jpg",
+          "bytes": 129114,
+          "duration": 103.10000000149012
+        },
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 10.800000000745058
+        },
+        {
+          "name": "/assets/banner_mahiru_phone.jpg",
+          "bytes": 304734,
+          "duration": 66.5
+        },
+        {
+          "name": "/assets/banner_mahiru_phone2.jpg",
+          "bytes": 234528,
+          "duration": 63.100000001490116
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone.jpg",
+          "bytes": 137609,
+          "duration": 76.90000000223517
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone2.jpg",
+          "bytes": 329315,
+          "duration": 73.5
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone.jpg",
+          "bytes": 177284,
+          "duration": 76.80000000074506
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone2.jpg",
+          "bytes": 92025,
+          "duration": 78.80000000074506
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone.jpg",
+          "bytes": 88907,
+          "duration": 94.90000000223517
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone2.jpg",
+          "bytes": 141346,
+          "duration": 108.60000000149012
+        },
+        {
+          "name": "/assets/banner_hinako_phone.jpg",
+          "bytes": 267650,
+          "duration": 111.29999999701977
+        },
+        {
+          "name": "/assets/banner_hinako_phone2.jpg",
+          "bytes": 314594,
+          "duration": 127.30000000074506
+        },
+        {
+          "name": "/assets/banner_umi_phone.jpg",
+          "bytes": 176868,
+          "duration": 129.20000000298023
+        },
+        {
+          "name": "/assets/banner_umi_phone2.jpg",
+          "bytes": 167948,
+          "duration": 130.5
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone.jpg",
+          "bytes": 57612,
+          "duration": 160.90000000223517
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone2.jpg",
+          "bytes": 251173,
+          "duration": 172.5
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone3.jpg",
+          "bytes": 188538,
+          "duration": 178.90000000223517
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone4.jpg",
+          "bytes": 127452,
+          "duration": 186
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone5.jpg",
+          "bytes": 196128,
+          "duration": 191.5
+        }
+      ],
+      "webgl": true,
+      "gpu": "ANGLE (Intel, Intel(R) HD Graphics 3000 (0x00000126) Direct3D11 vs_4_1 ps_4_1, D3D11)",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0"
+    },
+    {
+      "mode": "balanced",
+      "baseline": true,
+      "playing": false,
+      "windowMs": 5000,
+      "frames": 300,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.800000000000182,
+      "p99Ms": 16.900000000000546,
+      "intervalsOver25ms": 1,
+      "delta": {
+        "TaskDuration": 1.300159,
+        "ScriptDuration": 0.12904300000000002,
+        "LayoutDuration": 0,
+        "RecalcStyleDuration": 0.178347,
+        "LayoutCount": 0,
+        "RecalcStyleCount": 301
+      },
+      "timeline": {
+        "UpdateLayoutTree": {
+          "count": 302,
+          "cpuMs": 178.41100000000003
+        },
+        "Paint": {
+          "count": 1510,
+          "cpuMs": 157.03199999999998
+        },
+        "Layerize": {
+          "count": 302,
+          "cpuMs": 113.53299999999997
+        },
+        "RasterTask": {
+          "count": 1208,
+          "cpuMs": 722.0710000000005
+        }
+      },
+      "longTasks": [],
+      "heap": 2168071,
+      "images": [
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 32.80000000074506
+        },
+        {
+          "name": "/assets/banner_alya_pc.jpg",
+          "bytes": 173120,
+          "duration": 52.899999998509884
+        },
+        {
+          "name": "/assets/avatar_mahiru.png",
+          "bytes": 423048,
+          "duration": 33.600000001490116
+        },
+        {
+          "name": "/assets/avatar_kaoruko.png",
+          "bytes": 255583,
+          "duration": 206.40000000223517
+        },
+        {
+          "name": "/assets/avatar_sakuramiku.png",
+          "bytes": 402109,
+          "duration": 221.20000000298023
+        },
+        {
+          "name": "/assets/avatar_shinobu.png",
+          "bytes": 416260,
+          "duration": 232.19999999925494
+        },
+        {
+          "name": "/assets/avatar_hinako.png",
+          "bytes": 206449,
+          "duration": 234.60000000149012
+        },
+        {
+          "name": "/assets/avatar_umi.png",
+          "bytes": 225392,
+          "duration": 235.59999999776483
+        },
+        {
+          "name": "/assets/avatar_nakanomiku.png",
+          "bytes": 391227,
+          "duration": 249.80000000074506
+        },
+        {
+          "name": "/assets/banner_alya_phone.jpg",
+          "bytes": 129114,
+          "duration": 263.79999999701977
+        },
+        {
+          "name": "/assets/banner_alya_phone2.jpg",
+          "bytes": 137300,
+          "duration": 294.8999999985099
+        },
+        {
+          "name": "/assets/banner_mahiru_phone.jpg",
+          "bytes": 304734,
+          "duration": 36.19999999925494
+        },
+        {
+          "name": "/assets/banner_mahiru_phone2.jpg",
+          "bytes": 234528,
+          "duration": 47.80000000074506
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone.jpg",
+          "bytes": 137609,
+          "duration": 49.400000002235174
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone2.jpg",
+          "bytes": 329315,
+          "duration": 51.900000002235174
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone.jpg",
+          "bytes": 177284,
+          "duration": 53.900000002235174
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone2.jpg",
+          "bytes": 92025,
+          "duration": 56.19999999925494
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone.jpg",
+          "bytes": 88907,
+          "duration": 70.89999999850988
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone2.jpg",
+          "bytes": 141346,
+          "duration": 76.20000000298023
+        },
+        {
+          "name": "/assets/banner_hinako_phone.jpg",
+          "bytes": 267650,
+          "duration": 80.5
+        },
+        {
+          "name": "/assets/banner_hinako_phone2.jpg",
+          "bytes": 314594,
+          "duration": 81
+        },
+        {
+          "name": "/assets/banner_umi_phone.jpg",
+          "bytes": 176868,
+          "duration": 84.79999999701977
+        },
+        {
+          "name": "/assets/banner_umi_phone2.jpg",
+          "bytes": 167948,
+          "duration": 104.09999999776483
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone.jpg",
+          "bytes": 57612,
+          "duration": 107.10000000149012
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone2.jpg",
+          "bytes": 251173,
+          "duration": 108.89999999850988
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone3.jpg",
+          "bytes": 188538,
+          "duration": 108.29999999701977
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone4.jpg",
+          "bytes": 127452,
+          "duration": 112.19999999925494
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone5.jpg",
+          "bytes": 196128,
+          "duration": 115.60000000149012
+        },
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 8.699999999254942
+        }
+      ],
+      "webgl": true,
+      "gpu": "ANGLE (Intel, Intel(R) HD Graphics 3000 (0x00000126) Direct3D11 vs_4_1 ps_4_1, D3D11)",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0"
+    },
+    {
+      "mode": "eco",
+      "baseline": true,
+      "playing": false,
+      "windowMs": 5000,
+      "frames": 301,
+      "medianMs": 16.699999999999818,
+      "p95Ms": 16.800000000000182,
+      "p99Ms": 16.899999999999636,
+      "intervalsOver25ms": 0,
+      "delta": {
+        "TaskDuration": 0.927051,
+        "ScriptDuration": 0.025823,
+        "LayoutDuration": 0,
+        "RecalcStyleDuration": 0.263524,
+        "LayoutCount": 0,
+        "RecalcStyleCount": 301
+      },
+      "timeline": {
+        "Paint": {
+          "count": 1509,
+          "cpuMs": 161.52499999999998
+        },
+        "Layerize": {
+          "count": 302,
+          "cpuMs": 75.46499999999997
+        },
+        "RasterTask": {
+          "count": 1208,
+          "cpuMs": 533.3830000000006
+        },
+        "UpdateLayoutTree": {
+          "count": 301,
+          "cpuMs": 263.183
+        }
+      },
+      "longTasks": [],
+      "heap": 2092806,
+      "images": [
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 36.30000000074506
+        },
+        {
+          "name": "/assets/banner_alya_pc.jpg",
+          "bytes": 173120,
+          "duration": 43
+        },
+        {
+          "name": "/assets/avatar_mahiru.png",
+          "bytes": 423048,
+          "duration": 64.20000000298023
+        },
+        {
+          "name": "/assets/avatar_kaoruko.png",
+          "bytes": 255583,
+          "duration": 71.89999999850988
+        },
+        {
+          "name": "/assets/avatar_sakuramiku.png",
+          "bytes": 402109,
+          "duration": 80.80000000074506
+        },
+        {
+          "name": "/assets/avatar_shinobu.png",
+          "bytes": 416260,
+          "duration": 95.19999999925494
+        },
+        {
+          "name": "/assets/avatar_hinako.png",
+          "bytes": 206449,
+          "duration": 86.40000000223517
+        },
+        {
+          "name": "/assets/avatar_umi.png",
+          "bytes": 225392,
+          "duration": 81.10000000149012
+        },
+        {
+          "name": "/assets/avatar_nakanomiku.png",
+          "bytes": 391227,
+          "duration": 244.69999999925494
+        },
+        {
+          "name": "/assets/banner_alya_phone.jpg",
+          "bytes": 129114,
+          "duration": 249.09999999776483
+        },
+        {
+          "name": "/assets/banner_alya_phone2.jpg",
+          "bytes": 137300,
+          "duration": 245.10000000149012
+        },
+        {
+          "name": "/assets/avatar_alya.png",
+          "bytes": 540758,
+          "duration": 16.699999999254942
+        },
+        {
+          "name": "/assets/banner_mahiru_phone.jpg",
+          "bytes": 304734,
+          "duration": 76.89999999850988
+        },
+        {
+          "name": "/assets/banner_mahiru_phone2.jpg",
+          "bytes": 234528,
+          "duration": 77.19999999925494
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone.jpg",
+          "bytes": 137609,
+          "duration": 81.89999999850988
+        },
+        {
+          "name": "/assets/banner_kaoruko_phone2.jpg",
+          "bytes": 329315,
+          "duration": 84.10000000149012
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone.jpg",
+          "bytes": 177284,
+          "duration": 82
+        },
+        {
+          "name": "/assets/banner_sakuramiku_phone2.jpg",
+          "bytes": 92025,
+          "duration": 87
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone.jpg",
+          "bytes": 88907,
+          "duration": 95.89999999850988
+        },
+        {
+          "name": "/assets/banner_shinobuuzuki_phone2.jpg",
+          "bytes": 141346,
+          "duration": 96.5
+        },
+        {
+          "name": "/assets/banner_hinako_phone.jpg",
+          "bytes": 267650,
+          "duration": 102
+        },
+        {
+          "name": "/assets/banner_hinako_phone2.jpg",
+          "bytes": 314594,
+          "duration": 109.09999999776483
+        },
+        {
+          "name": "/assets/banner_umi_phone.jpg",
+          "bytes": 176868,
+          "duration": 107.5
+        },
+        {
+          "name": "/assets/banner_umi_phone2.jpg",
+          "bytes": 167948,
+          "duration": 107.59999999776483
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone.jpg",
+          "bytes": 57612,
+          "duration": 115.5
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone2.jpg",
+          "bytes": 251173,
+          "duration": 118.10000000149012
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone3.jpg",
+          "bytes": 188538,
+          "duration": 123
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone4.jpg",
+          "bytes": 127452,
+          "duration": 125.80000000074506
+        },
+        {
+          "name": "/assets/banner_nakanomiku_phone5.jpg",
+          "bytes": 196128,
+          "duration": 127.39999999850988
+        }
+      ],
+      "webgl": true,
+      "gpu": "ANGLE (Intel, Intel(R) HD Graphics 3000 (0x00000126) Direct3D11 vs_4_1 ps_4_1, D3D11)",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0"
+    }
+  ]
+}

@@ -35,7 +35,6 @@
     transition:
         opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1),
         transform 7.5s cubic-bezier(0.22, 1, 0.36, 1);
-    will-change: opacity, transform;
     /* Gentle analog film softness: dials back digital over-saturation & plastic sharpening */
     filter: brightness(0.94) contrast(0.97) saturate(0.94);
 }
