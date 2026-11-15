@@ -71,4 +71,21 @@ check(card.includes('z-index: 1200;'),
 check(responsive.includes('.lyrics-drawer-modal.open'),
     'Mobile lyrics bottom-sheet rule must remain intact');
 
-console.log('PASS: desktop flyout flips, small viewport bounds, mobile sheets unchanged, lyrics panel safe.');
+const components = fs.readFileSync(path.join(root, 'js/ui/components.js'), 'utf8');
+const lyricsMobile = responsive.slice(
+    responsive.indexOf('    /* Miuix Lyrics Drawer Sheet on Mobile'),
+    responsive.indexOf('    .lyrics-drawer-header', responsive.indexOf('    /* Miuix Lyrics Drawer Sheet on Mobile'))
+);
+check(lyricsMobile.includes('transform: translateY(100%);'), 'Mobile Lyrics needs a spring-overridable transform');
+check(lyricsMobile.includes('opacity: 0;'), 'Mobile Lyrics needs spring-overridable opacity');
+check(!lyricsMobile.includes('transform: translateY(100%) !important;') ||
+      lyricsMobile.indexOf('transform: translateY(100%) !important;') > lyricsMobile.indexOf('@media (prefers-reduced-motion: reduce)'),
+      'Base mobile Lyrics transform must not use !important');
+check(!lyricsMobile.includes('opacity: 0 !important;') ||
+      lyricsMobile.indexOf('opacity: 0 !important;') > lyricsMobile.indexOf('@media (prefers-reduced-motion: reduce)'),
+      'Base mobile Lyrics opacity must not use !important');
+check(components.includes("triggerBtn.closest('.studio-audio-suite')?.querySelector('.suite-header-row')"),
+      'New Miuix panel controller must anchor above-menu safe area to Studio title');
+check(!components.includes('Math.max(120, Math.floor(spaceAbove))'),
+      'New Miuix controller must not force an oversized minimum height on short screens');
+console.log('PASS: legacy flyouts, new Miuix header bounds and mobile Lyrics spring CSS cascade.');

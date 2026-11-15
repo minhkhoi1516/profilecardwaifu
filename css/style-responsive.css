@@ -698,14 +698,29 @@
         -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
         box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.85) !important;
         z-index: 2050 !important;
-        transform: translateY(100%) !important;
-        opacity: 0 !important;
+        /* Keep these non-important: the unified spring controller writes
+           transform/opacity inline every frame on mobile. !important would
+           permanently lock the lyrics sheet offscreen and transparent. */
+        transform: translateY(100%);
+        opacity: 0;
         visibility: hidden !important;
         will-change: transform, opacity;
     }
 
     .lyrics-drawer-modal.open {
         visibility: visible !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .lyrics-drawer-modal.open {
+            /* Desktop reduced-motion centering must not apply to mobile sheets. */
+            transform: none !important;
+            opacity: 1 !important;
+        }
+        .lyrics-drawer-modal:not(.open) {
+            transform: translateY(100%) !important;
+            opacity: 0 !important;
+        }
     }
 
     .lyrics-drawer-header {

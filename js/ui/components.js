@@ -599,16 +599,23 @@
             if (!triggerBtn) return;
 
             const btnRect = triggerBtn.getBoundingClientRect();
-            const headerEl = doc.querySelector('.site-brand-header');
+            // Anchor tool menus below the Audio Suite heading, not merely the
+            // separate website header. This preserves the prior overflow fix.
+            const studioHeader = triggerBtn.closest('.studio-audio-suite')?.querySelector('.suite-header-row');
+            const siteHeader = doc.querySelector('.site-brand-header');
+            const headerEl = studioHeader || siteHeader;
             const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 56;
-            const safeTopMargin = Math.max(8, headerBottom + 8);
+            const safeTopMargin = Math.min(
+                Math.max(8, headerBottom + 12),
+                Math.max(8, btnRect.top - 12)
+            );
             const safeBottomMargin = vh - 12;
 
             const menuW = Math.max(260, panelEl.offsetWidth || (id === 'playlist-menu' ? 350 : (id === 'audio-fx-menu' ? 330 : 280)));
             const menuH = Math.max(160, panelEl.offsetHeight || 280);
 
-            const spaceBelow = safeBottomMargin - btnRect.bottom - 10;
-            const spaceAbove = btnRect.top - 10 - safeTopMargin;
+            const spaceBelow = Math.max(0, safeBottomMargin - btnRect.bottom - 10);
+            const spaceAbove = Math.max(0, btnRect.top - 10 - safeTopMargin);
 
             const flipAbove = (spaceBelow < menuH && spaceAbove > spaceBelow) ||
                               (btnRect.bottom + 10 + menuH > vh - 12 && btnRect.top - 10 - menuH > safeTopMargin);
@@ -617,24 +624,15 @@
                 panelEl.style.top = 'auto';
                 panelEl.style.bottom = 'calc(100% + 10px)';
                 originY = '100%';
-                if (menuH > spaceAbove || spaceAbove < 260) {
-                    panelEl.style.maxHeight = `${Math.max(120, Math.floor(spaceAbove))}px`;
-                    panelEl.style.overflowY = 'auto';
-                } else {
-                    panelEl.style.maxHeight = '';
-                    panelEl.style.overflowY = '';
-                }
+                // Never enforce a 120px minimum if only 80px is available.
+                panelEl.style.maxHeight = `${Math.floor(spaceAbove)}px`;
+                panelEl.style.overflowY = 'auto';
             } else {
                 panelEl.style.top = 'calc(100% + 10px)';
                 panelEl.style.bottom = 'auto';
                 originY = '0px';
-                if (menuH > spaceBelow || spaceBelow < 260) {
-                    panelEl.style.maxHeight = `${Math.max(120, Math.floor(spaceBelow))}px`;
-                    panelEl.style.overflowY = 'auto';
-                } else {
-                    panelEl.style.maxHeight = '';
-                    panelEl.style.overflowY = '';
-                }
+                panelEl.style.maxHeight = `${Math.floor(spaceBelow)}px`;
+                panelEl.style.overflowY = 'auto';
             }
 
             if (align === 'right' || id === 'playlist-menu') {
