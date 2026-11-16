@@ -174,9 +174,10 @@
         }
     });
 
-    // Viewport resize handler with DPR clamp
+    // Viewport resize handler with compositor-efficient DPR
     function resizeCanvas() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const dpr = touchDevice ? Math.min(window.devicePixelRatio || 1, 0.75) : Math.min(window.devicePixelRatio || 1, 1.0);
         const w = Math.round(window.innerWidth * dpr);
         const h = Math.round(window.innerHeight * dpr);
         if (canvas.width !== w || canvas.height !== h) {

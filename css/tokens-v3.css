@@ -483,6 +483,7 @@ body.light-mode.zen-mode .banner-stage::after {
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.40), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.20) !important;
     padding: 4px 6px !important;
+    isolation: isolate;
     /* JS owns horizontal glass dragging; native vertical page scrolling remains.
        pan-x here allows browsers to cancel the pointer gesture on pill gaps. */
     touch-action: pan-y pinch-zoom;
@@ -503,19 +504,25 @@ body.light-mode .audio-category-nav {
     bottom: 4px;
     left: 0;
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-accent) 18%, rgba(255, 255, 255, 0.05));
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.18) 0%,
+        rgba(255, 255, 255, 0.04) 50%,
+        color-mix(in srgb, var(--color-accent) 14%, transparent) 100%
+    );
     backdrop-filter: url(#minkoi-liquid-lens-refraction);
     -webkit-backdrop-filter: url(#minkoi-liquid-lens-refraction);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.70));
+    border: 1px solid rgba(255, 255, 255, 0.45);
     box-shadow:
-        var(--glass-fresnel-rim),
-        var(--glass-caustic-depth);
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.65),
+        inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.25),
+        0 8px 24px -4px var(--color-accent-glow);
     pointer-events: none;
-    z-index: 2;
+    z-index: 1;
     overflow: hidden;
     will-change: transform;
     transform-origin: left center;
     touch-action: none;
+    contain: layout style;
     opacity: 1 !important;
     display: block !important;
 }
@@ -530,14 +537,18 @@ body.light-mode .audio-category-nav {
 
 body.light-mode .liquid-glass-indicator,
 body.light-mode .tab-sliding-pill {
-    background: color-mix(in srgb, var(--color-accent) 16%, rgba(255, 255, 255, 0.85));
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(255, 255, 255, 0.55) 50%,
+        color-mix(in srgb, var(--color-accent) 20%, transparent) 100%
+    );
     backdrop-filter: url(#minkoi-liquid-lens-refraction);
     -webkit-backdrop-filter: url(#minkoi-liquid-lens-refraction);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 45%, rgba(255, 255, 255, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.85);
     box-shadow:
         inset 0 1.5px 2px 0 #ffffff,
         inset 0 -1px 1px 0 rgba(0, 0, 0, 0.08),
-        var(--glass-caustic-depth);
+        0 6px 20px -4px var(--color-accent-glow);
 }
 
 /* Layer 1: Optical Convex Lens Body & Micro-Refraction */
@@ -547,21 +558,20 @@ body.light-mode .tab-sliding-pill {
     border-radius: inherit;
     pointer-events: none;
     box-shadow:
-        inset 2.5px 0 4px 0 rgba(255, 255, 255, 0.40),
-        inset -2.5px 0 4px 0 rgba(255, 255, 255, 0.40);
+        inset 2px 0 3px 0 rgba(255, 255, 255, 0.35),
+        inset -2px 0 3px 0 rgba(255, 255, 255, 0.35);
 }
 
-/* Layer 2: Prismatic Chromatic Dispersion (Cyan / Amber Rims) */
+/* Layer 2: Prismatic Chromatic Dispersion (Subtle Cyan / Amber Rims) */
 .liquid-lens-dispersion {
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
     background:
-        radial-gradient(ellipse at 12% 50%, var(--glass-dispersion-cyan) 0%, transparent 45%),
-        radial-gradient(ellipse at 88% 50%, var(--glass-dispersion-amber) 0%, transparent 45%);
-    mix-blend-mode: screen;
-    opacity: 0.82;
+        radial-gradient(ellipse at 8% 50%, var(--glass-dispersion-cyan, rgba(56, 189, 248, 0.4)) 0%, transparent 40%),
+        radial-gradient(ellipse at 92% 50%, var(--glass-dispersion-amber, rgba(251, 191, 36, 0.35)) 0%, transparent 40%);
+    opacity: 0.45;
 }
 
 /* Layer 3: Grazing-Angle Fresnel Rim Glow */
@@ -571,8 +581,8 @@ body.light-mode .tab-sliding-pill {
     border-radius: inherit;
     pointer-events: none;
     box-shadow: var(--glass-fresnel-rim);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 60%, rgba(255, 255, 255, 0.75));
-    opacity: 0.9;
+    border: 1px solid rgba(255, 255, 255, 0.40);
+    opacity: 0.8;
 }
 
 /* Layer 4: Interactive Specular Highlight (Follows Pointer Coordinates) */
@@ -583,11 +593,11 @@ body.light-mode .tab-sliding-pill {
     pointer-events: none;
     background: radial-gradient(
         ellipse 55% 55% at var(--specular-x, 50%) var(--specular-y, 25%),
-        rgba(255, 255, 255, 0.80) 0%,
-        rgba(255, 255, 255, 0.22) 32%,
+        rgba(255, 255, 255, 0.75) 0%,
+        rgba(255, 255, 255, 0.18) 32%,
         transparent 70%
     );
-    opacity: 0.85;
+    opacity: 0.8;
     transition: opacity 0.22s ease;
 }
 
@@ -598,7 +608,7 @@ body.light-mode .tab-sliding-pill {
     border-radius: inherit;
     pointer-events: none;
     background: radial-gradient(ellipse at 50% 100%, var(--color-accent-glow) 0%, transparent 72%);
-    opacity: 0.72;
+    opacity: 0.55;
 }
 
 .liquid-glass-shimmer {
@@ -607,20 +617,19 @@ body.light-mode .tab-sliding-pill {
     border-radius: inherit;
     pointer-events: none;
     background: linear-gradient(135deg,
-        rgba(255, 255, 255, 0.35) 0%,
-        rgba(255, 255, 255, 0.06) 42%,
+        rgba(255, 255, 255, 0.28) 0%,
+        rgba(255, 255, 255, 0.05) 42%,
         transparent 60%,
-        color-mix(in srgb, var(--color-accent) 22%, transparent) 100%
+        color-mix(in srgb, var(--color-accent) 18%, transparent) 100%
     );
-    opacity: 0.35;
+    opacity: 0.3;
 }
 
 .liquid-glass-indicator.is-dragging {
     box-shadow:
         inset 0 2px 2px 0 rgba(255, 255, 255, 0.88),
         inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.38),
-        0 8px 30px -2px var(--color-accent-glow);
-    filter: brightness(1.15);
+        0 10px 32px -2px var(--color-accent-glow);
 }
 
 .liquid-glass-indicator.is-dragging .liquid-lens-specular {
@@ -629,7 +638,7 @@ body.light-mode .tab-sliding-pill {
 
 .audio-category-nav .cat-tab {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     border-radius: 9999px !important;
     background: transparent !important;
     border: none !important;
@@ -647,7 +656,7 @@ body.light-mode .tab-sliding-pill {
 .audio-category-nav .cat-tab.active {
     color: #ffffff !important;
     font-weight: 700 !important;
-    text-shadow: 0 0 12px var(--color-accent-glow) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.50), 0 0 14px var(--color-accent-glow) !important;
     touch-action: pan-y pinch-zoom;
 }
 

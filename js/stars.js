@@ -37,7 +37,8 @@
     function resize() {
         width = window.innerWidth;
         height = window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+        const dpr = touchDevice ? Math.min(window.devicePixelRatio || 1, 1.0) : Math.min(window.devicePixelRatio || 1, 1.5);
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         ctx.scale(dpr, dpr);
