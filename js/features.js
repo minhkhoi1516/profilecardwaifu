@@ -113,7 +113,7 @@
             shareBtn.addEventListener('click', () => {
                 if (navigator.share) {
                     navigator.share({
-                        title: `${CONFIG.name} · Waifu & Music Studio`,
+                        title: `${CONFIG.name} — Personal Waifu Music Archive`,
                         text: `${CONFIG.title} · ${CONFIG.bio}`,
                         url: window.location.href
                     }).catch(() => {});

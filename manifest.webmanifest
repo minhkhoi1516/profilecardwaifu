@@ -1,7 +1,7 @@
 {
-  "name": "MinKoi · Waifu & Music Studio",
+  "name": "MINKOI — Personal Waifu Music Archive",
   "short_name": "MinKoi",
-  "description": "Kho lưu trữ nhạc và waifu của MinKoi.",
+  "description": "Website cá nhân lưu trữ, quản lý và thưởng thức bộ sưu tập nhạc gắn với các nhân vật waifu yêu thích.",
   "lang": "vi",
   "start_url": "/",
   "scope": "/",

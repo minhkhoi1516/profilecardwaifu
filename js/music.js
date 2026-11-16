@@ -721,7 +721,7 @@
             const wctx = waifuCanvas.getContext('2d');
             if (wctx) wctx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
         }
-        document.title = `${CONFIG.name} · Waifu & Music Studio`;
+        document.title = `${CONFIG.name} — Personal Waifu Music Archive`;
         if (visualizerFrameId) {
             cancelAnimationFrame(visualizerFrameId);
             visualizerFrameId = null;

@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "pnpm@11.25.0",
   "version": "4.0.0",
-  "description": "Static anime music studio; packages are QA tools only.",
+  "description": "Personal Waifu Music Archive & Profile Card",
   "scripts": {
     "test": "node scripts/qa/integrity.cjs && playwright test",
     "test:ui": "playwright test",
