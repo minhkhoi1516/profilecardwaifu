@@ -72,6 +72,20 @@
     --v3-hero-gradient: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 65%, #38bdf8) 100%);
     --v3-hero-glow: 0 4px 22px var(--color-accent-glow), 0 0 32px -4px var(--color-accent-glow);
     --v3-hero-glow-hover: 0 6px 28px var(--color-accent-glow), 0 0 42px 0px var(--color-accent-glow);
+
+    /* --- 7. MINKOI V5.0 OPTICAL LIQUID GLASS & PRISMATIC TOKENS --- */
+    --glass-refraction: 2.5px;
+    --glass-edge-width: 1.5px;
+    --glass-thickness: 14px;
+    --glass-dispersion-cyan: rgba(56, 189, 248, 0.40);
+    --glass-dispersion-amber: rgba(251, 191, 36, 0.32);
+    --glass-fresnel-top: inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.72);
+    --glass-fresnel-bottom: inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.28);
+    --glass-fresnel-rim: var(--glass-fresnel-top), var(--glass-fresnel-bottom);
+    --glass-specular-x: 50%;
+    --glass-specular-y: 25%;
+    --glass-caustic-depth: 0 8px 24px -2px var(--color-accent-glow);
+    --glass-squircle-radius: 22px;
 }
 
 /* Light Mode Tokens (WCAG AA+ Crisp Miuix Light Surfaces) */
@@ -108,6 +122,13 @@ html[data-theme="light"] body {
     --v3-soundstage-glow: 0 0 24px -4px var(--color-accent-glow);
     --v3-hero-glow: 0 4px 18px var(--color-accent-glow), 0 0 24px -2px var(--color-accent-glow);
     --v3-hero-glow-hover: 0 6px 24px var(--color-accent-glow), 0 0 32px 0px var(--color-accent-glow);
+
+    --glass-dispersion-cyan: rgba(14, 165, 233, 0.45);
+    --glass-dispersion-amber: rgba(245, 158, 11, 0.35);
+    --glass-fresnel-top: inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.95);
+    --glass-fresnel-bottom: inset 0 -1px 1.5px 0 rgba(15, 23, 42, 0.08);
+    --glass-fresnel-rim: var(--glass-fresnel-top), var(--glass-fresnel-bottom);
+    --glass-caustic-depth: 0 6px 20px -2px var(--color-accent-glow), 0 2px 8px rgba(15, 23, 42, 0.06);
 }
 
 /* Balanced Quality Tier */
@@ -460,7 +481,7 @@ body.light-mode.zen-mode .banner-stage::after {
     backdrop-filter: blur(18px) saturate(160%) !important;
     -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.40), inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 1px 0 rgba(0, 0, 0, 0.20) !important;
     padding: 4px 6px !important;
     /* JS owns horizontal glass dragging; native vertical page scrolling remains.
        pan-x here allows browsers to cancel the pointer gesture on pill gaps. */
@@ -472,7 +493,7 @@ body.light-mode.zen-mode .banner-stage::after {
 body.light-mode .audio-category-nav {
     background: rgba(255, 255, 255, 0.65) !important;
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 10px 30px -6px rgba(15, 23, 42, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 10px 30px -6px rgba(15, 23, 42, 0.08), inset 0 1px 1.5px 0 #ffffff, inset 0 -1px 1px 0 rgba(15, 23, 42, 0.05) !important;
 }
 
 .liquid-glass-indicator,
@@ -483,13 +504,12 @@ body.light-mode .audio-category-nav {
     left: 0;
     border-radius: 9999px;
     background: color-mix(in srgb, var(--color-accent) 26%, rgba(255, 255, 255, 0.08));
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(170%);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
     border: 1px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.65));
     box-shadow:
-        inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.65),
-        inset 0 -1px 1px 0 rgba(0, 0, 0, 0.22),
-        0 4px 18px -2px var(--color-accent-glow);
+        var(--glass-fresnel-rim),
+        var(--glass-caustic-depth);
     pointer-events: none;
     z-index: 1;
     overflow: hidden;
@@ -503,23 +523,78 @@ body.light-mode .audio-category-nav {
 body.light-mode .liquid-glass-indicator,
 body.light-mode .tab-sliding-pill {
     background: color-mix(in srgb, var(--color-accent) 20%, rgba(255, 255, 255, 0.88));
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(145%);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
     border: 1px solid color-mix(in srgb, var(--color-accent) 45%, rgba(255, 255, 255, 0.95));
     box-shadow:
         inset 0 1.5px 2px 0 #ffffff,
         inset 0 -1px 1px 0 rgba(0, 0, 0, 0.08),
-        0 4px 16px -2px var(--color-accent-glow);
+        var(--glass-caustic-depth);
 }
 
+/* Layer 1: Optical Convex Lens Body & Micro-Refraction */
 .liquid-glass-lens {
     position: absolute;
     inset: 0;
     border-radius: inherit;
     pointer-events: none;
     box-shadow:
-        inset 2px 0 3px 0 rgba(255, 255, 255, 0.35),
-        inset -2px 0 3px 0 rgba(255, 255, 255, 0.35);
+        inset 2.5px 0 4px 0 rgba(255, 255, 255, 0.40),
+        inset -2.5px 0 4px 0 rgba(255, 255, 255, 0.40);
+}
+
+body:not([data-quality="eco"]) .liquid-glass-lens {
+    filter: url(#minkoi-liquid-lens-refraction);
+}
+
+/* Layer 2: Prismatic Chromatic Dispersion (Cyan / Amber Rims) */
+.liquid-lens-dispersion {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 12% 50%, var(--glass-dispersion-cyan) 0%, transparent 45%),
+        radial-gradient(ellipse at 88% 50%, var(--glass-dispersion-amber) 0%, transparent 45%);
+    mix-blend-mode: screen;
+    opacity: 0.82;
+}
+
+/* Layer 3: Grazing-Angle Fresnel Rim Glow */
+.liquid-lens-fresnel {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: var(--glass-fresnel-rim);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 60%, rgba(255, 255, 255, 0.75));
+    opacity: 0.9;
+}
+
+/* Layer 4: Interactive Specular Highlight (Follows Pointer Coordinates) */
+.liquid-lens-specular {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse 55% 55% at var(--specular-x, 50%) var(--specular-y, 25%),
+        rgba(255, 255, 255, 0.80) 0%,
+        rgba(255, 255, 255, 0.22) 32%,
+        transparent 70%
+    );
+    opacity: 0.85;
+    transition: opacity 0.22s ease;
+}
+
+/* Layer 5: Ground Caustic Glow */
+.liquid-lens-caustic {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 100%, var(--color-accent-glow) 0%, transparent 72%);
+    opacity: 0.72;
 }
 
 .liquid-glass-shimmer {
@@ -538,10 +613,14 @@ body.light-mode .tab-sliding-pill {
 
 .liquid-glass-indicator.is-dragging {
     box-shadow:
-        inset 0 2px 2px 0 rgba(255, 255, 255, 0.8),
-        inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.35),
-        0 6px 26px -2px var(--color-accent-glow);
-    filter: brightness(1.12);
+        inset 0 2px 2px 0 rgba(255, 255, 255, 0.88),
+        inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.38),
+        0 8px 30px -2px var(--color-accent-glow);
+    filter: brightness(1.15);
+}
+
+.liquid-glass-indicator.is-dragging .liquid-lens-specular {
+    opacity: 1;
 }
 
 .audio-category-nav .cat-tab {
@@ -916,4 +995,198 @@ body.zen-mode .banner-stage {
         max-width: min(360px, calc(100vw - 32px));
     }
 }
+
+/* ==========================================================================
+   MINKOI V5.0 · OPTICAL LIQUID GLASS SYSTEM & NEXT-GEN DEPTH ARCHITECTURE
+   ========================================================================== */
+
+/* 1. Hero Play/Pause Button - 3D Optical Glass Squircle */
+.play-hero-btn {
+    border-radius: var(--glass-squircle-radius, 22px) !important;
+    background: linear-gradient(135deg,
+        color-mix(in srgb, var(--color-accent) 80%, rgba(255, 255, 255, 0.40)) 0%,
+        color-mix(in srgb, var(--color-accent) 65%, #38bdf8) 100%
+    ) !important;
+    border: 1px solid rgba(255, 255, 255, 0.38) !important;
+    box-shadow:
+        var(--glass-fresnel-top),
+        inset 0 -2px 3px 0 rgba(0, 0, 0, 0.28),
+        0 8px 28px -4px var(--color-accent-glow),
+        0 0 36px -6px var(--color-accent-glow) !important;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, filter 0.2s ease !important;
+}
+
+.play-hero-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(ellipse at 35% 25%, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.12) 40%, transparent 70%);
+    pointer-events: none;
+    opacity: 0.9;
+    transition: opacity 0.24s ease;
+}
+
+.play-hero-btn:hover {
+    transform: scale(1.08) !important;
+    box-shadow:
+        var(--glass-fresnel-top),
+        inset 0 -2px 3px 0 rgba(0, 0, 0, 0.22),
+        0 12px 34px -4px var(--color-accent-glow),
+        0 0 46px -2px var(--color-accent-glow) !important;
+    filter: brightness(1.06);
+}
+
+.play-hero-btn:active {
+    transform: scale(0.92) !important;
+    box-shadow:
+        inset 0 2px 4px 0 rgba(0, 0, 0, 0.35),
+        0 4px 16px var(--color-accent-glow) !important;
+    filter: brightness(0.96);
+}
+
+body.light-mode .play-hero-btn {
+    border: 1px solid rgba(255, 255, 255, 0.65) !important;
+    box-shadow:
+        inset 0 1.5px 2px 0 #ffffff,
+        inset 0 -1.5px 2px 0 rgba(15, 23, 42, 0.12),
+        0 8px 24px -4px var(--color-accent-glow),
+        0 0 28px -4px var(--color-accent-glow) !important;
+}
+
+/* 2. Luminous Glass Track & Glowing Liquid Thumb */
+.seek-bar-track {
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(8px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(140%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.35) !important;
+}
+
+body.light-mode .seek-bar-track {
+    background: rgba(15, 23, 42, 0.08) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow: inset 0 1px 2px 0 rgba(15, 23, 42, 0.12) !important;
+}
+
+.seek-fill-bar {
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--color-accent) 72%, #38bdf8),
+        var(--color-accent)
+    ) !important;
+    box-shadow: 0 0 14px var(--color-accent-glow) !important;
+}
+
+.seek-thumb-dot {
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.92),
+        0 0 0 6px color-mix(in srgb, var(--color-accent) 50%, transparent),
+        0 0 22px var(--color-accent-glow) !important;
+}
+
+/* 3. Fluid Volume Capsule Dock */
+.volume-slider-dock {
+    border-radius: 9999px !important;
+    background: rgba(16, 20, 32, 0.58) !important;
+    backdrop-filter: blur(14px) saturate(155%) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(155%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow:
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.15),
+        0 8px 24px -6px rgba(0, 0, 0, 0.45) !important;
+}
+
+body.light-mode .volume-slider-dock {
+    background: rgba(255, 255, 255, 0.78) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    box-shadow:
+        inset 0 1px 1px 0 #ffffff,
+        0 6px 20px -6px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* 4. Multi-Layer Optical Zen Mini Dock */
+.zen-mini-dock {
+    border-radius: 26px !important;
+    background: rgba(16, 20, 32, 0.72) !important;
+    backdrop-filter: blur(28px) saturate(185%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(185%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow:
+        inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.28),
+        0 20px 48px -8px rgba(0, 0, 0, 0.65),
+        0 0 32px -4px var(--color-accent-glow) !important;
+}
+
+body.light-mode .zen-mini-dock {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(15, 23, 42, 0.10) !important;
+    box-shadow:
+        inset 0 1.5px 2px 0 #ffffff,
+        0 18px 44px -8px rgba(15, 23, 42, 0.12),
+        0 0 26px var(--color-accent-glow) !important;
+}
+
+/* 5. Restrained Luxury Card & Popover Surfaces */
+.card-container {
+    box-shadow:
+        var(--v3-specular-top),
+        0 28px 64px -16px rgba(0, 0, 0, 0.72),
+        0 0 32px -12px var(--color-accent-glow) !important;
+}
+
+body.light-mode .card-container {
+    box-shadow:
+        var(--v3-specular-top),
+        0 22px 52px -12px rgba(15, 23, 42, 0.14),
+        0 0 24px -8px var(--color-accent-glow) !important;
+}
+
+.dropdown-flyout,
+.top-more-dropdown {
+    backdrop-filter: blur(26px) saturate(185%) !important;
+    -webkit-backdrop-filter: blur(26px) saturate(185%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    box-shadow:
+        inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+        0 22px 54px -10px rgba(0, 0, 0, 0.78),
+        0 0 24px -6px var(--color-accent-glow) !important;
+}
+
+body.light-mode .dropdown-flyout,
+body.light-mode .top-more-dropdown {
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    box-shadow:
+        inset 0 1px 1px 0 #ffffff,
+        0 20px 48px -10px rgba(15, 23, 42, 0.18),
+        0 0 20px -6px var(--color-accent-glow) !important;
+}
+
+/* 6. Multi-tier Performance Overrides for V5.0 */
+[data-quality="balanced"] .play-hero-btn,
+[data-quality="balanced"] .zen-mini-dock,
+[data-quality="balanced"] .dropdown-flyout {
+    backdrop-filter: blur(12px) saturate(145%) !important;
+    -webkit-backdrop-filter: blur(12px) saturate(145%) !important;
+}
+
+[data-quality="eco"] .play-hero-btn,
+body.low-end .play-hero-btn {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.4), 0 4px 14px var(--color-accent-glow) !important;
+}
+
+[data-quality="eco"] .liquid-lens-dispersion,
+body.low-end .liquid-lens-dispersion,
+[data-quality="eco"] .liquid-lens-caustic,
+body.low-end .liquid-lens-caustic {
+    display: none !important;
+}
+
 

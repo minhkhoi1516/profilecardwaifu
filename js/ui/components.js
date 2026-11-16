@@ -1275,6 +1275,20 @@
 
         let indicator = null;
 
+        function updatePointerLight(clientX, clientY) {
+            if (!navEl) return;
+            const navRect = navEl.getBoundingClientRect();
+            if (navRect.width <= 0 || navRect.height <= 0) return;
+            const relX = Math.max(0, Math.min(100, ((clientX - navRect.left) / navRect.width) * 100));
+            const relY = Math.max(0, Math.min(100, ((clientY - navRect.top) / navRect.height) * 100));
+            navEl.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
+            navEl.style.setProperty('--specular-y', `${relY.toFixed(1)}%`);
+            if (indicator) {
+                indicator.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
+                indicator.style.setProperty('--specular-y', `${relY.toFixed(1)}%`);
+            }
+        }
+
         function ensureIndicator() {
             if (!indicator || !indicator.isConnected) {
                 indicator = navEl.querySelector('.liquid-glass-indicator, .tab-sliding-pill');
@@ -1282,21 +1296,43 @@
                     indicator = doc.createElement('div');
                     indicator.className = 'liquid-glass-indicator';
                     indicator.setAttribute('aria-hidden', 'true');
-
-                    const lens = doc.createElement('div');
-                    lens.className = 'liquid-glass-lens';
-                    indicator.appendChild(lens);
-
-                    const shimmer = doc.createElement('div');
-                    shimmer.className = 'liquid-glass-shimmer';
-                    indicator.appendChild(shimmer);
-
                     navEl.insertBefore(indicator, navEl.firstChild);
                 } else if (!indicator.isConnected) {
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
             }
             if (indicator) {
+                // Ensure all 5 MinKoi V5.0 optical sub-layers exist
+                if (!indicator.querySelector('.liquid-glass-lens')) {
+                    const lens = doc.createElement('div');
+                    lens.className = 'liquid-glass-lens';
+                    indicator.appendChild(lens);
+                }
+                if (!indicator.querySelector('.liquid-lens-dispersion')) {
+                    const dispersion = doc.createElement('div');
+                    dispersion.className = 'liquid-lens-dispersion';
+                    indicator.appendChild(dispersion);
+                }
+                if (!indicator.querySelector('.liquid-lens-fresnel')) {
+                    const fresnel = doc.createElement('div');
+                    fresnel.className = 'liquid-lens-fresnel';
+                    indicator.appendChild(fresnel);
+                }
+                if (!indicator.querySelector('.liquid-lens-specular')) {
+                    const specular = doc.createElement('div');
+                    specular.className = 'liquid-lens-specular';
+                    indicator.appendChild(specular);
+                }
+                if (!indicator.querySelector('.liquid-lens-caustic')) {
+                    const caustic = doc.createElement('div');
+                    caustic.className = 'liquid-lens-caustic';
+                    indicator.appendChild(caustic);
+                }
+                if (!indicator.querySelector('.liquid-glass-shimmer')) {
+                    const shimmer = doc.createElement('div');
+                    shimmer.className = 'liquid-glass-shimmer';
+                    indicator.appendChild(shimmer);
+                }
                 indicator.style.display = 'block';
                 indicator.style.opacity = '1';
             }
@@ -1437,6 +1473,7 @@
             currentRight = nextRight;
 
             renderCapsule(currentLeft, currentRight);
+            updatePointerLight(clientX, dragStartY || (cachedNavRectLeft + 20));
 
             // Projected center for predictive fling candidate selection (Miuix fling tau = 0.18s)
             const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
@@ -1849,6 +1886,22 @@
         };
         navEl.addEventListener('click', onNavClick, true);
 
+        const onNavPointerMove = (e) => {
+            if (gestureState === 'dragging') return;
+            updatePointerLight(e.clientX, e.clientY);
+        };
+        const onNavPointerLeave = () => {
+            if (gestureState === 'dragging') return;
+            navEl.style.setProperty('--specular-x', '50%');
+            navEl.style.setProperty('--specular-y', '25%');
+            if (indicator) {
+                indicator.style.setProperty('--specular-x', '50%');
+                indicator.style.setProperty('--specular-y', '25%');
+            }
+        };
+        navEl.addEventListener('pointermove', onNavPointerMove, { passive: true });
+        navEl.addEventListener('pointerleave', onNavPointerLeave, { passive: true });
+
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
@@ -1891,6 +1944,8 @@
                 gestureState = 'idle';
                 navEl.classList.remove('is-liquid-dragging');
                 navEl.removeEventListener('click', onNavClick, true);
+                navEl.removeEventListener('pointermove', onNavPointerMove);
+                navEl.removeEventListener('pointerleave', onNavPointerLeave);
                 navEl.removeEventListener('pointerdown', onPointerDown);
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);

@@ -732,7 +732,7 @@
     height: 58px;
     min-width: 58px;
     min-height: 58px;
-    border-radius: 50%;
+    border-radius: var(--glass-squircle-radius, 22px);
     background: linear-gradient(135deg, var(--color-accent) 0%, #38bdf8 100%);
     background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 65%, #38bdf8) 100%);
     border: none;
@@ -754,7 +754,7 @@
     content: '';
     position: absolute;
     inset: -4px;
-    border-radius: 50%;
+    border-radius: inherit;
     background: transparent;
     border: 2px solid var(--color-accent);
     opacity: 0;

@@ -577,7 +577,7 @@
         height: 60px;
         min-width: 60px;
         min-height: 60px;
-        border-radius: 20px;
+        border-radius: var(--glass-squircle-radius, 22px);
         font-size: 1.35rem;
         background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-secondary, #38bdf8) 100%);
         color: #ffffff;
