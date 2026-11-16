@@ -89,6 +89,15 @@
         rafId = 0;
         if (global.document && global.document.hidden) {
             lastTimestamp = 0;
+            // When document is hidden, cleanly snap active springs to their targets
+            activeSprings.forEach(spring => {
+                spring.value = spring.target;
+                spring.velocity = 0;
+                spring.running = false;
+                safeUpdate(spring, spring.value, 0);
+                safeComplete(spring);
+            });
+            activeSprings.clear();
             return;
         }
 
@@ -302,13 +311,21 @@
                 const now = performance.now();
                 samples.push({ x: Number(x) || 0, y: Number(y) || 0, time: now });
                 // Prune old samples
-                while (samples.length > 2 && (now - samples[0].time) > MAX_WINDOW_MS) {
+                while (samples.length > 1 && (now - samples[0].time) > MAX_WINDOW_MS) {
                     samples.shift();
                 }
             },
             getVelocity() {
                 if (samples.length < 2) return { vx: 0, vy: 0 };
+                const now = performance.now();
                 const newest = samples[samples.length - 1];
+                if ((now - newest.time) > MAX_WINDOW_MS) {
+                    return { vx: 0, vy: 0 };
+                }
+                while (samples.length > 1 && (now - samples[0].time) > MAX_WINDOW_MS) {
+                    samples.shift();
+                }
+                if (samples.length < 2) return { vx: 0, vy: 0 };
                 const oldest = samples[0];
                 const dt = (newest.time - oldest.time) / 1000;
                 if (dt <= 0.005) return { vx: 0, vy: 0 };

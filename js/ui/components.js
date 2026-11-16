@@ -1289,12 +1289,14 @@
                 cachedNavRectRight = navRect.right;
             }
             if (navWidth <= 0) return;
-            const relX = Math.max(0, Math.min(100, ((clientX - navLeft) / navWidth) * 100));
-            if (Math.abs(relX - lastSpecularX) < 0.5) return;
-            lastSpecularX = relX;
             const ind = indicator || ensureIndicator();
             if (ind) {
-                ind.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
+                const indW = Math.max(16, currentRight - currentLeft);
+                const localX = Math.max(5, Math.min(95, ((clientX - navLeft - currentLeft) / indW) * 100));
+                if (Math.abs(localX - lastSpecularX) >= 0.5) {
+                    lastSpecularX = localX;
+                    ind.style.setProperty('--specular-x', `${localX.toFixed(1)}%`);
+                }
             }
         }
 
@@ -1376,6 +1378,7 @@
         let cachedNavRectRight = 0;
         let cachedTabs = [];
         let grabOffset = 0;
+        let anchorLeft = 0;
         let baseTabWidth = 64;
         let minContentX = 0;
         let maxContentX = 0;
@@ -1405,7 +1408,7 @@
             return best;
         }
 
-        function renderCapsule(left, right) {
+        function renderCapsule(left, right, boundarySquash = 1) {
             const ind = ensureIndicator();
             if (!ind) return;
             const safeLeft = Number.isFinite(left) ? left : 0;
@@ -1414,8 +1417,8 @@
 
             // Compute volume-preserving squash
             const standardW = Math.max(16, baseTabWidth);
-            const stretchRatio = Math.max(0.92, Math.min(1.15, w / standardW));
-            const squashRatio = Math.max(0.88, Math.min(1.08, 1 / Math.sqrt(stretchRatio)));
+            const stretchRatio = Math.max(0.88, Math.min(1.22, w / standardW));
+            const squashRatio = Math.max(0.82, Math.min(1.18, (1 / Math.sqrt(stretchRatio)) * boundarySquash));
 
             if (Math.abs(lastRenderedWidth - w) >= 0.5) {
                 ind.style.width = `${w.toFixed(1)}px`;
@@ -1447,41 +1450,49 @@
                 baseTabWidth += (candidate.width - baseTabWidth) * 0.16;
             }
 
-            // Miuix Smooth Directional Edge-Lag Model:
+            // Miuix Smooth Directional Edge-Lag & Elastic Surface Tension Model:
             // Continuous lag that smoothly transitions through zero during direction reversals
-            // and decays to 0 when finger pauses, restoring natural capsule shape.
-            const stationaryFactor = Math.min(1, speed / 30);
-            const trailLag = Math.min(18, (speed * 0.025 + 5 * Math.tanh(speed / 90)) * stationaryFactor);
-            const dirWeight = Math.tanh(vel / 120); // -1.0 (moving left) to +1.0 (moving right)
+            // and combines velocity with elastic displacement stretching.
+            const displacement = rawX - anchorLeft;
+            const dispLag = Math.min(26, Math.abs(displacement) * 0.32);
+            const stationaryFactor = Math.min(1, speed / 25);
+            const velLag = Math.min(28, (speed * 0.035 + 8 * Math.tanh(speed / 80)) * stationaryFactor);
+            const trailLag = Math.max(velLag, dispLag);
+            const dirWeight = Math.abs(vel) > 2 ? Math.tanh(vel / 100) : (displacement !== 0 ? Math.sign(displacement) : 0);
 
             let nextLeft = rawX;
             let nextRight = rawX + baseTabWidth;
 
             if (dirWeight > 0.05) {
                 // Moving right: right edge leads forward, left edge follows finger
-                nextRight += trailLag * dirWeight;
+                nextRight += trailLag * Math.abs(dirWeight);
             } else if (dirWeight < -0.05) {
                 // Moving left: left edge leads forward, right edge follows finger
                 nextLeft -= trailLag * Math.abs(dirWeight);
             }
 
-            // Damped elastic resistance at container boundaries (Miuix obtainDampingDistance)
+            // Damped elastic resistance at container boundaries with organic liquid surface tension
+            let boundarySquash = 1;
             if (nextLeft < minContentX) {
                 const overshoot = minContentX - nextLeft;
                 const damped = spLib ? spLib.obtainDampingDistance(-overshoot, 36) : -overshoot * 0.28;
                 nextLeft = minContentX + damped;
-                nextRight = Math.min(nextRight, nextLeft + baseTabWidth + 14);
+                const strain = Math.min(0.28, Math.abs(damped) / 36);
+                boundarySquash = 1 + strain * 0.40;
+                nextRight = nextLeft + baseTabWidth * (1 - strain * 0.25);
             } else if (nextRight > maxContentX) {
                 const overshoot = nextRight - maxContentX;
                 const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.28;
                 nextRight = maxContentX + damped;
-                nextLeft = Math.max(nextLeft, nextRight - baseTabWidth - 14);
+                const strain = Math.min(0.28, Math.abs(damped) / 36);
+                boundarySquash = 1 + strain * 0.40;
+                nextLeft = nextRight - baseTabWidth * (1 - strain * 0.25);
             }
 
             currentLeft = nextLeft;
             currentRight = nextRight;
 
-            renderCapsule(currentLeft, currentRight);
+            renderCapsule(currentLeft, currentRight, boundarySquash);
             updatePointerLight(clientX, dragStartY || (cachedNavRectLeft + 20));
 
             // Projected center for predictive fling candidate selection (Miuix fling tau = 0.18s)
@@ -1554,7 +1565,7 @@
         }
 
         function syncIndicator() {
-            if (gestureState === 'dragging' || gestureState === 'pressed') return;
+            if (gestureState === 'dragging' || gestureState === 'pressed' || gestureState === 'settling') return;
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
             if (wasDetached) lastRenderedWidth = -1;
@@ -1713,7 +1724,7 @@
 
             const pressedItem = cachedTabs.find(t => t.el === pressedTab) || cachedTabs.find(t => t.el === activeTab);
             baseTabWidth = pressedItem ? pressedItem.width : activeTab.offsetWidth;
-            const anchorLeft = pressedItem ? pressedItem.left : activeTab.offsetLeft;
+            anchorLeft = pressedItem ? pressedItem.left : activeTab.offsetLeft;
 
             minContentX = cachedTabs.length ? cachedTabs[0].left : 0;
             maxContentX = cachedTabs.length
@@ -1726,6 +1737,10 @@
             gestureState = 'pressed';
 
             // Subtle tactile compress
+            const ind = ensureIndicator();
+            if (ind) {
+                ind.classList.add('is-pressed');
+            }
             if (pressedTab !== activeTab) {
                 if (leftSpring) leftSpring.setTarget(anchorLeft);
                 if (rightSpring) rightSpring.setTarget(anchorLeft + baseTabWidth);
@@ -1814,7 +1829,10 @@
             } catch (_) {}
 
             navEl.classList.remove('is-liquid-dragging');
-            if (indicator) indicator.classList.remove('is-dragging');
+            if (indicator) {
+                indicator.classList.remove('is-dragging');
+                indicator.classList.remove('is-pressed');
+            }
 
             if (cachedTabs) {
                 cachedTabs.forEach(t => t.el.classList.remove('drag-candidate'));
@@ -1854,6 +1872,13 @@
                         const leadPreset = spLib.PRESETS.EDGE_LEADING;
                         const trailPreset = spLib.PRESETS.EDGE_TRAILING;
 
+                        const settleComplete = () => {
+                            gestureState = 'idle';
+                            currentLeft = targetLeft;
+                            currentRight = targetRight;
+                            renderCapsule(targetLeft, targetRight);
+                        };
+
                         if (movingRight) {
                             rightSpring.setTarget(targetRight, {
                                 dampingRatio: leadPreset.dampingRatio,
@@ -1862,7 +1887,7 @@
                             leftSpring.setTarget(targetLeft, {
                                 dampingRatio: trailPreset.dampingRatio,
                                 stiffness: trailPreset.stiffness,
-                                onComplete: () => { gestureState = 'idle'; }
+                                onComplete: settleComplete
                             });
                         } else {
                             leftSpring.setTarget(targetLeft, {
@@ -1872,7 +1897,7 @@
                             rightSpring.setTarget(targetRight, {
                                 dampingRatio: trailPreset.dampingRatio,
                                 stiffness: trailPreset.stiffness,
-                                onComplete: () => { gestureState = 'idle'; }
+                                onComplete: settleComplete
                             });
                         }
                     } else {
@@ -1896,6 +1921,9 @@
         }
 
         function onPointerCancel(e) {
+            if (indicator) {
+                indicator.classList.remove('is-pressed');
+            }
             if (e && e.type === 'lostpointercapture' && e.buttons > 0) return;
             onPointerUp(e, true);
         }
@@ -1951,7 +1979,7 @@
             indicator: indicator,
             onSelect: onSelect,
             sync: syncIndicator,
-            debug: () => ({ gestureState, dragPointerId, currentLeft, currentRight, baseTabWidth, lastRenderedWidth }),
+            debug: () => ({ gestureState, dragPointerId, currentLeft, currentRight, baseTabWidth, lastRenderedWidth, vel: velocityTracker ? velocityTracker.getVelocity().vx : -999 }),
             destroy() {
                 if (resizeObserver) {
                     try { resizeObserver.disconnect(); } catch (_) {}
