@@ -1274,18 +1274,27 @@
         }
 
         let indicator = null;
+        let indicatorBuilt = false;
+        let lastSpecularX = -1;
 
         function updatePointerLight(clientX, clientY) {
             if (!navEl) return;
-            const navRect = navEl.getBoundingClientRect();
-            if (navRect.width <= 0 || navRect.height <= 0) return;
-            const relX = Math.max(0, Math.min(100, ((clientX - navRect.left) / navRect.width) * 100));
-            const relY = Math.max(0, Math.min(100, ((clientY - navRect.top) / navRect.height) * 100));
-            navEl.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
-            navEl.style.setProperty('--specular-y', `${relY.toFixed(1)}%`);
-            if (indicator) {
-                indicator.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
-                indicator.style.setProperty('--specular-y', `${relY.toFixed(1)}%`);
+            let navLeft = cachedNavRectLeft;
+            let navWidth = cachedNavRectRight - cachedNavRectLeft;
+            if (!navWidth || navWidth <= 0) {
+                const navRect = navEl.getBoundingClientRect();
+                navLeft = navRect.left;
+                navWidth = navRect.width;
+                cachedNavRectLeft = navLeft;
+                cachedNavRectRight = navRect.right;
+            }
+            if (navWidth <= 0) return;
+            const relX = Math.max(0, Math.min(100, ((clientX - navLeft) / navWidth) * 100));
+            if (Math.abs(relX - lastSpecularX) < 0.5) return;
+            lastSpecularX = relX;
+            const ind = indicator || ensureIndicator();
+            if (ind) {
+                ind.style.setProperty('--specular-x', `${relX.toFixed(1)}%`);
             }
         }
 
@@ -1300,9 +1309,10 @@
                 } else if (!indicator.isConnected) {
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
+                indicatorBuilt = false;
             }
-            if (indicator) {
-                // Ensure all 5 MinKoi V5.0 optical sub-layers exist
+            if (indicator && !indicatorBuilt) {
+                // Ensure all 5 MinKoi V5.2 optical sub-layers exist ONCE
                 if (!indicator.querySelector('.liquid-glass-lens')) {
                     const lens = doc.createElement('div');
                     lens.className = 'liquid-glass-lens';
@@ -1333,8 +1343,7 @@
                     shimmer.className = 'liquid-glass-shimmer';
                     indicator.appendChild(shimmer);
                 }
-                indicator.style.display = 'block';
-                indicator.style.opacity = '1';
+                indicatorBuilt = true;
             }
             navEl.classList.add('has-liquid-nav');
             if (instance) instance.indicator = indicator;
@@ -1497,11 +1506,18 @@
             const edgePreset = spLib.PRESETS.EDGE_LEADING || spLib.PRESETS.LIQUID_GLASS;
             const trailPreset = spLib.PRESETS.EDGE_TRAILING || spLib.PRESETS.LIQUID_STRETCH;
 
+            let springCommitRaf = 0;
             const onSpringUpdate = () => {
                 if (gestureState === 'dragging') return;
-                currentLeft = leftSpring ? leftSpring.value : currentLeft;
-                currentRight = rightSpring ? rightSpring.value : currentRight;
-                renderCapsule(currentLeft, currentRight);
+                if (!springCommitRaf) {
+                    springCommitRaf = global.requestAnimationFrame(() => {
+                        springCommitRaf = 0;
+                        if (gestureState === 'dragging') return;
+                        currentLeft = leftSpring ? leftSpring.value : currentLeft;
+                        currentRight = rightSpring ? rightSpring.value : currentRight;
+                        renderCapsule(currentLeft, currentRight);
+                    });
+                }
             };
 
             leftSpring = spLib.createSpring({
@@ -1755,10 +1771,7 @@
             if (gestureState !== 'dragging') return;
 
             e.preventDefault();
-            // Pointer movement updates geometry immediately; RAF only maintains
-            // stationary relaxation and edge scrolling between input events.
             computePhysicalDrag(targetPointerClientX);
-
             if (!dragRaf) {
                 dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
             }

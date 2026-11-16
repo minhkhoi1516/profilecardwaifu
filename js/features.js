@@ -434,15 +434,12 @@
     const STORAGE_QUALITY = 'minkoi_quality_mode';
 
     function detectAutoQuality() {
-        const cores = navigator.hardwareConcurrency || 8;
-        const memory = navigator.deviceMemory;
         const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduced || cores <= 2 || (typeof memory === 'number' && memory <= 2)) {
+        if (reduced) {
             return 'eco';
         }
-        if ((cores <= 4 && window.innerWidth <= 900) || (typeof memory === 'number' && memory <= 4)) {
-            return 'balanced';
-        }
+        // Never strip effects prematurely based solely on core/memory heuristics
+        // Modern mobile GPUs handle composited layers gracefully.
         return 'high';
     }
 
