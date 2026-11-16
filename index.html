@@ -6,7 +6,7 @@
     <title>MinKoi · Waifu & Music Studio</title>
     <meta name="description" content="MinKoi · dabbling and researching. Kho lưu trữ nhạc và waifu.">
     <meta name="theme-color" content="#080a14">
-    <meta name="minkoi-release" content="52.0">
+    <meta name="minkoi-release" content="V5 Rebuild">
     <meta name="color-scheme" content="dark light">
     
     <!-- Open Graph & Twitter Cards -->
@@ -35,29 +35,38 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
     <!-- Consolidated High-End Stylesheets -->
-    <link rel="stylesheet" href="css/style-base.css?v=52.0">
-    <link rel="stylesheet" href="css/style-backgrounds.css?v=52.0">
-    <link rel="stylesheet" href="css/style-card.css?v=52.0">
-    <link rel="stylesheet" href="css/style-left.css?v=52.0">
-    <link rel="stylesheet" href="css/style-right.css?v=52.0">
-    <link rel="stylesheet" href="css/style-responsive.css?v=52.0">
-    <link rel="stylesheet" href="css/tokens-v3.css?v=52.0">
+    <link rel="stylesheet" href="css/style-base.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/style-backgrounds.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/style-card.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/style-left.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/style-right.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/style-responsive.css?v=5.0-rebuild">
+    <link rel="stylesheet" href="css/tokens-v3.css?v=5.0-rebuild">
 </head>
 <body>
 
-    <!-- MINKOI V5.2 ANALYTICAL CONVEX OPTICAL LIQUID GLASS SVG DEFINITIONS -->
+    <!-- MINKOI V5 REBUILD — OPTICAL 2D SDF CONVEX WATER LENS WITH PRISMATIC CHROMATIC DISPERSION -->
     <svg id="minkoi-optical-defs" class="minkoi-optical-defs" aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none;">
         <defs>
-            <!-- Analytical Convex Optical Water Lens Refraction Filter (Zero Noise Overhead, 100% Optical Clarity) -->
+            <!-- True Optical Water Lens: 2D SDF Meniscus Normal Map + Multi-Wavelength Dispersion -->
             <filter id="minkoi-liquid-lens-refraction" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-                <feImage xlink:href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='gx' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0%25' stop-color='%23308080'/%3E%3Cstop offset='20%25' stop-color='%23588080'/%3E%3Cstop offset='38%25' stop-color='%23808080'/%3E%3Cstop offset='62%25' stop-color='%23808080'/%3E%3Cstop offset='80%25' stop-color='%23a88080'/%3E%3Cstop offset='100%25' stop-color='%23d08080'/%3E%3C/linearGradient%3E%3ClinearGradient id='gy' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23803080'/%3E%3Cstop offset='25%25' stop-color='%23805880'/%3E%3Cstop offset='42%25' stop-color='%23808080'/%3E%3Cstop offset='58%25' stop-color='%23808080'/%3E%3Cstop offset='75%25' stop-color='%2380a880'/%3E%3Cstop offset='100%25' stop-color='%2380d080'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='url(%23gx)'/%3E%3Crect width='100' height='100' fill='url(%23gy)' style='mix-blend-mode: screen;'/%3E%3C/svg%3E" result="convex_map" />
-                <feDisplacementMap in="SourceGraphic" in2="convex_map" scale="18" xChannelSelector="R" yChannelSelector="G" result="displaced_lens" />
-            </filter>
-            <!-- Prismatic Chromatic Dispersion Filter -->
-            <filter id="minkoi-chromatic-edge" x="-10%" y="-10%" width="120%" height="120%">
-                <feOffset in="SourceGraphic" dx="-1.2" dy="0" result="cyan_offset" />
-                <feOffset in="SourceGraphic" dx="1.2" dy="0" result="amber_offset" />
-                <feBlend in="cyan_offset" in2="amber_offset" mode="screen" />
+                <feImage xlink:href="data:image/png;base64,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" result="normal_map" preserveAspectRatio="none" />
+
+                <!-- Red component displacement (scale=11) -->
+                <feDisplacementMap in="SourceGraphic" in2="normal_map" scale="11" xChannelSelector="R" yChannelSelector="G" result="disp_red" />
+                <feColorMatrix in="disp_red" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="red_only" />
+
+                <!-- Green component displacement (scale=15) -->
+                <feDisplacementMap in="SourceGraphic" in2="normal_map" scale="15" xChannelSelector="R" yChannelSelector="G" result="disp_green" />
+                <feColorMatrix in="disp_green" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="green_only" />
+
+                <!-- Blue component displacement (scale=19) -->
+                <feDisplacementMap in="SourceGraphic" in2="normal_map" scale="19" xChannelSelector="R" yChannelSelector="G" result="disp_blue" />
+                <feColorMatrix in="disp_blue" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="blue_only" />
+
+                <!-- Additive Recombination -->
+                <feComposite in="red_only" in2="green_only" operator="arithmetic" k2="1" k3="1" result="rg_sum" />
+                <feComposite in="rg_sum" in2="blue_only" operator="arithmetic" k2="1" k3="1" result="displaced_lens" />
             </filter>
         </defs>
     </svg>
@@ -360,14 +369,20 @@
 
                     <!-- MINIMAL FOOTER CREDITS -->
                     <footer class="studio-card-footer">
-                        <span class="footer-copy">© 2026 MINKOI STUDIO · ALL RIGHTS RESERVED</span>
-                        <span class="footer-meta">VIETNAM · BESPOKE DIGITAL IDENTITY</span>
+                        <span class="footer-copy">© 2026 MINKOI — Crafted with Motion, Light &amp; Soul.</span>
+                        <span class="footer-meta">Anime Music Studio · V5 Rebuild</span>
                     </footer>
 
                 </section>
             </div>
         </div>
     </main>
+
+    <!-- MINKOI V5 REBUILD GLOBAL WEBSITE FOOTER -->
+    <footer class="minkoi-global-footer" role="contentinfo">
+        <p class="global-footer-line-primary">© 2026 MINKOI — Crafted with Motion, Light &amp; Soul.</p>
+        <p class="global-footer-line-secondary">Anime Music Studio · V5 Rebuild</p>
+    </footer>
 
     <!-- MOBILE FLYOUT BACKDROP OVERLAY -->
     <div class="mobile-flyout-backdrop" id="mobile-flyout-backdrop" aria-hidden="true"></div>
@@ -470,28 +485,28 @@
         <div class="noscript-banner">Vui lòng bật JavaScript để trải nghiệm trọn vẹn bộ nhận diện và trình phát nhạc Mahikari Studio.</div>
     </noscript>
 
-    <!-- CLEAN JAVASCRIPT MODULES (MINKOI V5.2) -->
-    <script src="js/config.js?v=52.0"></script>
-    <script src="js/ui/spring.js?v=52.0"></script>
-    <script src="js/ui/squircle.js?v=52.0"></script>
-    <script src="js/ui/components.js?v=52.0"></script>
-    <script src="js/stars.js?v=52.0"></script>
-    <script src="js/fluid-bg.js?v=52.0"></script>
-    <script src="js/avatar.js?v=52.0"></script>
-    <script src="js/music.js?v=52.0"></script>
+    <!-- CLEAN JAVASCRIPT MODULES (MINKOI V5 REBUILD) -->
+    <script src="js/config.js?v=5.0-rebuild"></script>
+    <script src="js/ui/spring.js?v=5.0-rebuild"></script>
+    <script src="js/ui/squircle.js?v=5.0-rebuild"></script>
+    <script src="js/ui/components.js?v=5.0-rebuild"></script>
+    <script src="js/stars.js?v=5.0-rebuild"></script>
+    <script src="js/fluid-bg.js?v=5.0-rebuild"></script>
+    <script src="js/avatar.js?v=5.0-rebuild"></script>
+    <script src="js/music.js?v=5.0-rebuild"></script>
     <!-- Lyrics Engine V2 (Modular Decoupled Architecture) -->
-    <script src="js/lyrics/normalizer.js?v=40.8"></script>
-    <script src="js/lyrics/parser.js?v=40.8"></script>
-    <script src="js/lyrics/matcher.js?v=40.8"></script>
-    <script src="js/lyrics/cache.js?v=40.8"></script>
-    <script src="js/lyrics/diagnostics.js?v=40.8"></script>
-    <script src="js/lyrics/repository.js?v=40.12"></script>
-    <script src="js/lyrics/provider.js?v=40.8"></script>
-    <script src="js/lyrics/sync-engine.js?v=40.8"></script>
-    <script src="js/lyrics/renderer.js?v=40.8"></script>
-    <script src="js/lyrics/editor.js?v=40.8"></script>
-    <script src="js/lyrics/index.js?v=40.8"></script>
-    <script src="js/snapshot.js?v=40.8"></script>
-    <script src="js/features.js?v=52.0"></script>
+    <script src="js/lyrics/normalizer.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/parser.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/matcher.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/cache.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/diagnostics.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/repository.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/provider.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/sync-engine.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/renderer.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/editor.js?v=5.0-rebuild"></script>
+    <script src="js/lyrics/index.js?v=5.0-rebuild"></script>
+    <script src="js/snapshot.js?v=5.0-rebuild"></script>
+    <script src="js/features.js?v=5.0-rebuild"></script>
 </body>
 </html>

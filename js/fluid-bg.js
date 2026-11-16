@@ -47,16 +47,20 @@
             );
         }
 
-        // 3-Octave Fractional Brownian Motion (fBm)
-        float fbm(vec2 p) {
-            float v = 0.0;
-            float a = 0.5;
+        // Optimized 2-Octave Domain Warp fBm (Zero Latency Warping)
+        float fbm2(vec2 p) {
             mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
-            for (int i = 0; i < 3; i++) {
-                v += a * noise(p);
-                p = rot * p * 2.04 + vec2(13.4, 1.7);
-                a *= 0.5;
-            }
+            return 0.6 * noise(p) + 0.3 * noise(rot * p * 2.04 + vec2(13.4, 1.7));
+        }
+
+        // 3-Octave Detailed Feature fBm
+        float fbm3(vec2 p) {
+            mat2 rot = mat2(0.87758, 0.47942, -0.47942, 0.87758);
+            float v = 0.5 * noise(p);
+            p = rot * p * 2.04 + vec2(13.4, 1.7);
+            v += 0.25 * noise(p);
+            p = rot * p * 2.04 + vec2(13.4, 1.7);
+            v += 0.125 * noise(p);
             return v;
         }
 
@@ -67,16 +71,16 @@
 
             // Two-stage Domain Warping
             vec2 q = vec2(
-                fbm(p + vec2(0.0, t * 0.8)),
-                fbm(p + vec2(t * 0.6, 0.0))
+                fbm2(p + vec2(0.0, t * 0.8)),
+                fbm2(p + vec2(t * 0.6, 0.0))
             );
 
             vec2 r = vec2(
-                fbm(p + 2.2 * q + vec2(1.7, 9.2) + 0.15 * t + bassImpact * 0.3),
-                fbm(p + 2.2 * q + vec2(8.3, 2.8) + 0.12 * t - bassImpact * 0.2)
+                fbm2(p + 2.2 * q + vec2(1.7, 9.2) + 0.15 * t + bassImpact * 0.3),
+                fbm2(p + 2.2 * q + vec2(8.3, 2.8) + 0.12 * t - bassImpact * 0.2)
             );
 
-            float f = fbm(p + 3.0 * r + bassImpact * 0.5);
+            float f = fbm3(p + 3.0 * r + bassImpact * 0.5);
 
             // Palette interpolation: Deep Void -> Persona Accent -> Neon Shimmer
             vec3 colDeep = vec3(0.02, 0.03, 0.07);
@@ -174,10 +178,15 @@
         }
     });
 
-    // Viewport resize handler with compositor-efficient DPR
+    // Viewport resize handler with quality-aware DPR
     function resizeCanvas() {
-        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-        const dpr = touchDevice ? Math.min(window.devicePixelRatio || 1, 0.75) : Math.min(window.devicePixelRatio || 1, 1.0);
+        const q = (document.body && document.body.getAttribute('data-quality')) || 'high';
+        let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        if (q === 'balanced') {
+            dpr = Math.min(window.devicePixelRatio || 1, 1.0);
+        } else if (q === 'eco') {
+            dpr = 1.0;
+        }
         const w = Math.round(window.innerWidth * dpr);
         const h = Math.round(window.innerHeight * dpr);
         if (canvas.width !== w || canvas.height !== h) {
@@ -213,14 +222,6 @@
         if (shouldPauseFluid()) {
             animationFrameId = null;
             lastBackgroundPaint = 0;
-            return;
-        }
-        // Full-screen shader competes with expensive glass compositing on phones.
-        // Throttle the BACKGROUND only, never the foreground gesture animations.
-        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-        const mobileBackground = touchDevice || window.innerWidth <= 768;
-        if (mobileBackground && lastBackgroundPaint && now - lastBackgroundPaint < 32) {
-            animationFrameId = requestAnimationFrame(render);
             return;
         }
         lastBackgroundPaint = now;

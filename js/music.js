@@ -865,7 +865,7 @@
                 }
             }
             if (window.MinkoiUI && typeof window.MinkoiUI.syncTabIndicator === 'function') {
-                window.requestAnimationFrame(() => window.MinkoiUI.syncTabIndicator(categoryNav, setFilter));
+                window.MinkoiUI.syncTabIndicator(categoryNav, setFilter);
             }
         }
 

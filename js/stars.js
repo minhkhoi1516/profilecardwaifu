@@ -37,8 +37,13 @@
     function resize() {
         width = window.innerWidth;
         height = window.innerHeight;
-        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-        const dpr = touchDevice ? Math.min(window.devicePixelRatio || 1, 1.0) : Math.min(window.devicePixelRatio || 1, 1.5);
+        const q = (document.body && document.body.getAttribute('data-quality')) || 'high';
+        let dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+        if (q === 'balanced') {
+            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        } else if (q === 'eco') {
+            dpr = 1.0;
+        }
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         ctx.scale(dpr, dpr);

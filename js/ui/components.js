@@ -1506,17 +1506,26 @@
             const edgePreset = spLib.PRESETS.EDGE_LEADING || spLib.PRESETS.LIQUID_GLASS;
             const trailPreset = spLib.PRESETS.EDGE_TRAILING || spLib.PRESETS.LIQUID_STRETCH;
 
-            let springCommitRaf = 0;
+            let isSpringCommitPending = false;
+            const commitSpringRender = () => {
+                isSpringCommitPending = false;
+                if (gestureState === 'dragging') return;
+                currentLeft = leftSpring ? leftSpring.value : currentLeft;
+                currentRight = rightSpring ? rightSpring.value : currentRight;
+                renderCapsule(currentLeft, currentRight);
+            };
+
             const onSpringUpdate = () => {
                 if (gestureState === 'dragging') return;
-                if (!springCommitRaf) {
-                    springCommitRaf = global.requestAnimationFrame(() => {
-                        springCommitRaf = 0;
-                        if (gestureState === 'dragging') return;
-                        currentLeft = leftSpring ? leftSpring.value : currentLeft;
-                        currentRight = rightSpring ? rightSpring.value : currentRight;
-                        renderCapsule(currentLeft, currentRight);
-                    });
+                if (!isSpringCommitPending) {
+                    isSpringCommitPending = true;
+                    // Microtask executes in the SAME frame's RAF tick before style/paint,
+                    // eliminating the 1-frame latency pipeline stall of nested RAFs.
+                    if (typeof queueMicrotask === 'function') {
+                        queueMicrotask(commitSpringRender);
+                    } else {
+                        Promise.resolve().then(commitSpringRender);
+                    }
                 }
             };
 
