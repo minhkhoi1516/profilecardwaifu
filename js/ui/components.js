@@ -1405,8 +1405,8 @@
 
             // Compute volume-preserving squash
             const standardW = Math.max(16, baseTabWidth);
-            const stretchRatio = Math.max(0.9, Math.min(1.18, w / standardW));
-            const squashRatio = Math.max(0.82, Math.min(1.12, 1 / Math.sqrt(stretchRatio)));
+            const stretchRatio = Math.max(0.92, Math.min(1.15, w / standardW));
+            const squashRatio = Math.max(0.88, Math.min(1.08, 1 / Math.sqrt(stretchRatio)));
 
             if (Math.abs(lastRenderedWidth - w) >= 0.5) {
                 ind.style.width = `${w.toFixed(1)}px`;

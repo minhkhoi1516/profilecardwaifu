@@ -503,15 +503,15 @@ body.light-mode .audio-category-nav {
     bottom: 4px;
     left: 0;
     border-radius: 9999px;
-    background: color-mix(in srgb, var(--color-accent) 26%, rgba(255, 255, 255, 0.08));
-    backdrop-filter: blur(18px) saturate(170%);
-    -webkit-backdrop-filter: blur(18px) saturate(170%);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.65));
+    background: color-mix(in srgb, var(--color-accent) 18%, rgba(255, 255, 255, 0.05));
+    backdrop-filter: url(#minkoi-liquid-lens-refraction);
+    -webkit-backdrop-filter: url(#minkoi-liquid-lens-refraction);
+    border: 1px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.70));
     box-shadow:
         var(--glass-fresnel-rim),
         var(--glass-caustic-depth);
     pointer-events: none;
-    z-index: 1;
+    z-index: 2;
     overflow: hidden;
     will-change: transform;
     transform-origin: left center;
@@ -520,11 +520,19 @@ body.light-mode .audio-category-nav {
     display: block !important;
 }
 
+@supports not (backdrop-filter: url(#minkoi-liquid-lens-refraction)) {
+    .liquid-glass-indicator,
+    .tab-sliding-pill {
+        backdrop-filter: blur(14px) saturate(160%);
+        -webkit-backdrop-filter: blur(14px) saturate(160%);
+    }
+}
+
 body.light-mode .liquid-glass-indicator,
 body.light-mode .tab-sliding-pill {
-    background: color-mix(in srgb, var(--color-accent) 20%, rgba(255, 255, 255, 0.88));
-    backdrop-filter: blur(18px) saturate(145%);
-    -webkit-backdrop-filter: blur(18px) saturate(145%);
+    background: color-mix(in srgb, var(--color-accent) 16%, rgba(255, 255, 255, 0.85));
+    backdrop-filter: url(#minkoi-liquid-lens-refraction);
+    -webkit-backdrop-filter: url(#minkoi-liquid-lens-refraction);
     border: 1px solid color-mix(in srgb, var(--color-accent) 45%, rgba(255, 255, 255, 0.95));
     box-shadow:
         inset 0 1.5px 2px 0 #ffffff,
@@ -541,10 +549,6 @@ body.light-mode .tab-sliding-pill {
     box-shadow:
         inset 2.5px 0 4px 0 rgba(255, 255, 255, 0.40),
         inset -2.5px 0 4px 0 rgba(255, 255, 255, 0.40);
-}
-
-body:not([data-quality="eco"]) .liquid-glass-lens {
-    filter: url(#minkoi-liquid-lens-refraction);
 }
 
 /* Layer 2: Prismatic Chromatic Dispersion (Cyan / Amber Rims) */
@@ -625,7 +629,7 @@ body:not([data-quality="eco"]) .liquid-glass-lens {
 
 .audio-category-nav .cat-tab {
     position: relative;
-    z-index: 2;
+    z-index: 1;
     border-radius: 9999px !important;
     background: transparent !important;
     border: none !important;
