@@ -137,7 +137,7 @@
                     <div class="avatar-zone" id="avatar-zone-wrap">
                         <div class="ripple-ground" aria-hidden="true"><span></span><span></span><span></span></div>
                         <canvas id="waifu-visualizer-canvas" class="waifu-viz-canvas" width="240" height="240" aria-hidden="true"></canvas>
-                        <div class="avatar-backdrop-disc" aria-hidden="true"></div>
+                        <div class="avatar-backdrop-disc" aria-hidden="true"><span class="audio-reactive-glow"></span></div>
                         <div class="halo-rotate" aria-hidden="true"></div>
                         <div class="halo-rotate outer" aria-hidden="true"></div>
                         <img src="assets/avatar_alya.png" alt="Alya Kujou Portrait" class="avatar-img avatar-portrait" id="char-avatar" data-persona="alya" loading="eager" fetchpriority="high" decoding="async" width="136" height="136">
@@ -149,6 +149,9 @@
                         <div class="name-title-row">
                             <h1 class="creator-name" id="creator-name">MinKoi</h1>
                             <span class="verified-badge" title="Verified Creator" aria-label="Verified"><i class="fas fa-circle-check"></i></span>
+                            <button class="viz-menu-btn" id="viz-menu-btn" type="button" title="Kiểu visualizer" aria-label="Chọn kiểu visualizer" aria-haspopup="menu" aria-expanded="false" aria-controls="viz-menu">
+                                <i class="fas fa-wave-square" aria-hidden="true"></i>
+                            </button>
                         </div>
                         <div class="creator-handle">@minkoi</div>
                         <p class="creator-tagline" id="persona-role-text">Solitary Princess · Alya Sometimes Hides Her Feelings in Russian</p>
@@ -213,6 +216,7 @@
                         <!-- TRACK STAGE (VINYL & METADATA) -->
                         <div class="now-playing-stage">
                             <div class="vinyl-disc-wrap" id="vinyl-disc" aria-hidden="true">
+                                <span class="audio-reactive-glow"></span>
                                 <div class="vinyl-platter" aria-hidden="true"></div>
                                 <img src="assets/avatar_alya.png" alt="Album Cover" class="vinyl-art" id="player-album-art" loading="lazy" decoding="async">
                             </div>
@@ -450,6 +454,64 @@
         <div class="noscript-banner">Vui lòng bật JavaScript để trải nghiệm trọn vẹn bộ nhận diện và kho nhạc waifu cá nhân MinKoi.</div>
     </noscript>
 
+    <!-- VISUALIZER STYLE MENU (Compact Miuix ListPopup) -->
+    <div class="viz-menu" id="viz-menu" role="menu" aria-label="Kiểu visualizer" data-popup-state="closed" inert>
+        <div class="viz-menu-head">Visualizer</div>
+        <button class="viz-menu-item" type="button" role="menuitemradio" aria-checked="true" data-viz-style="dual">
+            <span class="viz-preview" aria-hidden="true">
+                <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <circle cx="13" cy="13" r="8" opacity="0.22" stroke-width="1.2"/>
+                    <path d="M6.6 9.2A8 8 0 0 1 10.4 5.7"/>
+                    <path d="M19.4 16.8A8 8 0 0 1 15.6 20.3"/>
+                </svg>
+            </span>
+            <span class="viz-menu-copy">
+                <span class="viz-menu-name">Dual Arc Halo</span>
+                <span class="viz-menu-note">Hai cung thanh mảnh</span>
+            </span>
+            <span class="viz-menu-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+        </button>
+        <button class="viz-menu-item" type="button" role="menuitemradio" aria-checked="false" data-viz-style="crescent">
+            <span class="viz-preview" aria-hidden="true">
+                <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <path d="M5 12.5a8 8 0 0 0 16 0" opacity="0.9"/>
+                    <path d="M5 9.5a8 8 0 0 1 16 0" opacity="0.2" stroke-width="1.2"/>
+                </svg>
+            </span>
+            <span class="viz-menu-copy">
+                <span class="viz-menu-name">Crescent Spectrum</span>
+                <span class="viz-menu-note">Cung trăng khuyết</span>
+            </span>
+            <span class="viz-menu-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+        </button>
+        <button class="viz-menu-item" type="button" role="menuitemradio" aria-checked="false" data-viz-style="orbit">
+            <span class="viz-preview" aria-hidden="true">
+                <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-linecap="round">
+                    <circle cx="13" cy="13" r="8.6" opacity="0.28" stroke-width="1.1"/>
+                    <path d="M17.2 14.2l2.4 1.4M18.2 10.8l2-1.5M17.6 12.6v-2.6" stroke-width="2"/>
+                    <circle cx="7.2" cy="7.6" r="1.1" fill="currentColor" stroke="none" opacity="0.8"/>
+                </svg>
+            </span>
+            <span class="viz-menu-copy">
+                <span class="viz-menu-name">Orbit Visualizer</span>
+                <span class="viz-menu-note">Quỹ đạo tối giản</span>
+            </span>
+            <span class="viz-menu-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+        </button>
+        <button class="viz-menu-item" type="button" role="menuitemradio" aria-checked="false" data-viz-style="eq">
+            <span class="viz-preview" aria-hidden="true">
+                <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M7 19v-4M10.5 19v-7M14 19v-10M17.5 19v-6M21 19v-3"/>
+                </svg>
+            </span>
+            <span class="viz-menu-copy">
+                <span class="viz-menu-name">Mini Equalizer</span>
+                <span class="viz-menu-note">Thanh âm nhỏ gọn</span>
+            </span>
+            <span class="viz-menu-check" aria-hidden="true"><i class="fas fa-check"></i></span>
+        </button>
+    </div>
+
     <!-- MinKoi V4 Refined runtime modules -->
     <script src="js/config.js?v=4-refined-dev"></script>
     <script src="js/ui/spring.js?v=4-refined-dev"></script>
@@ -458,6 +520,7 @@
     <script src="js/stars.js?v=4-refined-dev"></script>
     <script src="js/fluid-bg.js?v=4-refined-dev"></script>
     <script src="js/avatar.js?v=4-refined-dev"></script>
+    <script src="js/visualizer.js?v=4-refined-dev"></script>
     <script src="js/music.js?v=4-refined-dev"></script>
     <!-- Lyrics Engine V2 (Modular Decoupled Architecture) -->
     <script src="js/lyrics/normalizer.js?v=4-refined-dev"></script>

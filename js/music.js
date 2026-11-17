@@ -154,8 +154,6 @@
     let analyser = null;
     let audioSource = null;
     let isContextReady = false;
-    let visualizerData = null;
-    let visualizerFrameId = null;
     let isCrossfadeActive = safeGet('minkoi_crossfade', 'true') === 'true';
     let autoAdvanceTimer = null;
 
@@ -205,9 +203,8 @@
             eqBands.air.frequency.value = 12000;
 
             analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256; // 128 frequency bins (64 bars sampling)
+            analyser.fftSize = 256; // 128 frequency bins (shared by the avatar visualizer)
             analyser.smoothingTimeConstant = 0.8;
-            visualizerData = new Uint8Array(analyser.frequencyBinCount);
 
             // Connect in series: Source -> GainNode -> Sub -> Bass -> Mid -> Treble -> Air -> Analyser -> Output
             audioSource = audioCtx.createMediaElementSource(audio);
@@ -231,111 +228,20 @@
         } catch (_) {}
     }
 
+    // The avatar visualizer owns its single render loop in js/visualizer.js.
+    // Keeping these wrappers means play/pause/zen/visibility lifecycles stay one
+    // source of truth while the rendering module can evolve independently.
     function startVisualizerLoop() {
-        if (visualizerFrameId) cancelAnimationFrame(visualizerFrameId);
-        const bars = document.querySelectorAll('.live-visualizer-bars .viz-bar');
-        const vinyl = document.getElementById('vinyl-disc');
-        const charAvatar = document.getElementById('char-avatar');
-        const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
-        const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
-        const waifuCtx = waifuCanvas ? waifuCanvas.getContext('2d') : null;
+        if (window.MinkoiVisualizer) window.MinkoiVisualizer.start();
+    }
 
-        function loop(now) {
-            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (audio.paused || document.hidden || document.body.classList.contains('zen-mode') || !analyser || reduced) {
-                visualizerFrameId = null;
-                if (bars.length > 0) {
-                    for (let i = 0; i < bars.length; i++) {
-                        bars[i].style.setProperty('--bar-scale', '0.18');
-                    }
-                }
-                if (vinyl) {
-                    vinyl.style.boxShadow = '';
-                    vinyl.style.scale = '';
-                }
-                if (avatarBackdrop) {
-                    avatarBackdrop.style.boxShadow = '';
-                    avatarBackdrop.style.transform = '';
-                }
-                if (waifuCtx && waifuCanvas) {
-                    waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
-                }
-                return;
-            }
-
-            visualizerFrameId = requestAnimationFrame(loop);
-            analyser.getByteFrequencyData(visualizerData);
-
-            if (bars.length > 0) {
-                for (let i = 0; i < bars.length; i++) {
-                    const binIdx = Math.min(i + 1, visualizerData.length - 1);
-                    const val = visualizerData[binIdx] || 0;
-                    const scaleY = Math.max(0.18, Math.min(1, val / 255));
-                    bars[i].style.setProperty('--bar-scale', scaleY.toFixed(3));
-                }
-            }
-
-            const bass = (visualizerData[1] + visualizerData[2] + visualizerData[3]) / (3 * 255);
-            const mid = (visualizerData[4] + visualizerData[5] + visualizerData[6]) / (3 * 255);
-
-            // Reactive Vinyl Disc Halo
-            if (vinyl) {
-                const glowSpread = Math.floor(bass * 26);
-                const scaleAmp = 1 + (bass * 0.035);
-                vinyl.style.boxShadow = `0 8px 20px rgba(0, 0, 0, 0.65), 0 0 ${10 + glowSpread}px var(--color-accent-glow), 0 0 ${Math.floor(mid * 14)}px rgba(255, 255, 255, 0.12)`;
-                vinyl.style.scale = scaleAmp.toFixed(3);
-            }
-
-            // Ambient Waifu Reactive Aura (Glow & Subtle Pulse on Avatar)
-            if (avatarBackdrop) {
-                const auraGlow = Math.floor(bass * 32);
-                avatarBackdrop.style.boxShadow = `0 12px 28px -4px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 0 ${20 + auraGlow}px var(--color-accent-glow)`;
-                avatarBackdrop.style.transform = `translate(-50%, -50%) scale(${(1 + bass * 0.04).toFixed(3)})`;
-            }
-
-            // [TÍNH NĂNG 2] 64 Radial Bars Visualizer with Dynamic HSL Colors
-            if (waifuCtx && waifuCanvas) {
-                waifuCtx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
-                const centerX = waifuCanvas.width / 2;
-                const centerY = waifuCanvas.height / 2;
-                const baseRadius = 68; // Just outside the 136px avatar circle
-                const maxBarLength = 32;
-                const numBars = 64;
-
-                for (let i = 0; i < numBars; i++) {
-                    const angle = (i / numBars) * Math.PI * 2 - Math.PI / 2;
-                    const bin = Math.min(i * 2, visualizerData.length - 1);
-                    const val = visualizerData[bin] || 0;
-                    const amp = (val / 255);
-                    const barLen = Math.max(2, amp * maxBarLength);
-
-                    // Dynamic HSL color according to frequency & audio intensity
-                    const hue = Math.floor((i / numBars) * 360 + amp * 60) % 360;
-
-                    const x1 = centerX + Math.cos(angle) * baseRadius;
-                    const y1 = centerY + Math.sin(angle) * baseRadius;
-                    const x2 = centerX + Math.cos(angle) * (baseRadius + barLen);
-                    const y2 = centerY + Math.sin(angle) * (baseRadius + barLen);
-
-                    waifuCtx.beginPath();
-                    waifuCtx.moveTo(x1, y1);
-                    waifuCtx.lineTo(x2, y2);
-                    waifuCtx.strokeStyle = `hsla(${hue}, 90%, 65%, ${0.4 + amp * 0.6})`;
-                    waifuCtx.lineWidth = 2.4;
-                    waifuCtx.lineCap = 'round';
-                    waifuCtx.shadowColor = `hsla(${hue}, 95%, 60%, 0.8)`;
-                    waifuCtx.shadowBlur = amp > 0.4 ? 6 : 2;
-                    waifuCtx.stroke();
-                }
-            }
-        }
-        visualizerFrameId = requestAnimationFrame(loop);
+    function stopVisualizerLoop() {
+        if (window.MinkoiVisualizer) window.MinkoiVisualizer.stop();
     }
 
     window.addEventListener('minkoi:zenchange', () => {
         if (document.body.classList.contains('zen-mode')) {
-            if (visualizerFrameId != null) cancelAnimationFrame(visualizerFrameId);
-            visualizerFrameId = null;
+            stopVisualizerLoop();
         } else if (!audio.paused && analyser && !document.hidden) {
             startVisualizerLoop();
         }
@@ -697,33 +603,13 @@
             try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
         }
         syncPlayIcons(false);
-        if (vinylDisc) {
-            vinylDisc.classList.remove('spinning');
-            vinylDisc.style.boxShadow = '';
-            vinylDisc.style.scale = '';
-        }
+        if (vinylDisc) vinylDisc.classList.remove('spinning');
         if (zenDisc) zenDisc.classList.remove('spinning');
         const avatarZone = document.getElementById('avatar-zone-wrap');
         if (avatarZone) avatarZone.classList.remove('playing');
-        const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
-        if (avatarBackdrop) {
-            avatarBackdrop.style.boxShadow = '';
-            avatarBackdrop.style.transform = '';
-        }
-        const charAvatar = document.getElementById('char-avatar');
-        if (charAvatar) charAvatar.style.transform = '';
-        const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
-        if (waifuCanvas) {
-            const wctx = waifuCanvas.getContext('2d');
-            if (wctx) wctx.clearRect(0, 0, waifuCanvas.width, waifuCanvas.height);
-        }
         document.title = `${CONFIG.name} — Personal Waifu Music Archive`;
-        if (visualizerFrameId) {
-            cancelAnimationFrame(visualizerFrameId);
-            visualizerFrameId = null;
-        }
-        const bars = document.querySelectorAll('.live-visualizer-bars .viz-bar');
-        bars.forEach(b => { b.style.setProperty('--bar-scale', '0.18'); });
+        // The visualizer fades its own energy out naturally (js/visualizer.js);
+        // clearing here would make pause feel like a hard cut.
     }
 
     function togglePlay() {
@@ -2030,13 +1916,11 @@
         }
     });
 
-    // Visibility change: pause visualizer immediately when tab is hidden, resume when visible
+    // Visibility change: the visualizer module also observes this, but keep the
+    // player's lifecycle explicit so background tabs never animate music UI.
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            if (visualizerFrameId) {
-                cancelAnimationFrame(visualizerFrameId);
-                visualizerFrameId = null;
-            }
+            stopVisualizerLoop();
         } else if (!audio.paused) {
             startVisualizerLoop();
         }

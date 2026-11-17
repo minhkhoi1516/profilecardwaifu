@@ -188,6 +188,8 @@
             '.social-link-pill',
             '.fx-preset-btn',
             '.top-more-item',
+            '.viz-menu-btn',
+            '.viz-menu-item',
             '.zen-ctrl-btn',
             '.zen-fab',
             '.lyrics-close-btn',

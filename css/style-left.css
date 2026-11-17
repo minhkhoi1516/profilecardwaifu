@@ -68,17 +68,18 @@
     100% { transform: scale(1.38); opacity: 0; }
 }
 
-/* Ambient Canvas Visualizer behind Waifu */
+/* Ambient Canvas Visualizer — sized from live avatar bounds by js/visualizer.js.
+   Sits above the halo rings but below the unclipped chibi artwork. */
 .waifu-viz-canvas {
     position: absolute;
     top: 52%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 220px;
-    height: 220px;
+    width: 172px;
+    height: 172px;
     pointer-events: none;
-    z-index: 1;
-    opacity: 0.85;
+    z-index: 4;
+    opacity: 0.92;
     transition: opacity var(--transition-normal);
 }
 
@@ -118,6 +119,25 @@
     opacity: 0.85;
     box-shadow: 0 0 16px var(--color-accent-glow);
     pointer-events: none;
+}
+
+/* Rasterize the glow once, then composite its energy instead of rebuilding a
+   blurred box-shadow every audio frame. No paint containment: pop-out stays free. */
+.audio-reactive-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: 0 0 52px var(--color-accent-glow);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.audio-reactive .audio-reactive-glow { will-change: opacity; }
+.avatar-backdrop-disc.audio-reactive,
+.vinyl-disc-wrap.audio-reactive { will-change: transform; }
+.avatar-backdrop-disc.audio-reactive { transition: border-color var(--transition-normal); }
+.vinyl-disc-wrap > .audio-reactive-glow {
+    box-shadow: 0 0 36px var(--color-accent-glow), 0 0 14px rgba(255, 255, 255, 0.12);
 }
 
 body.light-mode .avatar-backdrop-disc {
@@ -308,6 +328,40 @@ body.light-mode .creator-name {
     display: flex;
     align-items: center;
     filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.4));
+}
+
+/* Visualizer style trigger — compact waveform chip beside the identity name. */
+.viz-menu-btn {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    background: var(--surface-pill, var(--surface-2));
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.viz-menu-btn:hover {
+    color: var(--color-accent);
+    border-color: var(--color-border-active);
+    background: var(--surface-hover);
+}
+
+.viz-menu-btn:active {
+    transform: scale(0.94);
+}
+
+.viz-menu-btn[aria-expanded="true"] {
+    color: var(--color-accent);
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-pill, var(--surface-2)));
 }
 
 .creator-handle {

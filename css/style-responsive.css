@@ -242,6 +242,14 @@
         gap: 0.4rem;
     }
 
+    .viz-menu-btn {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        min-height: 24px;
+        font-size: 0.66rem;
+    }
+
     .creator-name {
         font-size: 1.35rem;
         font-weight: 700;
