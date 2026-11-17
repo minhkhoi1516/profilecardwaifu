@@ -25,6 +25,14 @@ local-test-*
 test-results/
 node_modules/
 playwright-report/
+# Local-only QA and AI development artifacts are never release source.
+/scripts/qa/
+/tests/
+/tools/
+/docs/qa/
+/docs/screenshots/
+/docs/rebuild/
+*.bundle
 
 # Archives & dumps
 *.zip

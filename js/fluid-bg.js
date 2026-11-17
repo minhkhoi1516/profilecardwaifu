@@ -178,15 +178,9 @@
         }
     });
 
-    // Viewport resize handler with quality-aware DPR
+    // One bounded render resolution; no device tiers or frame-rate cap.
     function resizeCanvas() {
-        const q = (document.body && document.body.getAttribute('data-quality')) || 'high';
-        let dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        if (q === 'balanced') {
-            dpr = Math.min(window.devicePixelRatio || 1, 1.0);
-        } else if (q === 'eco') {
-            dpr = 1.0;
-        }
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         const w = Math.round(window.innerWidth * dpr);
         const h = Math.round(window.innerHeight * dpr);
         if (canvas.width !== w || canvas.height !== h) {
@@ -214,8 +208,7 @@
     function shouldPauseFluid() {
         if (document.hidden || document.body?.classList.contains('zen-mode')) return true;
         if (reducedMotionMQ && reducedMotionMQ.matches) return true;
-        const q = document.body ? document.body.getAttribute('data-quality') : '';
-        return q === 'eco' || Boolean(document.body && document.body.classList.contains('low-end'));
+        return false;
     }
 
     function render(now) {
@@ -224,7 +217,6 @@
             lastBackgroundPaint = 0;
             return;
         }
-        lastBackgroundPaint = now;
         const elapsed = (now - startTime) * 0.001;
 
         // Query Analyser bass energy (bins 0-6 represent 20Hz - 150Hz)
@@ -244,7 +236,9 @@
         }
 
         // Exponential smoothing (lerp)
-        smoothBass += (targetBass - smoothBass) * 0.14;
+        const dt = lastBackgroundPaint ? Math.min(64, now - lastBackgroundPaint) : 16.67;
+        smoothBass += (targetBass - smoothBass) * (1 - Math.exp(-dt / 110));
+        lastBackgroundPaint = now;
 
         gl.uniform2f(uResLoc, canvas.width, canvas.height);
         gl.uniform1f(uTimeLoc, elapsed);
@@ -273,7 +267,7 @@
         }
     }
 
-    // Tab visibility, quality mode & reduced motion listeners
+    // Tab visibility and accessibility lifecycle.
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             stopLoop();
@@ -282,10 +276,6 @@
         }
     });
 
-    window.addEventListener('minkoi:qualitychange', () => {
-        if (shouldPauseFluid()) stopLoop();
-        else startLoop();
-    });
     window.addEventListener('minkoi:zenchange', () => {
         if (shouldPauseFluid()) stopLoop();
         else startLoop();

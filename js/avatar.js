@@ -49,6 +49,7 @@
     // ------------------------------------------------------------------
     let bannerLoadSeq = 0;
     let bannerReleaseTimer = null;
+    let bannerSwapFrame = 0;
     function releaseInactiveBannerTextures() {
         if (bannerStage) bannerStage.querySelectorAll('.banner-layer:not(.active)').forEach(layer => {
             layer.style.backgroundImage = 'none';
@@ -174,6 +175,10 @@
     }
 
     function commitBannerCrossfade(src, immediate) {
+        if (bannerSwapFrame) {
+            window.cancelAnimationFrame(bannerSwapFrame);
+            bannerSwapFrame = 0;
+        }
         currentBannerSrc = src;
         if (!bannerStage) return;
 
@@ -201,7 +206,8 @@
         // Keep the inactive standby buffer without forcing a sync layout flush.
         standby.classList.remove('active');
 
-        window.requestAnimationFrame(() => {
+        bannerSwapFrame = window.requestAnimationFrame(() => {
+            bannerSwapFrame = 0;
             layers.forEach((layer) => {
                 layer.classList.toggle('active', layer === standby);
             });
@@ -211,7 +217,7 @@
     }
 
     function updateBannerLayers(persona, options) {
-        const src = pickBanner(persona);
+        const src = options?.src || pickBanner(persona);
         if (!src) {
             commitBannerCrossfade('', true);
             return '';
@@ -219,6 +225,11 @@
 
         const immediate = Boolean(options && options.immediate);
         const seq = ++bannerLoadSeq;
+
+        if (options?.decoded) {
+            commitBannerCrossfade(src, immediate);
+            return src;
+        }
 
         if (immediate || (currentBannerSrc === '' && bannerStage?.querySelector('.banner-layer.active')?.style.backgroundImage.includes(src))) {
             commitBannerCrossfade(src, true);
@@ -238,10 +249,10 @@
         };
 
         if (typeof loader.decode === 'function') {
-            loader.decode().then(applyWhenReady).catch(applyWhenReady);
+            loader.decode().then(applyWhenReady).catch(() => {});
         } else {
             loader.onload = applyWhenReady;
-            loader.onerror = applyWhenReady;
+            loader.onerror = () => {};
         }
         return src;
     }
@@ -291,8 +302,24 @@
     window.showWaifuQuote = () => {};
 
     let currentPersona = null;
+    let personaLoadSeq = 0;
 
-    function setPersona(indexOrKey, persist) {
+    function prepareImage(src) {
+        if (!src) return Promise.resolve();
+        const image = new Image();
+        image.decoding = 'async';
+        if (typeof image.decode === 'function') {
+            image.src = src;
+            return image.decode();
+        }
+        return new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = reject;
+            image.src = src;
+        });
+    }
+
+    async function setPersona(indexOrKey, persist) {
         let index = typeof indexOrKey === 'string'
             ? personas.findIndex(p => p.key === indexOrKey)
             : Number(indexOrKey);
@@ -300,13 +327,33 @@
         const persona = personas[index];
         if (!persona || !persona.available) return;
 
+        const seq = ++personaLoadSeq;
+        ++bannerLoadSeq;
+        const mobile = isMobileViewport();
+        const banner = pickBanner(persona);
+        personaContainer?.setAttribute('aria-busy', 'true');
+        try {
+            await Promise.all([prepareImage(persona.avatar), prepareImage(banner)]);
+        } catch (_) {
+            if (seq === personaLoadSeq) {
+                personaContainer?.setAttribute('aria-busy', 'false');
+                window.showToast?.('Không thể tải artwork. Giữ nhân vật hiện tại.', 'fa-triangle-exclamation');
+            }
+            return;
+        }
+        if (seq !== personaLoadSeq) return;
+        if (mobile !== isMobileViewport()) return setPersona(index, persist);
+        personaContainer?.setAttribute('aria-busy', 'false');
+
+        // Commit one prepared persona transaction: artwork, palette, particles,
+        // text and player mapping all change in the same rendering opportunity.
         currentIndex = index;
         currentPersona = persona;
         safeStorageSet('minkoi_persona_index', index.toString());
 
         applyPersonaTokens(persona);
         updatePersonaText(persona);
-        updateBannerLayers(persona, { immediate: !persist && currentBannerSrc === '' });
+        updateBannerLayers(persona, { src: banner, decoded: true, immediate: !persist && currentBannerSrc === '' });
         applyAvatar(persona, persist);
 
         // Update ambient particle mode (Sakura petals, snowflakes, stardust)

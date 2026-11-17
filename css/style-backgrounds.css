@@ -98,9 +98,7 @@ body.light-mode .banner-stage::after {
     );
 }
 
-/* Preserve the original crossfade while adding low-cost cinematic motion.
-   Only High animates the visible wallpaper texture. Mid animates the opacity
-   of one already-composited lighting overlay. Eco stays static. */
+/* Preserve crossfades and cinematic motion, respecting accessibility. */
 @keyframes zenCinematicDrift {
     from { transform: translate3d(0, 0, 0) scale(1.018); }
     to { transform: translate3d(-0.3%, -0.25%, 0) scale(1.038); }
@@ -110,25 +108,17 @@ body.light-mode .banner-stage::after {
     to { opacity: 0.48; }
 }
 @media (prefers-reduced-motion: no-preference) {
-    body.zen-mode:is([data-quality="high"], :not([data-quality])):not(.low-end) .banner-layer.active {
+    body.zen-mode .banner-layer.active {
         animation: zenCinematicDrift 24s ease-in-out infinite alternate;
     }
-    body.zen-mode:is([data-quality="high"], [data-quality="balanced"], :not([data-quality])):not(.low-end) .banner-stage::before {
+    body.zen-mode .banner-stage::before {
         animation: zenLightBreathing 10s ease-in-out infinite alternate;
     }
 }
 @media (max-width: 860px) {
-    body.zen-mode:is([data-quality="high"], :not([data-quality])):not(.low-end) .banner-layer.active {
+    body.zen-mode .banner-layer.active {
         animation-duration: 32s;
     }
-}
-body.low-end .banner-stage::before {
-    display: none;
-}
-
-body.low-end .banner-layer {
-    transform: none !important;
-    transition: opacity 0.45s ease !important;
 }
 
 /* Minimalist ambient canvas */

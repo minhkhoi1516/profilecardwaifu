@@ -1,6 +1,6 @@
 /* ==========================================================================
    MINKOI V4 · MIUIX NATURAL MOTION PHYSICS ENGINE
-   Semi-implicit Euler spring integration (F = -kx - cv), interruptible with
+   Closed-form damped springs (F = -kx - cv), interruptible with
    velocity preservation, directional edge springs, and multi-property groups.
    Reference: Miuix SpringUtils.kt, PressFeedback.kt, ListPopup.kt, Lens.kt
    ========================================================================== */
@@ -37,24 +37,66 @@
         EDGE_TRAILING: Object.freeze(folmeSpring(0.80, 0.34)),
         NAV_FOLLOW: Object.freeze(folmeSpring(1.00, 0.14)),
         HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
-        TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22))
+        TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22)),
+        ZEN_ENTER: Object.freeze(folmeSpring(0.96, 0.42)),
+        ZEN_EXIT: Object.freeze(folmeSpring(0.98, 0.38))
     });
 
     const activeSprings = new Set();
     let rafId = 0;
     let lastTimestamp = 0;
+    let ticking = false;
+    const pendingRenders = new Set();
+    const motionQuery = global.matchMedia ? global.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
-    function isAccessibilityReducedMotion() {
-        return Boolean(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    // Groups render once after every spring has advanced, never once per axis.
+    function scheduleRender(render) {
+        if (ticking) pendingRenders.add(render);
+        else render();
     }
 
-    // Eco removes expensive rendering effects; the liquid tab's lightweight
-    // physics may opt in to motion. Accessibility reduced-motion always wins.
-    function shouldInstantSnap(allowEcoMotion = false) {
-        if (isAccessibilityReducedMotion()) return true;
-        if (allowEcoMotion) return false;
-        const docBody = global.document && global.document.body;
-        return Boolean(docBody && (docBody.getAttribute('data-quality') === 'eco' || docBody.classList.contains('low-end')));
+    function advance(spring, dt) {
+        const omega = Math.sqrt(spring.stiffness / spring.mass);
+        const zeta = spring.dampingRatio;
+        const x = spring.value - spring.target;
+        const v = spring.velocity;
+        let nextX;
+        let nextV;
+        if (Math.abs(zeta - 1) < 1e-5) {
+            const b = v + omega * x;
+            const decay = Math.exp(-omega * dt);
+            nextX = (x + b * dt) * decay;
+            nextV = (v - omega * b * dt) * decay;
+        } else if (zeta < 1) {
+            const alpha = zeta * omega;
+            const wd = omega * Math.sqrt(1 - zeta * zeta);
+            const b = (v + alpha * x) / wd;
+            const cos = Math.cos(wd * dt);
+            const sin = Math.sin(wd * dt);
+            const decay = Math.exp(-alpha * dt);
+            nextX = decay * (x * cos + b * sin);
+            nextV = decay * (v * cos - (alpha * b + wd * x) * sin);
+        } else {
+            const root = Math.sqrt(zeta * zeta - 1);
+            const r1 = -omega / (zeta + root);
+            const r2 = -omega * (zeta + root);
+            const a = (v - r2 * x) / (r1 - r2);
+            const b = x - a;
+            const e1 = Math.exp(r1 * dt);
+            const e2 = Math.exp(r2 * dt);
+            nextX = a * e1 + b * e2;
+            nextV = r1 * a * e1 + r2 * b * e2;
+        }
+        spring.value = spring.target + nextX;
+        spring.velocity = nextV;
+    }
+
+    function isAccessibilityReducedMotion() {
+        return Boolean(motionQuery?.matches);
+    }
+
+    function shouldInstantSnap() {
+        return isAccessibilityReducedMotion();
     }
 
     function stopLoop() {
@@ -85,6 +127,20 @@
         } catch (_) { /* ignore callback error */ }
     }
 
+    motionQuery?.addEventListener?.('change', () => {
+        if (!motionQuery.matches) return;
+        stopLoop();
+        const pending = Array.from(activeSprings);
+        activeSprings.clear();
+        pending.forEach(sp => {
+            sp.value = sp.target;
+            sp.velocity = 0;
+            sp.running = false;
+            safeUpdate(sp, sp.value, 0);
+            safeComplete(sp);
+        });
+    });
+
     function tick(now) {
         rafId = 0;
         if (global.document && global.document.hidden) {
@@ -102,12 +158,10 @@
         }
 
         const dt = lastTimestamp
-            ? Math.min(0.25, Math.max(0.001, (now - lastTimestamp) / 1000))
-            : 0.016;
+            ? Math.min(0.064, Math.max(0, (now - lastTimestamp) / 1000))
+            : 0;
         lastTimestamp = now;
-
-        const subSteps = Math.max(1, Math.ceil(dt / 0.012));
-        const stepDt = dt / subSteps;
+        ticking = true;
         const completed = [];
         const stale = [];
 
@@ -116,15 +170,7 @@
                 stale.push(spring);
                 return;
             }
-            const k = spring.stiffness;
-            const c = 2 * spring.dampingRatio * Math.sqrt(k);
-
-            for (let s = 0; s < subSteps; s++) {
-                const displacement = spring.value - spring.target;
-                const accel = -k * displacement - c * spring.velocity;
-                spring.velocity += accel * stepDt;
-                spring.value += spring.velocity * stepDt;
-            }
+            advance(spring, dt);
 
             if (!Number.isFinite(spring.value) || !Number.isFinite(spring.velocity) || Math.abs(spring.value) > 1e6) {
                 spring.value = spring.target;
@@ -133,8 +179,6 @@
                 completed.push(spring);
                 return;
             }
-
-            safeUpdate(spring, spring.value, spring.velocity);
 
             const settled =
                 Math.abs(spring.value - spring.target) < spring.precision &&
@@ -145,6 +189,8 @@
                 spring.velocity = 0;
                 spring.running = false;
                 completed.push(spring);
+            } else {
+                safeUpdate(spring, spring.value, spring.velocity);
             }
         });
 
@@ -161,6 +207,12 @@
             safeComplete(sp);
         }
 
+        pendingRenders.forEach(render => {
+            try { render(); } catch (_) { /* isolate component failures */ }
+        });
+        pendingRenders.clear();
+        ticking = false;
+
         if (activeSprings.size > 0 && !(global.document && global.document.hidden)) {
             rafId = global.requestAnimationFrame(tick);
         } else {
@@ -170,8 +222,8 @@
 
     function ensureLoop() {
         if (global.document && global.document.hidden) return;
-        if (!rafId && activeSprings.size > 0) {
-            lastTimestamp = 0;
+        if (!ticking && !rafId && activeSprings.size > 0) {
+            lastTimestamp = global.performance.now();
             rafId = global.requestAnimationFrame(tick);
         }
     }
@@ -218,10 +270,10 @@
         const initTarget = Number.isFinite(opts.target) ? opts.target : initVal;
         const spring = {
             el: opts.el || null,
-            allowEcoMotion: opts.allowEcoMotion === true,
             value: initVal,
             target: initTarget,
             velocity: 0,
+            mass: Number.isFinite(opts.mass) ? Math.max(0.001, opts.mass) : 1,
             dampingRatio: Number.isFinite(opts.dampingRatio) ? Math.max(0.05, opts.dampingRatio) : preset.dampingRatio,
             stiffness: Number.isFinite(opts.stiffness) ? Math.max(1, opts.stiffness) : preset.stiffness,
             precision: Number.isFinite(opts.precision) ? Math.max(1e-5, opts.precision) : 0.001,
@@ -235,10 +287,11 @@
                 if (override) {
                     if (Number.isFinite(override.dampingRatio)) this.dampingRatio = Math.max(0.05, override.dampingRatio);
                     if (Number.isFinite(override.stiffness)) this.stiffness = Math.max(1, override.stiffness);
+                    if (Number.isFinite(override.mass)) this.mass = Math.max(0.001, override.mass);
                     if ('onComplete' in override) this.onComplete = override.onComplete;
                 }
                 this.target = nextTarget;
-                if (shouldInstantSnap(this.allowEcoMotion) || (global.document && global.document.hidden)) {
+                if (shouldInstantSnap() || (global.document && global.document.hidden)) {
                     activeSprings.delete(this);
                     this.value = nextTarget;
                     this.velocity = 0;
@@ -278,7 +331,7 @@
             impulse(v) {
                 if (!Number.isFinite(v)) return;
                 this.velocity += v;
-                if (!this.running && !shouldInstantSnap(this.allowEcoMotion)) {
+                if (!this.running && !shouldInstantSnap()) {
                     this.running = true;
                     activeSprings.add(this);
                     ensureLoop();
@@ -345,6 +398,7 @@
         const springs = {};
         const values = {};
         let isAnyRunning = false;
+        let updatingTargets = false;
         const keys = Object.keys(definitions || {});
 
         const notifyRender = () => {
@@ -365,18 +419,19 @@
                 preset: def.preset,
                 dampingRatio: def.dampingRatio,
                 stiffness: def.stiffness,
+                mass: def.mass,
                 precision: def.precision,
                 velocityPrecision: def.velocityPrecision,
-                allowEcoMotion: def.allowEcoMotion !== false,
-                onUpdate: () => notifyRender(),
+                onUpdate: () => scheduleRender(notifyRender),
                 onComplete: () => {
-                    checkGroupComplete();
+                    scheduleRender(checkGroupComplete);
                 }
             });
             values[k] = springs[k].value;
         }
 
         function checkGroupComplete() {
+            if (updatingTargets) return;
             let stillRunning = false;
             for (let i = 0; i < keys.length; i++) {
                 if (springs[keys[i]].running) {
@@ -397,6 +452,7 @@
             values,
             setTargets(targets) {
                 isAnyRunning = true;
+                updatingTargets = true;
                 const tKeys = Object.keys(targets || {});
                 for (let i = 0; i < tKeys.length; i++) {
                     const tk = tKeys[i];
@@ -404,6 +460,8 @@
                         springs[tk].setTarget(targets[tk]);
                     }
                 }
+                updatingTargets = false;
+                checkGroupComplete();
             },
             snap(targetValues) {
                 const tKeys = Object.keys(targetValues || {});

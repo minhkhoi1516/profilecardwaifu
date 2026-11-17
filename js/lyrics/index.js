@@ -190,6 +190,9 @@
                     matchResult: currentMatchResult
                 });
 
+                // Mount the current line even while paused, otherwise Zen opened
+                // after a track change stays empty until playback resumes.
+                syncEngine.forceSync(false);
                 if (!audio.paused) {
                     syncEngine.startLoop();
                 }

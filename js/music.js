@@ -239,12 +239,10 @@
         const avatarBackdrop = document.querySelector('.avatar-backdrop-disc');
         const waifuCanvas = document.getElementById('waifu-visualizer-canvas');
         const waifuCtx = waifuCanvas ? waifuCanvas.getContext('2d') : null;
-        let lastPaint = 0;
 
         function loop(now) {
-            const quality = document.body.dataset.quality;
             const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (audio.paused || document.hidden || document.body.classList.contains('zen-mode') || !analyser || quality === 'eco' || reduced) {
+            if (audio.paused || document.hidden || document.body.classList.contains('zen-mode') || !analyser || reduced) {
                 visualizerFrameId = null;
                 if (bars.length > 0) {
                     for (let i = 0; i < bars.length; i++) {
@@ -266,8 +264,6 @@
             }
 
             visualizerFrameId = requestAnimationFrame(loop);
-            if ((quality === 'balanced' || window.innerWidth <= 860) && now - lastPaint < 32) return;
-            lastPaint = now;
             analyser.getByteFrequencyData(visualizerData);
 
             if (bars.length > 0) {
@@ -587,7 +583,7 @@
     function setSeekProgressUI(pos, thumbScale) {
         const clamped = Math.max(0, Math.min(1, pos || 0));
         if (seekFill) seekFill.style.setProperty('--seek-progress', clamped.toFixed(4));
-        if (zenSeekFill) zenSeekFill.style.width = `${(clamped * 100).toFixed(2)}%`;
+        if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${clamped.toFixed(5)})`;
         const dot = ensureSeekThumbDot();
         if (dot) {
             dot.style.left = `${(clamped * 100).toFixed(2)}%`;
@@ -2044,9 +2040,6 @@
         } else if (!audio.paused) {
             startVisualizerLoop();
         }
-    });
-    window.addEventListener('minkoi:qualitychange', () => {
-        if (!audio.paused) startVisualizerLoop();
     });
     window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', () => {
         if (!audio.paused) startVisualizerLoop();

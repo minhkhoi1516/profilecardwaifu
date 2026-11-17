@@ -126,51 +126,9 @@
         }
     }
 
-    // 4. SYNTHESIZED MAGIC CHIME SFX (Web Audio API, 0ms latency, 0 files)
-    function playChimeSFX(personaKey) {
-        try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) return;
-            const ctx = window.__minkoiAudioCtx || (window.__sfxCtx = window.__sfxCtx || new AudioCtx());
-            if (ctx.state === 'suspended') ctx.resume();
-
-            const now = ctx.currentTime;
-            
-            // Chord frequencies tailored to waifu personalities
-            let notes = [880, 1174.66, 1567.98]; // Default crystalline A5, D6, G6
-            if (personaKey === 'alya') {
-                notes = [1046.50, 1318.51, 1760.00]; // Ice Snowflake C6, E6, A6
-            } else if (personaKey === 'mahiru') {
-                notes = [659.25, 880.00, 1318.51];  // Warm Angel E5, A5, E6
-            } else if (personaKey === 'kaoruko' || personaKey === 'sakuramiku') {
-                notes = [783.99, 987.77, 1396.91];  // Sakura Blossom G5, B5, F6
-            } else if (personaKey === 'umi') {
-                notes = [587.33, 880.00, 1174.66];  // Ocean Tide D5, A5, D6
-            } else if (personaKey === 'nakanomiku') {
-                notes = [659.25, 987.77, 1318.51];  // Soft Cobalt E5, B5, E6
-            } else if (personaKey === 'shinobu' || personaKey === 'hinako') {
-                notes = [739.99, 932.33, 1318.51];  // Midnight Twilight F#5, A#5, E6
-            }
-
-            notes.forEach((freq, idx) => {
-                const noteTime = now + (idx * 0.045);
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, noteTime);
-
-                gain.gain.setValueAtTime(0.0001, noteTime);
-                gain.gain.linearRampToValueAtTime(0.045, noteTime + 0.015);
-                gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + 0.28);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-
-                osc.start(noteTime);
-                osc.stop(noteTime + 0.29);
-            });
-        } catch (_) {}
+    // 4. Legacy selection hooks share the feedback preference and cooldown.
+    function playChimeSFX() {
+        window.MinkoiFeedback?.selection();
     }
     window.playChimeSFX = playChimeSFX;
 
@@ -206,6 +164,55 @@
         const zenPlayBtn = document.getElementById('zen-play-pause');
         const zenFab = document.getElementById('zen-fab');
         const mainPlayBtn = document.getElementById('play-pause');
+        const mainCard = document.getElementById('main-card');
+        const header = document.querySelector('.site-brand-header');
+        const dock = document.getElementById('zen-mini-dock');
+        const zenSurfaces = [mainCard, header, dock].filter(Boolean);
+        const spring = window.MinkoiSpring;
+        const renderZen = value => {
+            const f = Math.max(0, Math.min(1, value));
+            if (mainCard) {
+                mainCard.style.opacity = (1 - f).toFixed(4);
+                mainCard.style.transform = `translate3d(0,${(12 * f).toFixed(2)}px,0) scale(${(1 - 0.02 * f).toFixed(4)})`;
+            }
+            if (header) {
+                header.style.opacity = (1 - f).toFixed(4);
+                header.style.transform = `translate3d(0,${(-8 * f).toFixed(2)}px,0)`;
+            }
+            if (dock) {
+                dock.style.opacity = f.toFixed(4);
+                dock.style.transform = `translate(-50%,${((1 - f) * 140).toFixed(2)}px)`;
+            }
+        };
+        const zenSpring = spring?.createSpring({
+            initial: 0,
+            preset: spring.PRESETS.ZEN_ENTER,
+            onUpdate: renderZen
+        });
+        if (zenSpring) zenSurfaces.forEach(el => { el.dataset.zenMotion = ''; });
+
+        let zenMotionGen = 0;
+        function animateZen(enabled) {
+            if (!zenSpring) return;
+            const gen = ++zenMotionGen;
+            zenSurfaces.forEach(el => {
+                el.style.visibility = 'visible';
+                el.style.willChange = 'transform, opacity';
+            });
+            renderZen(zenSpring.value);
+            zenSpring.setTarget(enabled ? 1 : 0, {
+                ...(enabled ? spring.PRESETS.ZEN_ENTER : spring.PRESETS.ZEN_EXIT),
+                onComplete: () => {
+                    // A rapid re-toggle must not let the previous direction hide
+                    // surfaces that the latest transition is bringing back.
+                    if (gen !== zenMotionGen) return;
+                    if (mainCard) mainCard.style.visibility = enabled ? 'hidden' : '';
+                    if (header) header.style.visibility = enabled ? 'hidden' : '';
+                    if (dock) dock.style.visibility = enabled ? '' : 'hidden';
+                    zenSurfaces.forEach(el => { el.style.willChange = ''; });
+                }
+            });
+        }
 
         // --- Screen Wake Lock: giữ màn hình sáng khi đang ở chế độ màn hình chờ ---
         let wakeLock = null;
@@ -248,6 +255,7 @@
             if (isZen === document.body.classList.contains('zen-mode')) return;
             window.MinkoiUI?.closeAllOverlays(null, { instant: true, restoreFocus: false });
             document.body.classList.toggle('zen-mode', isZen);
+            animateZen(isZen);
             // Stop hidden rendering work before the Zen wallpaper swap.
             window.dispatchEvent(new CustomEvent('minkoi:zenchange', {
                 detail: { enabled: isZen }
@@ -430,58 +438,9 @@
         }
     }
 
-    // 7. HARDWARE PROFILER & V3 QUALITY ENGINE (AUTO / HIGH / BALANCED / ECO)
-    const STORAGE_QUALITY = 'minkoi_quality_mode';
-
-    function detectAutoQuality() {
-        const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduced) {
-            return 'eco';
-        }
-        // Never strip effects prematurely based solely on core/memory heuristics
-        // Modern mobile GPUs handle composited layers gracefully.
-        return 'high';
-    }
-
-    function setMinkoiQuality(mode, persist = true) {
-        const chosen = ['auto', 'high', 'balanced', 'eco'].includes(mode) ? mode : 'auto';
-        const resolved = chosen === 'auto' ? detectAutoQuality() : chosen;
-
-        if (persist) {
-            try { localStorage.setItem(STORAGE_QUALITY, chosen); } catch (_) {}
-        }
-
-        document.body.setAttribute('data-quality', resolved);
-        document.body.setAttribute('data-quality-pref', chosen);
-        const isEco = resolved === 'eco';
-        document.body.classList.toggle('low-end', isEco);
-        document.documentElement.classList.toggle('low-end-device', isEco);
-
-        document.querySelectorAll('.quality-option-btn').forEach((btn) => {
-            const active = btn.getAttribute('data-quality') === chosen;
-            btn.classList.toggle('active', active);
-            btn.setAttribute('aria-checked', active ? 'true' : 'false');
-        });
-
-        window.dispatchEvent(new CustomEvent('minkoi:qualitychange', {
-            detail: { preference: chosen, resolved }
-        }));
-
-        if (persist && typeof showToast === 'function') {
-            const labels = { auto: `Tự động (${resolved})`, high: 'Cao (Liquid Glass)', balanced: 'Cân bằng', eco: 'Tiết kiệm (Eco)' };
-            showToast(`Chất lượng đồ họa: ${labels[chosen] || chosen}`, 'fa-gauge-high');
-        }
-    }
-    window.setMinkoiQuality = setMinkoiQuality;
-
-    function initHardwareProfiler() {
-        let saved = 'auto';
-        try { saved = localStorage.getItem(STORAGE_QUALITY) || 'auto'; } catch (_) {}
-        setMinkoiQuality(saved, false);
-    }
-
     // Boot
-    initHardwareProfiler();
+    // Retire the old tier preference; accessibility is handled by each renderer.
+    try { localStorage.removeItem('minkoi_quality_mode'); } catch (_) {}
     initTheme();
     initActionButtons();
     initLiveClock();

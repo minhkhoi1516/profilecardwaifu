@@ -17,7 +17,43 @@
     let animationId = null;
     let lastParticlePaint = 0;
     let currentThemeMode = 'snow'; // 'snow' (Alya), 'stardust' (Mahiru), 'sakura' (Kaoruko/Miku), 'twilight' (Shinobu/Rikka)
-    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let zenActive = document.body.classList.contains('zen-mode');
+    let zenEmphasis = zenActive ? 1 : 0;
+    const particleSprites = new Map();
+
+    // Cache small glowing sprites; moving particles still render at display cadence.
+    // Shadow kernels are rasterized once per radius/color, not per particle/frame.
+    function drawGlow(p, radius, color, glow, bubble = false) {
+        const bucket = Math.max(0.5, Math.ceil(radius * 2) / 2);
+        const family = p.type === 'snow' ? (p.isCrystal ? 0 : 1) : (bubble ? 2 : 3);
+        const key = family * 64 + bucket * 2;
+        let sprite = particleSprites.get(key);
+        if (!sprite) {
+            const extent = Math.ceil(bucket + glow * 2 + 2);
+            const image = document.createElement('canvas');
+            image.width = image.height = extent * 4;
+            const paint = image.getContext('2d');
+            if (!paint) return;
+            paint.scale(2, 2);
+            paint.beginPath();
+            paint.arc(extent, extent, bucket, 0, Math.PI * 2);
+            paint.shadowColor = color;
+            paint.shadowBlur = glow;
+            paint.fillStyle = bubble ? 'rgba(34, 211, 238, 0.22)' : color;
+            if (bubble) {
+                paint.strokeStyle = color;
+                paint.lineWidth = 0.8;
+                paint.stroke();
+            }
+            paint.fill();
+            sprite = { image, extent };
+            particleSprites.set(key, sprite);
+        }
+        const extent = sprite.extent * radius / bucket;
+        ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
+        ctx.drawImage(sprite.image, p.x - extent, p.y - extent, extent * 2, extent * 2);
+        ctx.globalAlpha = 1;
+    }
 
     function getThemeForPersona(index) {
         const persona = (typeof CONFIG !== 'undefined' && CONFIG.personas) ? CONFIG.personas[index] : null;
@@ -37,13 +73,7 @@
     function resize() {
         width = window.innerWidth;
         height = window.innerHeight;
-        const q = (document.body && document.body.getAttribute('data-quality')) || 'high';
-        let dpr = Math.min(window.devicePixelRatio || 1, 2.0);
-        if (q === 'balanced') {
-            dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        } else if (q === 'eco') {
-            dpr = 1.0;
-        }
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
         ctx.scale(dpr, dpr);
@@ -133,27 +163,18 @@
         }
     }
 
-    function getQualityFactor() {
-        const q = document.body ? document.body.getAttribute('data-quality') : 'high';
-        if (q === 'eco' || (document.body && document.body.classList.contains('low-end'))) return 0.28;
-        if (q === 'balanced') return 0.55;
-        return 1;
-    }
-
     function initParticles() {
         particles = [];
-        const factor = getQualityFactor();
-        if (factor <= 0) return;
         const isMobile = width < 768;
         const baseCount = isMobile ? (currentThemeMode === 'sakura' ? 20 : 28) : (currentThemeMode === 'sakura' ? 38 : 65);
-        const count = Math.max(6, Math.round(baseCount * factor));
+        const count = baseCount;
 
         for (let i = 0; i < count; i++) {
             particles.push(createParticle(currentThemeMode, true));
         }
     }
 
-    function drawSakuraPetal(ctx, p, isEco) {
+    function drawSakuraPetal(ctx, p) {
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rotation);
@@ -169,59 +190,24 @@
         ctx.fillStyle = `${p.color} ${p.alpha})`;
         ctx.fill();
 
-        // Delicate inner petal contour (skip on eco)
-        if (!isEco) {
-            ctx.strokeStyle = `rgba(255, 255, 255, ${p.alpha * 0.4})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-        }
-
-        ctx.restore();
-    }
-
-    function drawSnowflake(ctx, p, accentColor, isEco) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.isCrystal ? '#e0f2fe' : '#ffffff';
-        ctx.globalAlpha = p.alpha;
-        if (!isEco) {
-            ctx.shadowColor = accentColor;
-            ctx.shadowBlur = p.isCrystal ? 6 : 2;
-        }
-        ctx.fill();
-        ctx.restore();
-    }
-
-    function drawStardust(ctx, p, accentColor, isEco) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = accentColor;
-        ctx.globalAlpha = p.alpha;
-        if (!isEco) {
-            ctx.shadowColor = accentColor;
-            ctx.shadowBlur = 4;
-        }
-        ctx.fill();
-        ctx.restore();
-    }
-
-    function drawOceanBubble(ctx, p, accentColor, isEco) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(34, 211, 238, 0.22)';
-        ctx.globalAlpha = p.alpha;
-        ctx.strokeStyle = accentColor;
-        ctx.lineWidth = 0.8;
-        if (!isEco) {
-            ctx.shadowColor = accentColor;
-            ctx.shadowBlur = 3;
-        }
+        ctx.strokeStyle = `rgba(255, 255, 255, ${p.alpha * 0.4})`;
+        ctx.lineWidth = 0.5;
         ctx.stroke();
-        ctx.fill();
+
         ctx.restore();
+    }
+
+    function drawSnowflake(ctx, p) {
+        const radius = p.radius * (1 + zenEmphasis * (0.6 + p.radius * 0.25));
+        drawGlow(p, radius, p.isCrystal ? '#e0f2fe' : '#ffffff', p.isCrystal ? 6 : 2);
+    }
+
+    function drawStardust(ctx, p, accentColor) {
+        drawGlow(p, p.radius * (1 + zenEmphasis * 0.85), accentColor, 4);
+    }
+
+    function drawOceanBubble(ctx, p, accentColor) {
+        drawGlow(p, p.radius, accentColor, 3, true);
     }
 
     let cachedAccentColor = '#38bdf8';
@@ -229,7 +215,10 @@
 
     function refreshCachedAccent() {
         const val = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
-        if (val) cachedAccentColor = val;
+        if (val && val !== cachedAccentColor) {
+            cachedAccentColor = val;
+            particleSprites.clear();
+        }
     }
 
     function shouldPauseParticles() {
@@ -244,31 +233,26 @@
             lastParticlePaint = 0;
             return; // Battery & reduced-motion saving: truly pause loop
         }
-        // Atmospheric particles need less frequent painting than touch controls.
-        const touchDevice = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-        const mobileBackground = touchDevice || window.innerWidth <= 768;
         const time = Number.isFinite(now) ? now : performance.now();
-        if (mobileBackground && lastParticlePaint && time - lastParticlePaint < 32) {
-            animationId = requestAnimationFrame(render);
-            return;
-        }
+        const dt = lastParticlePaint ? Math.min(64, Math.max(0, time - lastParticlePaint)) : 0;
+        const step = dt * 0.06;
         lastParticlePaint = time;
+        zenEmphasis += ((zenActive ? 1 : 0) - zenEmphasis) * (1 - Math.exp(-dt / 260));
         animationId = requestAnimationFrame(render);
 
         ctx.clearRect(0, 0, width, height);
-        const isEco = getQualityFactor() <= 0.35;
         const accentColor = (currentThemeMode === 'stardust') ? (cachedAccentColor || '#fbbf24') : (cachedAccentColor || '#38bdf8');
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
 
-            if (!prefersReducedMotion) {
+            {
                 if (p.type === 'sakura') {
-                    p.swayAngle += p.swaySpeed;
-                    p.rotation += p.rotSpeed;
-                    p.flip += p.flipSpeed;
-                    p.x += Math.sin(p.swayAngle) * 0.75 + p.speedX;
-                    p.y += p.speedY;
+                    p.swayAngle += p.swaySpeed * step;
+                    p.rotation += p.rotSpeed * step;
+                    p.flip += p.flipSpeed * step;
+                    p.x += (Math.sin(p.swayAngle) * 0.75 + p.speedX) * step;
+                    p.y += p.speedY * step;
 
                     if (p.y > height + 20) {
                         particles[i] = createParticle('sakura', false);
@@ -276,9 +260,9 @@
                     if (p.x > width + 20) p.x = -10;
                     if (p.x < -20) p.x = width + 10;
                 } else if (p.type === 'snow') {
-                    p.swayAngle += p.swaySpeed;
-                    p.x += Math.sin(p.swayAngle) * 0.45 + p.speedX;
-                    p.y += p.speedY;
+                    p.swayAngle += p.swaySpeed * step;
+                    p.x += (Math.sin(p.swayAngle) * 0.45 + p.speedX) * step;
+                    p.y += p.speedY * step;
 
                     if (p.y > height + 10) {
                         particles[i] = createParticle('snow', false);
@@ -286,9 +270,9 @@
                     if (p.x > width + 10) p.x = 0;
                     if (p.x < -10) p.x = width;
                 } else if (p.type === 'ocean') {
-                    p.swayAngle += p.swaySpeed;
-                    p.x += Math.sin(p.swayAngle) * 0.5 + p.speedX;
-                    p.y += p.speedY;
+                    p.swayAngle += p.swaySpeed * step;
+                    p.x += (Math.sin(p.swayAngle) * 0.5 + p.speedX) * step;
+                    p.y += p.speedY * step;
 
                     if (p.y < -15) {
                         particles[i] = createParticle('ocean', false);
@@ -297,10 +281,10 @@
                     if (p.x < -15) p.x = width;
                 } else {
                     // Stardust / Twilight
-                    p.twinklePhase += p.twinkleSpeed;
+                    p.twinklePhase += p.twinkleSpeed * step;
                     p.alpha = p.baseAlpha + Math.sin(p.twinklePhase) * 0.18;
-                    p.x += p.speedX;
-                    p.y += p.speedY;
+                    p.x += p.speedX * step;
+                    p.y += p.speedY * step;
 
                     if (p.y < -10) {
                         particles[i] = createParticle(currentThemeMode, false);
@@ -311,13 +295,13 @@
             }
 
             if (p.type === 'sakura') {
-                drawSakuraPetal(ctx, p, isEco);
+                drawSakuraPetal(ctx, p);
             } else if (p.type === 'snow') {
-                drawSnowflake(ctx, p, accentColor, isEco);
+                drawSnowflake(ctx, p);
             } else if (p.type === 'ocean') {
-                drawOceanBubble(ctx, p, accentColor, isEco);
+                drawOceanBubble(ctx, p, accentColor);
             } else {
-                drawStardust(ctx, p, accentColor, isEco);
+                drawStardust(ctx, p, accentColor);
             }
         }
     }
@@ -361,11 +345,8 @@
 
     window.addEventListener('minkoi:themechange', () => refreshCachedAccent());
     window.addEventListener('minkoi:persona', () => refreshCachedAccent());
-    window.addEventListener('minkoi:qualitychange', () => {
-        initParticles();
-        startParticlesIfAllowed();
-    });
     window.addEventListener('minkoi:zenchange', () => {
+        zenActive = document.body.classList.contains('zen-mode');
         refreshCachedAccent();
         startParticlesIfAllowed();
     });
@@ -375,7 +356,8 @@
     }
 
     // Detect initial theme
-    const initialIndex = parseInt(localStorage.getItem('minkoi_persona_index') || localStorage.getItem('mahikari_persona_index') || '0', 10);
+    let initialIndex = 0;
+    try { initialIndex = parseInt(localStorage.getItem('minkoi_persona_index') || localStorage.getItem('mahikari_persona_index') || '0', 10); } catch (_) {}
     currentThemeMode = getThemeForPersona(isNaN(initialIndex) ? 0 : initialIndex);
     refreshCachedAccent();
 

@@ -1,6 +1,6 @@
 /* ========================================================
    MINKOI · MASTER STYLESHEET BUNDLE
-   Forwarding bundle for all modular stylesheets + V3 Tokens
+   Forwarding bundle for the modular stylesheets and shared materials
    ======================================================== */
 @import url('style-base.css');
 @import url('style-backgrounds.css');
@@ -8,4 +8,4 @@
 @import url('style-left.css');
 @import url('style-right.css');
 @import url('style-responsive.css');
-@import url('tokens-v3.css');
+@import url('materials.css');

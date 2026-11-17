@@ -4,23 +4,7 @@
 ======================================================== */
 
 :root {
-    /* Surface Hierarchy (Dark Luxury Studio) */
-    --surface-0: #05070e;
-    --surface-1: rgba(11, 15, 25, 0.82);
-    --surface-2: rgba(17, 23, 38, 0.88);
-    --surface-3: rgba(23, 31, 52, 0.96);
-    --surface-hover: rgba(30, 40, 68, 0.9);
-    --track-bg: rgba(255, 255, 255, 0.08);
-
-    /* Text Tones */
-    --color-text: #f8fafc;
-    --color-text-secondary: #94a3b8;
-    --color-text-muted: #64748b;
-
-    /* Micro Borders */
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-border-subtle: rgba(255, 255, 255, 0.04);
-    --color-border-active: rgba(255, 255, 255, 0.2);
+    /* Material, text and border tokens are owned by materials.css. */
 
     /* Dynamic Persona Accent Tokens (Updated via JS) */
     --color-accent: #38bdf8;
@@ -52,21 +36,6 @@
 
 /* Light Mode System (Refined Editorial & Non-Glaring Alabaster) */
 body.light-mode {
-    --surface-0: #eef2f6;
-    --surface-1: rgba(255, 255, 255, 0.86);
-    --surface-2: rgba(248, 250, 252, 0.94);
-    --surface-3: #ffffff;
-    --surface-hover: rgba(241, 245, 249, 0.95);
-    --track-bg: rgba(15, 23, 42, 0.12);
-
-    --color-text: #0f172a;
-    --color-text-secondary: #334155;
-    --color-text-muted: #64748b;
-
-    --color-border: rgba(15, 23, 42, 0.11);
-    --color-border-subtle: rgba(15, 23, 42, 0.06);
-    --color-border-active: rgba(15, 23, 42, 0.22);
-
     --shadow-soft: 0 6px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
     --shadow-deep: 0 24px 64px -12px rgba(15, 23, 42, 0.16), 0 8px 24px -4px rgba(15, 23, 42, 0.08);
 }

@@ -186,7 +186,6 @@
             '.cat-tab',
             '.persona-chip',
             '.social-link-pill',
-            '.quality-option-btn',
             '.fx-preset-btn',
             '.top-more-item',
             '.zen-ctrl-btn',
@@ -201,6 +200,67 @@
         const hapticSupported = typeof global.navigator?.vibrate === 'function';
         let hapticEnabled = hapticSupported;
         let lastHapticAt = -Infinity;
+        const soundToggle = doc.getElementById('interaction-sounds-toggle');
+        const soundState = doc.getElementById('interaction-sounds-state');
+        const AudioContext = global.AudioContext || global.webkitAudioContext;
+        let soundEnabled = false;
+        let soundContext = null;
+        let lastSoundAt = -Infinity;
+        try { soundEnabled = global.localStorage?.getItem('minkoi_interaction_sounds') === 'on'; } catch (_) {}
+
+        function syncSoundSetting() {
+            if (!soundToggle) return;
+            soundToggle.disabled = !AudioContext;
+            soundToggle.setAttribute('aria-checked', soundEnabled && AudioContext ? 'true' : 'false');
+            if (soundState) soundState.textContent = !AudioContext ? 'Không hỗ trợ' : (soundEnabled ? 'Bật' : 'Tắt');
+        }
+        syncSoundSetting();
+
+        // Original synthesized UI tones. Separate gain/context from music playback.
+        function playInteractionSound(el) {
+            if (!soundEnabled || !AudioContext || doc.hidden) return;
+            const now = global.performance.now();
+            if (now - lastSoundAt < 85) return;
+            lastSoundAt = now;
+            try {
+                soundContext ||= new AudioContext();
+                if (soundContext.state === 'suspended') soundContext.resume().catch(() => {});
+                const time = soundContext.currentTime;
+                const osc = soundContext.createOscillator();
+                const gain = soundContext.createGain();
+                const isMenu = el.getAttribute('aria-haspopup');
+                const isSelection = el.matches('.cat-tab, .persona-chip');
+                const frequency = el.matches('input[type="range"]') ? 360 : (isMenu ? (el.getAttribute('aria-expanded') === 'true' ? 420 : 620) : (isSelection ? 740 : 540));
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(frequency, time);
+                osc.frequency.exponentialRampToValueAtTime(frequency * 0.65, time + 0.055);
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.025, time + 0.004);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.065);
+                osc.connect(gain);
+                gain.connect(soundContext.destination);
+                osc.onended = () => { osc.disconnect(); gain.disconnect(); };
+                osc.start(time);
+                osc.stop(time + 0.07);
+            } catch (_) { /* UI feedback must never interrupt playback. */ }
+        }
+        soundToggle?.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            try { global.localStorage?.setItem('minkoi_interaction_sounds', soundEnabled ? 'on' : 'off'); } catch (_) {}
+            syncSoundSetting();
+        });
+        global.MinkoiFeedback = Object.freeze({
+            get soundsEnabled() { return soundEnabled; },
+            selection() {
+                if (!global.navigator.userActivation?.isActive) return;
+                playInteractionSound({ getAttribute: () => null, matches: selector => selector === '.cat-tab, .persona-chip' });
+            },
+            commit(el, event) {
+                if (!event?.isTrusted) return;
+                playInteractionSound(el);
+                vibrateTap(event, el);
+            }
+        });
         try {
             const saved = global.localStorage?.getItem('minkoi_haptic_feedback');
             if (saved !== null && saved !== undefined) hapticEnabled = hapticSupported && saved === 'on';
@@ -241,6 +301,7 @@
                     : (tier === 3 ? spLib.PRESETS.TACTILE_PRESS : spLib.PRESETS.SINK);
 
                 sp = spLib.createSpring({
+                    el,
                     initial: 1,
                     target: 1,
                     preset: preset,
@@ -259,9 +320,35 @@
         let tapX = 0;
         let tapY = 0;
         let moved = false;
+        let cancelledClick = null;
+        let lastTap = null;
+        let pressedAt = 0;
+        let rangePointerType = '';
+        const elasticSprings = new WeakMap();
+
+        function elastic(el, x = 0, y = 0, tilt = 0) {
+            // Keep form/slider hit targets and navigation geometry stationary.
+            if (el.closest('form, .category-nav') || el.matches('.cat-tab, .persona-chip')) return;
+            let group = elasticSprings.get(el);
+            if (!group) {
+                group = spLib.createSpringGroup({
+                    x: { initial: 0, preset: spLib.PRESETS.TILT },
+                    y: { initial: 0, preset: spLib.PRESETS.TILT },
+                    tilt: { initial: 0, preset: spLib.PRESETS.TILT }
+                }, { onRender: values => {
+                    if (!el.isConnected) { group.destroy(); return; }
+                    el.style.translate = values.x === 0 && values.y === 0 ? '' : `${values.x.toFixed(2)}px ${values.y.toFixed(2)}px`;
+                    el.style.rotate = values.tilt === 0 ? '' : `${values.tilt.toFixed(2)}deg`;
+                }});
+                elasticSprings.set(el, group);
+            }
+            group.setTargets({ x, y, tilt });
+        }
 
         doc.addEventListener('pointerdown', (e) => {
             if (e.button && e.button !== 0) return;
+            rangePointerType = e.target?.matches?.('input[type="range"]') ? e.pointerType : '';
+            if (!e.isPrimary) { release(e); return; }
             const target = e.target && e.target.closest ? e.target.closest(selector) : null;
             if (!target || target.disabled) return;
             activeEl = target;
@@ -269,13 +356,15 @@
             tapX = e.clientX;
             tapY = e.clientY;
             moved = false;
+            pressedAt = global.performance.now();
+            cancelledClick = null;
 
             // Tier 1: Expressive (Play/Pause hero)
             if (target.id === 'play-pause' || target.classList.contains('play-hero-btn')) {
                 getScaleSpring(target, 1).setTarget(0.95);
             }
             // Tier 3: Minimal feedback (category tabs, pills, chips)
-            else if (target.classList.contains('cat-tab') || target.classList.contains('quality-option-btn') || target.classList.contains('social-link-pill')) {
+            else if (target.classList.contains('cat-tab') || target.classList.contains('social-link-pill')) {
                 getScaleSpring(target, 3).setTarget(0.97);
             }
             // Tier 2: Functional (control buttons, top buttons, persona chips)
@@ -286,22 +375,68 @@
 
         doc.addEventListener('pointermove', (e) => {
             if (!activeEl || e.pointerId !== activePointerId) return;
-            if (Math.hypot(e.clientX - tapX, e.clientY - tapY) > 11) moved = true;
+            const dx = e.clientX - tapX;
+            const dy = e.clientY - tapY;
+            if (Math.hypot(dx, dy) > 11) {
+                moved = true;
+                getScaleSpring(activeEl, 2).setTarget(1);
+                elastic(activeEl, Math.tanh(dx / 50) * 2, Math.tanh(dy / 50) * 2, Math.tanh(dx / 50) * 1.2);
+            }
         }, { passive: true });
 
         const release = (e) => {
             if (!activeEl) return;
+            if (e?.isPrimary !== false && e?.pointerId !== undefined && e.pointerId !== activePointerId) return;
             const el = activeEl;
             const isTap = e?.type === 'pointerup' && !moved &&
                 e.pointerId === activePointerId &&
+                global.performance.now() - pressedAt < 550 &&
                 (e.target === el || el.contains(e.target));
             activeEl = null;
             activePointerId = null;
             moved = false;
             const tier = (el.id === 'play-pause' || el.classList.contains('play-hero-btn')) ? 1 : 2;
             getScaleSpring(el, tier).setTarget(1);
-            if (isTap) vibrateTap(e, el);
+            elastic(el);
+            if (isTap) lastTap = { el, pointerType: e.pointerType, time: global.performance.now() };
+            else cancelledClick = { el, time: global.performance.now() };
         };
+
+        doc.addEventListener('click', e => {
+            const el = e.target?.closest?.(selector);
+            if (!el || el.disabled) return;
+            const now = global.performance.now();
+            if (e.detail > 0 && cancelledClick?.el === el && now - cancelledClick.time < 700) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                return;
+            }
+            if (!e.isTrusted) return;
+            playInteractionSound(el);
+            if (lastTap?.el === el && now - lastTap.time < 700) vibrateTap(lastTap, el);
+            lastTap = null;
+        }, true);
+
+        doc.addEventListener('change', e => {
+            const el = e.target;
+            if (!e.isTrusted || !el?.matches?.('input[type="range"]')) return;
+            const value = Number(el.value);
+            const min = Number(el.min || 0);
+            const max = Number(el.max || 100);
+            if (value !== min && value !== max) return;
+            playInteractionSound(el);
+            vibrateTap({ pointerType: rangePointerType }, el);
+        }, { passive: true });
+
+        doc.addEventListener('pointerover', e => {
+            if (e.pointerType !== 'mouse' || e.buttons) return;
+            const el = e.target?.closest?.(selector);
+            if (el && !el.disabled && !el.contains(e.relatedTarget)) elastic(el, 0, -1, 0);
+        }, { passive: true });
+        doc.addEventListener('pointerout', e => {
+            const el = e.target?.closest?.(selector);
+            if (el && !el.contains(e.relatedTarget)) elastic(el);
+        }, { passive: true });
 
         doc.addEventListener('pointerup', release, { passive: true });
         doc.addEventListener('pointercancel', release, { passive: true });
@@ -454,6 +589,7 @@
                 fractionSpring.onComplete = null;
             }
             setPopupState('closing');
+            dropdown.style.pointerEvents = 'none';
             scrim.classList.remove('active');
 
             releaseCurrentTrap(options.restoreFocus !== false);
@@ -516,7 +652,7 @@
         // Keyboard arrow navigation inside menu
         dropdown.addEventListener('keydown', (e) => {
             if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-            const items = Array.from(dropdown.querySelectorAll('.top-more-item, .quality-option-btn'));
+            const items = Array.from(dropdown.querySelectorAll('.top-more-item:not(:disabled)'));
             if (!items.length) return;
             e.preventDefault();
             const cur = items.indexOf(doc.activeElement);
@@ -530,17 +666,20 @@
             close: closeMenu
         });
 
-        // Quality selector pills inside menu
-        const qualityBtns = dropdown.querySelectorAll('.quality-option-btn');
-        qualityBtns.forEach((qBtn) => {
-            qBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const mode = qBtn.getAttribute('data-quality');
-                if (typeof global.setMinkoiQuality === 'function') {
-                    global.setMinkoiQuality(mode, true);
-                }
+        let anchorFrame = 0;
+        const scheduleAnchor = () => {
+            if (popupState === 'closed' || anchorFrame) return;
+            anchorFrame = global.requestAnimationFrame(() => {
+                anchorFrame = 0;
+                if (popupState === 'closed') return;
+                computeAnchor();
+                applyFraction(fractionSpring ? fractionSpring.value : 1);
             });
-        });
+        };
+        global.addEventListener('resize', scheduleAnchor, { passive: true });
+        global.addEventListener('scroll', scheduleAnchor, { passive: true, capture: true });
+        global.visualViewport?.addEventListener('resize', scheduleAnchor, { passive: true });
+
     }
 
     // ----------------------------------------------------------------------
@@ -785,9 +924,7 @@
                 initialFocus: isMobile ? 'container' : id !== 'playlist-menu'
             });
 
-            let openFallbackTimer = null;
             const openDone = () => {
-                if (openFallbackTimer) clearTimeout(openFallbackTimer);
                 if (myGen !== transitionGen || panelState !== 'opening') return;
                 setPanelState('open');
                 applyFraction(1);
@@ -795,10 +932,9 @@
                     try { config.onAfterOpen(); } catch (_) {}
                 }
             };
-            openFallbackTimer = setTimeout(openDone, 650);
-
-            if (fractionSpring && !(spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
-                fractionSpring.setTarget(1, { onComplete: openDone });
+            if (fractionSpring) {
+                const preset = isMobile ? spLib.PRESETS.BOTTOM_SHEET_OPEN : (isCenterModal ? spLib.PRESETS.DIALOG_SCALE : spLib.PRESETS.LIST_POPUP);
+                fractionSpring.setTarget(1, { ...preset, onComplete: openDone });
             } else {
                 applyFraction(1);
                 openDone();
@@ -820,19 +956,18 @@
             }
 
             setPanelState('closing');
+            panelEl.style.pointerEvents = 'none';
 
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
-            if (ownsScrollLock) {
-                unlockBodyScroll();
-                ownsScrollLock = false;
-            }
 
             releaseCurrentTrap(options.restoreFocus !== false);
 
-            let fallbackTimer = null;
             const closeDone = () => {
-                if (fallbackTimer) clearTimeout(fallbackTimer);
                 if (myGen !== transitionGen || panelState !== 'closing') return;
+                if (ownsScrollLock) {
+                    unlockBodyScroll();
+                    ownsScrollLock = false;
+                }
                 setPanelState('closed');
                 panelEl.style.visibility = 'hidden';
                 panelEl.style.pointerEvents = 'none';
@@ -855,14 +990,13 @@
                 }
             };
 
-            fallbackTimer = setTimeout(closeDone, 650);
-
             if (options.instant || !fractionSpring || (spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
                 if (fractionSpring) fractionSpring.snap(0);
                 applyFraction(0);
                 closeDone();
             } else {
-                fractionSpring.setTarget(0, { onComplete: closeDone });
+                const preset = isMobile ? spLib.PRESETS.BOTTOM_SHEET_SETTLE : (isCenterModal ? spLib.PRESETS.DIALOG_SCALE : spLib.PRESETS.LIST_POPUP);
+                fractionSpring.setTarget(0, { ...preset, onComplete: closeDone });
             }
         }
 
@@ -1274,31 +1408,6 @@
         }
 
         let indicator = null;
-        let indicatorBuilt = false;
-        let lastSpecularX = -1;
-
-        function updatePointerLight(clientX, clientY) {
-            if (!navEl) return;
-            let navLeft = cachedNavRectLeft;
-            let navWidth = cachedNavRectRight - cachedNavRectLeft;
-            if (!navWidth || navWidth <= 0) {
-                const navRect = navEl.getBoundingClientRect();
-                navLeft = navRect.left;
-                navWidth = navRect.width;
-                cachedNavRectLeft = navLeft;
-                cachedNavRectRight = navRect.right;
-            }
-            if (navWidth <= 0) return;
-            const ind = indicator || ensureIndicator();
-            if (ind) {
-                const indW = Math.max(16, currentRight - currentLeft);
-                const localX = Math.max(5, Math.min(95, ((clientX - navLeft - currentLeft) / indW) * 100));
-                if (Math.abs(localX - lastSpecularX) >= 0.5) {
-                    lastSpecularX = localX;
-                    ind.style.setProperty('--specular-x', `${localX.toFixed(1)}%`);
-                }
-            }
-        }
 
         function ensureIndicator() {
             if (!indicator || !indicator.isConnected) {
@@ -1311,41 +1420,6 @@
                 } else if (!indicator.isConnected) {
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
-                indicatorBuilt = false;
-            }
-            if (indicator && !indicatorBuilt) {
-                // Ensure all 5 MinKoi V5.2 optical sub-layers exist ONCE
-                if (!indicator.querySelector('.liquid-glass-lens')) {
-                    const lens = doc.createElement('div');
-                    lens.className = 'liquid-glass-lens';
-                    indicator.appendChild(lens);
-                }
-                if (!indicator.querySelector('.liquid-lens-dispersion')) {
-                    const dispersion = doc.createElement('div');
-                    dispersion.className = 'liquid-lens-dispersion';
-                    indicator.appendChild(dispersion);
-                }
-                if (!indicator.querySelector('.liquid-lens-fresnel')) {
-                    const fresnel = doc.createElement('div');
-                    fresnel.className = 'liquid-lens-fresnel';
-                    indicator.appendChild(fresnel);
-                }
-                if (!indicator.querySelector('.liquid-lens-specular')) {
-                    const specular = doc.createElement('div');
-                    specular.className = 'liquid-lens-specular';
-                    indicator.appendChild(specular);
-                }
-                if (!indicator.querySelector('.liquid-lens-caustic')) {
-                    const caustic = doc.createElement('div');
-                    caustic.className = 'liquid-lens-caustic';
-                    indicator.appendChild(caustic);
-                }
-                if (!indicator.querySelector('.liquid-glass-shimmer')) {
-                    const shimmer = doc.createElement('div');
-                    shimmer.className = 'liquid-glass-shimmer';
-                    indicator.appendChild(shimmer);
-                }
-                indicatorBuilt = true;
             }
             navEl.classList.add('has-liquid-nav');
             if (instance) instance.indicator = indicator;
@@ -1370,8 +1444,9 @@
         let dragStartY = 0;
         let targetPointerClientX = 0;
         let suppressClickUntil = 0;
-        let autoScrollRaf = 0;
         let dragRaf = 0;
+        let dragFrameTime = 0;
+        let maxScrollRange = 0;
 
         // Cached geometry during active gestures (zero layout thrashing during moves)
         let cachedNavRectLeft = 0;
@@ -1387,6 +1462,11 @@
         let currentLeft = 0;
         let currentRight = 64;
         let lastRenderedWidth = -1;
+        let lastDragUpdate = 0;
+        let lastRenderedTransform = '';
+        let lastRenderedRadius = '';
+        let destroyed = false;
+        let resizeFrame = 0;
 
         function getActiveTab() {
             return navEl.querySelector('.cat-tab.active') || navEl.querySelector('.cat-tab');
@@ -1411,9 +1491,12 @@
         function renderCapsule(left, right, boundarySquash = 1) {
             const ind = ensureIndicator();
             if (!ind) return;
-            const safeLeft = Number.isFinite(left) ? left : 0;
+            let safeLeft = Number.isFinite(left) ? left : 0;
             const safeRight = Number.isFinite(right) ? Math.max(safeLeft + 16, right) : safeLeft + 64;
-            const w = Math.max(16, safeRight - safeLeft);
+            const rawWidth = Math.max(16, safeRight - safeLeft);
+            // Coupled edges: a single capsule cannot stretch across the whole bar.
+            const w = Math.min(rawWidth, Math.max(32, baseTabWidth * 1.6));
+            safeLeft += (rawWidth - w) / 2;
 
             // Compute volume-preserving squash
             const standardW = Math.max(16, baseTabWidth);
@@ -1424,7 +1507,17 @@
                 ind.style.width = `${w.toFixed(1)}px`;
                 lastRenderedWidth = w;
             }
-            ind.style.transform = `translate3d(${safeLeft.toFixed(1)}px, 0, 0) scale(1, ${squashRatio.toFixed(3)})`;
+            const transform = `translate3d(${safeLeft.toFixed(1)}px, 0, 0) scale(1, ${squashRatio.toFixed(3)})`;
+            if (transform !== lastRenderedTransform) {
+                ind.style.transform = transform;
+                lastRenderedTransform = transform;
+            }
+            const strain = Math.min(1, Math.abs(w / standardW - 1));
+            const radius = `${(26 + strain * 18).toFixed(1)}px / ${(26 - strain * 3).toFixed(1)}px`;
+            if (radius !== lastRenderedRadius) {
+                ind.style.borderRadius = radius;
+                lastRenderedRadius = radius;
+            }
         }
 
         function updateCandidateHighlight(projCenter) {
@@ -1438,6 +1531,9 @@
         }
 
         function computePhysicalDrag(clientX) {
+            const now = global.performance.now();
+            const dt = lastDragUpdate ? Math.min(64, Math.max(0, now - lastDragUpdate)) : 16.67;
+            lastDragUpdate = now;
             const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
             const rawX = fingerContentX - grabOffset;
 
@@ -1447,15 +1543,15 @@
             // Dynamically adapt nominal width as the indicator glides across different tabs
             const candidate = getCandidateTab(rawX + baseTabWidth / 2);
             if (candidate && candidate.width > 0) {
-                baseTabWidth += (candidate.width - baseTabWidth) * 0.16;
+                baseTabWidth += (candidate.width - baseTabWidth) * (1 - Math.exp(-dt / 95));
             }
 
             // Miuix Smooth Directional Edge-Lag & Elastic Surface Tension Model:
             // Continuous lag that smoothly transitions through zero during direction reversals
             // and combines velocity with elastic displacement stretching.
             const displacement = rawX - anchorLeft;
-            const dispLag = Math.min(26, Math.abs(displacement) * 0.32);
             const stationaryFactor = Math.min(1, speed / 25);
+            const dispLag = Math.min(26, Math.abs(displacement) * 0.32) * stationaryFactor;
             const velLag = Math.min(28, (speed * 0.035 + 8 * Math.tanh(speed / 80)) * stationaryFactor);
             const trailLag = Math.max(velLag, dispLag);
             const dirWeight = Math.abs(vel) > 2 ? Math.tanh(vel / 100) : (displacement !== 0 ? Math.sign(displacement) : 0);
@@ -1493,7 +1589,6 @@
             currentRight = nextRight;
 
             renderCapsule(currentLeft, currentRight, boundarySquash);
-            updatePointerLight(clientX, dragStartY || (cachedNavRectLeft + 20));
 
             // Projected center for predictive fling candidate selection (Miuix fling tau = 0.18s)
             const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
@@ -1544,7 +1639,6 @@
                 initial: initX,
                 target: initX,
                 preset: edgePreset,
-                allowEcoMotion: true,
                 precision: 0.2,
                 onUpdate: onSpringUpdate
             });
@@ -1553,7 +1647,6 @@
                 initial: initX + initW,
                 target: initX + initW,
                 preset: trailPreset,
-                allowEcoMotion: true,
                 precision: 0.2,
                 onUpdate: onSpringUpdate
             });
@@ -1565,10 +1658,15 @@
         }
 
         function syncIndicator() {
-            if (gestureState === 'dragging' || gestureState === 'pressed' || gestureState === 'settling') return;
+            if (destroyed || !navEl.isConnected) return;
+            if (gestureState === 'dragging' || gestureState === 'pressed') return;
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
-            if (wasDetached) lastRenderedWidth = -1;
+            if (wasDetached) {
+                lastRenderedWidth = -1;
+                lastRenderedTransform = '';
+                lastRenderedRadius = '';
+            }
 
             const activeTab = getActiveTab();
             if (!activeTab) return;
@@ -1577,12 +1675,15 @@
             const targetRight = targetLeft + targetWidth;
 
             if (!targetWidth) {
-                global.requestAnimationFrame(() => syncIndicator());
+                // ResizeObserver/font readiness will retry once layout is available.
                 return;
             }
 
             baseTabWidth = targetWidth;
             ensureSprings();
+            gestureState = 'idle';
+            if (leftSpring) leftSpring.onComplete = null;
+            if (rightSpring) rightSpring.onComplete = null;
 
             if (wasDetached || !spLib || (spLib.isAccessibilityReducedMotion
                 ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion())) {
@@ -1610,58 +1711,17 @@
             }
         }
 
-        function startAutoScroll() {
-            if (autoScrollRaf) return;
-            let previousTime = 0;
-            const step = (now) => {
-                // RAF's timestamp can precede performance.now() from the input
-                // handler in the same frame. A zero first step must not be
-                // mistaken for reaching the content boundary.
-                const frameScale = previousTime ? Math.min(2, Math.max(0.1, (now - previousTime) / (1000 / 60))) : 1;
-                previousTime = now;
-                if (gestureState !== 'dragging') {
-                    autoScrollRaf = 0;
-                    return;
-                }
-
-                const edgeZone = 44;
-                const leftBoundary = cachedNavRectLeft + edgeZone;
-                const rightBoundary = cachedNavRectRight - edgeZone;
-                let speed = 0;
-
-                if (targetPointerClientX < leftBoundary) {
-                    const ratio = Math.min(1, Math.max(0, (leftBoundary - targetPointerClientX) / edgeZone));
-                    speed = -Math.round(ratio * 12);
-                } else if (targetPointerClientX > rightBoundary) {
-                    const ratio = Math.min(1, Math.max(0, (targetPointerClientX - rightBoundary) / edgeZone));
-                    speed = Math.round(ratio * 12);
-                }
-
-                // No scroll velocity, or already at the edge: stop this RAF loop.
-                // The next pointermove restarts it when the finger enters an edge.
-                if (speed === 0) {
-                    autoScrollRaf = 0;
-                    return;
-                }
-                const maxScroll = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
-                const nextScroll = Math.max(0, Math.min(maxScroll, navEl.scrollLeft + speed * frameScale));
-                if (nextScroll === navEl.scrollLeft) {
-                    autoScrollRaf = 0;
-                    return;
-                }
-                navEl.scrollLeft = nextScroll;
-                computePhysicalDrag(targetPointerClientX);
-                autoScrollRaf = global.requestAnimationFrame(step);
-            };
-
-            autoScrollRaf = global.requestAnimationFrame(step);
-        }
-
-        function stopAutoScroll() {
-            if (autoScrollRaf) {
-                global.cancelAnimationFrame(autoScrollRaf);
-                autoScrollRaf = 0;
+        function advanceEdgeScroll(now) {
+            const dt = dragFrameTime ? Math.min(32, Math.max(0, now - dragFrameTime)) : 0;
+            dragFrameTime = now;
+            const edgeZone = 44;
+            let speed = 0;
+            if (targetPointerClientX < cachedNavRectLeft + edgeZone) {
+                speed = -Math.min(1, Math.max(0, (cachedNavRectLeft + edgeZone - targetPointerClientX) / edgeZone));
+            } else if (targetPointerClientX > cachedNavRectRight - edgeZone) {
+                speed = Math.min(1, Math.max(0, (targetPointerClientX - cachedNavRectRight + edgeZone) / edgeZone));
             }
+            if (speed) navEl.scrollLeft = Math.max(0, Math.min(maxScrollRange, navEl.scrollLeft + speed * dt * 0.72));
         }
 
         function onPointerDown(e) {
@@ -1692,6 +1752,11 @@
 
             ensureSprings();
 
+            if (leftSpring) leftSpring.onComplete = null;
+            if (rightSpring) rightSpring.onComplete = null;
+            lastDragUpdate = 0;
+            dragFrameTime = 0;
+
             // Cancel any ongoing programmatic scroll
             try {
                 navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
@@ -1712,6 +1777,7 @@
             const navRect = navEl.getBoundingClientRect();
             cachedNavRectLeft = navRect.left;
             cachedNavRectRight = navRect.right;
+            maxScrollRange = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
 
             const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
             cachedTabs = tabs.map(t => ({
@@ -1747,11 +1813,12 @@
             }
         }
 
-        function runDragPhysicsLoop() {
+        function runDragPhysicsLoop(now) {
             if (gestureState !== 'dragging') {
                 dragRaf = 0;
                 return;
             }
+            advanceEdgeScroll(now);
             computePhysicalDrag(targetPointerClientX);
             dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
         }
@@ -1772,6 +1839,7 @@
                     // Immediate natural surrender to vertical page scroll
                     gestureState = 'idle';
                     dragPointerId = null;
+                    if (indicator) indicator.classList.remove('is-pressed');
                     syncIndicator();
                     return;
                 }
@@ -1784,6 +1852,10 @@
                         navEl.setPointerCapture(e.pointerId);
                     } catch (_) {}
                     // Halt previous springs during direct finger control
+                    // Preserve the capsule's visible origin when a gesture interrupts
+                    // a jump to a different tab; direct dragging must never teleport.
+                    grabOffset = e.clientX - cachedNavRectLeft + navEl.scrollLeft - currentLeft;
+                    anchorLeft = currentLeft;
                     if (leftSpring) leftSpring.snap(currentLeft);
                     if (rightSpring) rightSpring.snap(currentRight);
                     if (!dragRaf) {
@@ -1799,7 +1871,6 @@
             if (!dragRaf) {
                 dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
             }
-            startAutoScroll();
         }
 
         function onPointerUp(e, cancelled = false) {
@@ -1816,7 +1887,6 @@
             const capturedPointerId = dragPointerId;
             dragPointerId = null;
 
-            stopAutoScroll();
             if (dragRaf) {
                 global.cancelAnimationFrame(dragRaf);
                 dragRaf = 0;
@@ -1864,7 +1934,7 @@
                         rightSpring.snap(currentRight);
 
                         // Inherit fling impulse with Miuix directional edge physics
-                        const impulse = Math.max(-1800, Math.min(1800, vel)) * 0.18;
+                        const impulse = Math.max(-1800, Math.min(1800, vel));
                         leftSpring.impulse(impulse);
                         rightSpring.impulse(impulse);
 
@@ -1910,6 +1980,7 @@
                     if (typeof instance.onSelect === 'function') {
                         instance.onSelect(targetCat, { fromLiquidDrag: true });
                     }
+                    global.MinkoiFeedback?.commit(targetTab, e);
                 } else {
                     gestureState = 'idle';
                     syncIndicator();
@@ -1924,7 +1995,6 @@
             if (indicator) {
                 indicator.classList.remove('is-pressed');
             }
-            if (e && e.type === 'lostpointercapture' && e.buttons > 0) return;
             onPointerUp(e, true);
         }
 
@@ -1936,36 +2006,21 @@
         };
         navEl.addEventListener('click', onNavClick, true);
 
-        const onNavPointerMove = (e) => {
-            if (gestureState === 'dragging') return;
-            updatePointerLight(e.clientX, e.clientY);
-        };
-        const onNavPointerLeave = () => {
-            if (gestureState === 'dragging') return;
-            navEl.style.setProperty('--specular-x', '50%');
-            navEl.style.setProperty('--specular-y', '25%');
-            if (indicator) {
-                indicator.style.setProperty('--specular-x', '50%');
-                indicator.style.setProperty('--specular-y', '25%');
-            }
-        };
-        navEl.addEventListener('pointermove', onNavPointerMove, { passive: true });
-        navEl.addEventListener('pointerleave', onNavPointerLeave, { passive: true });
 
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
+        navEl.addEventListener('lostpointercapture', onPointerCancel, { passive: true });
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
 
         let resizeObserver = null;
         if (typeof ResizeObserver === 'function') {
-            let roTimer = 0;
             resizeObserver = new ResizeObserver(() => {
-                if (gestureState === 'dragging' || gestureState === 'pressed') return;
-                if (roTimer) return;
-                roTimer = global.requestAnimationFrame(() => {
-                    roTimer = 0;
-                    if (gestureState === 'dragging' || gestureState === 'pressed') return;
+                if (destroyed) return;
+                if (dragPointerId !== null) onPointerUp({ pointerId: dragPointerId }, true);
+                if (resizeFrame) return;
+                resizeFrame = global.requestAnimationFrame(() => {
+                    resizeFrame = 0;
                     syncIndicator();
                 });
             });
@@ -1981,11 +2036,15 @@
             sync: syncIndicator,
             debug: () => ({ gestureState, dragPointerId, currentLeft, currentRight, baseTabWidth, lastRenderedWidth, vel: velocityTracker ? velocityTracker.getVelocity().vx : -999 }),
             destroy() {
+                destroyed = true;
+                if (resizeFrame) {
+                    global.cancelAnimationFrame(resizeFrame);
+                    resizeFrame = 0;
+                }
                 if (resizeObserver) {
                     try { resizeObserver.disconnect(); } catch (_) {}
                     resizeObserver = null;
                 }
-                stopAutoScroll();
                 if (dragRaf) {
                     global.cancelAnimationFrame(dragRaf);
                     dragRaf = 0;
@@ -1994,9 +2053,8 @@
                 gestureState = 'idle';
                 navEl.classList.remove('is-liquid-dragging');
                 navEl.removeEventListener('click', onNavClick, true);
-                navEl.removeEventListener('pointermove', onNavPointerMove);
-                navEl.removeEventListener('pointerleave', onNavPointerLeave);
                 navEl.removeEventListener('pointerdown', onPointerDown);
+                navEl.removeEventListener('lostpointercapture', onPointerCancel);
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);
                 global.removeEventListener('pointercancel', onPointerCancel);

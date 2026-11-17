@@ -518,9 +518,33 @@
             const viEl = this.dom.zenVi;
             if (!box || !mainEl || !viEl) return;
 
+            const syncLevel = this.doc?.syncLevel || 'unavailable';
+            const hasTimedLines = Boolean(this.doc?.lines?.length);
+            const showFallback = zenOpen && this.doc &&
+                (!hasTimedLines || syncLevel === 'unavailable' || syncLevel === 'restricted' || syncLevel === 'instrumental');
+
+            if (showFallback) {
+                // Never leave Zen as an unexplained empty wallpaper when the
+                // current track has no timed lyric lines.
+                const title = this.doc.title || this.track?.name || '';
+                const note = syncLevel === 'instrumental' ? 'Bản không lời' : 'Chưa có lời cho bài này';
+                if (this.lastZenLineIndex !== -2 || mainEl.textContent !== title || viEl.textContent !== note) {
+                    this.lastZenLineIndex = -2;
+                    this.zenTokenRefs = [];
+                    mainEl.textContent = title;
+                    viEl.textContent = note;
+                }
+                if (!box.classList.contains('has-lyric')) {
+                    box.classList.add('has-lyric');
+                    box.setAttribute('aria-hidden', 'false');
+                }
+                return;
+            }
+
             if (!zenOpen || !this.doc || snapshot.activeLineIndex < 0) {
                 if (this.lastZenLineIndex !== -1) {
                     box.classList.remove('has-lyric');
+                    box.setAttribute('aria-hidden', 'true');
                     this.lastZenLineIndex = -1;
                 }
                 return;
@@ -530,6 +554,7 @@
             const line = this.doc.lines[idx];
             if (!line) {
                 box.classList.remove('has-lyric');
+                box.setAttribute('aria-hidden', 'true');
                 return;
             }
 
@@ -576,7 +601,10 @@
                 }
             }
 
-            box.classList.add('has-lyric');
+            if (!box.classList.contains('has-lyric')) {
+                box.classList.add('has-lyric');
+                box.setAttribute('aria-hidden', 'false');
+            }
         }
     }
 

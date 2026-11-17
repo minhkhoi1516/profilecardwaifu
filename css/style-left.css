@@ -513,33 +513,33 @@ body.light-mode .creator-name {
    LIGHT MODE OVERRIDES FOR SOCIAL PILLS & PERSONA CHIPS
 ======================================================== */
 body.light-mode .social-link-pill {
-    background: #ffffff;
-    border-color: rgba(15, 23, 42, 0.11);
+    background: var(--surface-2);
+    border-color: var(--color-border);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 body.light-mode .social-link-pill:hover {
-    background: #f8fafc;
+    background: var(--surface-hover);
     border-color: rgba(15, 23, 42, 0.24);
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
 body.light-mode .persona-chip {
-    background: #ffffff;
-    border-color: rgba(15, 23, 42, 0.1);
+    background: var(--surface-2);
+    border-color: var(--color-border);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 body.light-mode .persona-chip:hover {
-    background: #f8fafc;
+    background: var(--surface-hover);
     border-color: rgba(15, 23, 42, 0.22);
     box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
 }
 
 body.light-mode .persona-chip.active {
-    background: #ffffff;
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-2));
     border-color: var(--color-accent);
-    box-shadow: 0 0 14px var(--color-accent-glow), 0 2px 8px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 2px 8px rgba(51, 45, 35, 0.08);
 }
 
 body.light-mode .persona-avatar-preview {

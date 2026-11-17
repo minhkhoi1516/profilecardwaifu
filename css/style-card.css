@@ -51,14 +51,6 @@
     border-color: rgba(255, 255, 255, 0.12);
 }
 
-body.light-mode .card-container {
-    background: var(--surface-1);
-    border: 1px solid var(--color-border);
-    box-shadow: 
-        inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
-        var(--shadow-deep);
-}
-
 body.light-mode .card-container::before {
     background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.18), transparent);
     opacity: 0.4;
@@ -93,31 +85,23 @@ body.light-mode .card-container::before {
     border-color: var(--color-border-active);
 }
 
-body.light-mode .site-brand-header {
-    background: var(--surface-1);
-    border: 1px solid var(--color-border);
-    box-shadow: 
-        inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95),
-        var(--shadow-soft);
-}
-
 body.light-mode .monogram-symbol {
-    background: linear-gradient(135deg, #ffffff 0%, #edf2f7 100%);
+    background: var(--surface-2);
     border: 1px solid rgba(15, 23, 42, 0.14);
     color: var(--color-text);
     box-shadow: inset 0 1px 1px #ffffff, 0 2px 6px rgba(15, 23, 42, 0.05);
 }
 
 body.light-mode .top-action-btn {
-    background: #ffffff;
-    border: 1px solid rgba(15, 23, 42, 0.11);
+    background: var(--surface-pill);
+    border: 1px solid var(--color-border);
     color: var(--color-text-secondary);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
 body.light-mode .top-action-btn:hover {
-    background: #f8fafc;
-    border-color: rgba(15, 23, 42, 0.22);
+    background: var(--surface-hover);
+    border-color: var(--color-border-active);
     color: var(--color-text);
     box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
 }
@@ -273,7 +257,6 @@ body.light-mode .top-action-btn:hover {
     pointer-events: none;
     transform-origin: var(--popup-origin-x, 100%) var(--popup-origin-y, 0%);
     transform: scale(0.85);
-    will-change: transform, opacity;
 }
 
 .top-more-item {
@@ -585,9 +568,11 @@ body.zen-mode .zen-mini-dock {
 
 .zen-dock-progress-fill {
     height: 100%;
-    width: 0%;
+    width: 100%;
+    transform-origin: left center;
+    transform: scaleX(0);
     background: linear-gradient(90deg, var(--color-accent), var(--color-accent-secondary));
-    transition: width 0.2s linear;
+    transition: transform 0.2s linear;
 }
 
 .zen-dock-info {
@@ -687,10 +672,13 @@ body.zen-mode .zen-hint-toast {
 }
 
 body.zen-idle .zen-mini-dock {
-    opacity: 0.22;
-    transform: translateX(-50%) translateY(8px) scale(0.96);
-    filter: blur(1px);
-    pointer-events: none;
+    /* The dock is the only playback/exit control in Zen. Never fade it out or
+       remove hit-testing after idle, otherwise clicks fall through to the
+       banner and exit the mode instead of pressing the control. */
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+    filter: none;
+    pointer-events: auto;
 }
 
 body.zen-mode:not(.zen-idle) .zen-mini-dock {
@@ -723,18 +711,18 @@ body.zen-mode:not(.zen-idle) .zen-mini-dock {
 ======================================================== */
 .zen-ambient-lyric {
     position: fixed;
-    bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(128px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     max-width: min(700px, 92vw);
     text-align: center;
-    padding: 0.75rem 1.4rem;
-    background: rgba(8, 10, 20, 0.72);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid var(--color-border);
+    padding: 0.8rem 1.5rem;
+    background: rgba(17, 20, 27, 0.34);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--radius-lg);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 24px var(--color-accent-glow);
+    box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.38);
     z-index: 95;
     opacity: 0;
     pointer-events: none;
@@ -747,11 +735,11 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
 }
 
 .zen-lyric-romaji {
-    font-size: 1.05rem;
+    font-size: 1.12rem;
     font-weight: 700;
     color: var(--color-text);
     margin: 0 0 0.25rem 0;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7), 0 0 16px var(--color-accent-glow);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.52), 0 0 18px rgba(0, 0, 0, 0.22);
     line-height: 1.35;
 }
 
@@ -1226,15 +1214,6 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
    Continuous word/syllable sweep, Japanese typography,
    multi-singer alignments, interludes, recenter & editor
    ======================================================== */
-body.light-mode .lyrics-drawer-modal,
-body.light-theme .lyrics-drawer-modal {
-    --color-text: #f8fafc;
-    --color-text-secondary: #cbd5e1;
-    --color-text-muted: #94a3b8;
-    --color-border: rgba(255, 255, 255, 0.12);
-    --surface-2: rgba(255, 255, 255, 0.06);
-}
-
 .lyrics-drawer-modal {
     max-width: 540px;
     height: 580px;
@@ -1361,8 +1340,8 @@ body.light-theme .lyrics-drawer-modal {
 
 /* Apple Music Sing continuous progress sweep driven purely by --word-pct / --word-progress */
 .lyric-word {
-    --sing-sung: #ffffff;
-    --sing-upcoming: rgba(248, 250, 252, 0.36);
+    --sing-sung: var(--color-text);
+    --sing-upcoming: color-mix(in srgb, var(--color-text) 40%, transparent);
     --sing-glow: var(--color-accent-glow, rgba(56, 189, 248, 0.42));
     display: inline;
     color: var(--sing-upcoming);
@@ -1372,8 +1351,8 @@ body.light-theme .lyrics-drawer-modal {
 
 .lyric-line.active .lyric-word.is-upcoming-word,
 .zen-ambient-lyric .lyric-word.is-upcoming-word {
-    color: rgba(255, 255, 255, 0.46);
-    -webkit-text-fill-color: rgba(255, 255, 255, 0.46);
+    color: var(--sing-upcoming);
+    -webkit-text-fill-color: var(--sing-upcoming);
 }
 
 .lyric-word.is-active-word {
@@ -1394,7 +1373,7 @@ body.light-theme .lyrics-drawer-modal {
 
 .lyric-line.active .lyric-word.is-active-word,
 .zen-ambient-lyric .lyric-word.is-active-word {
-    --sing-upcoming: rgba(255, 255, 255, 0.46);
+    --sing-upcoming: color-mix(in srgb, var(--color-text) 46%, transparent);
 }
 
 .lyric-word.is-sung {
@@ -1891,7 +1870,7 @@ body.light-theme .lyrics-drawer-modal {
     color: #fda4af;
 }
 
-/* Reduced motion & low-end device guards for Lyrics V2 */
+/* Accessibility motion guard for Lyrics V2. */
 @media (prefers-reduced-motion: reduce) {
     .lyric-word.is-active-word,
     .lyric-word.is-sustained.is-active-word {
@@ -1901,17 +1880,3 @@ body.light-theme .lyrics-drawer-modal {
         animation: none !important;
     }
 }
-
-body.low-end .lyric-word.is-active-word,
-body.low-end .lyric-word.is-sustained.is-active-word {
-    filter: none !important;
-}
-
-body.low-end .lyric-interlude-row.active .interlude-dots span {
-    animation: none !important;
-}
-
-body.low-end .lyrics-editor-panel {
-    background: #141620 !important;
-}
-
