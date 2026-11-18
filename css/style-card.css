@@ -307,15 +307,25 @@ body.light-mode .top-more-item:hover {
     color: #0f172a;
 }
 
-/* Visualizer style menu — compact Miuix list popup anchored to the waveform chip */
+/* Live soundstage selector: no full-screen blur; the chibi stays in view. */
+.viz-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1190;
+    background: rgba(8, 12, 20, 0.06);
+    opacity: 0;
+    pointer-events: none;
+    touch-action: none;
+}
+.viz-scrim.active { pointer-events: auto; }
 .viz-menu {
     position: fixed;
     z-index: 1200;
     display: flex;
     flex-direction: column;
-    gap: 0.18rem;
-    width: 276px;
-    padding: 0.4rem;
+    gap: 0.65rem;
+    width: 344px;
+    padding: 0.85rem;
     border-radius: var(--v3-radius-popup, 20px);
     background: var(--surface-popup, rgba(20, 24, 36, 0.94));
     border: 1px solid var(--color-border-active, rgba(255, 255, 255, 0.14));
@@ -334,22 +344,42 @@ body.light-mode .top-more-item:hover {
 }
 
 .viz-menu-head {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--color-accent);
-    padding: 0.38rem 0.55rem 0.24rem;
-}
-
-.viz-menu-item {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.viz-menu-head h2 { margin: 0; color: var(--color-text); font: 700 0.9rem var(--font-display); }
+.viz-menu-head p { margin: 0.2rem 0 0; color: var(--color-text-muted); font: 400 0.61rem/1.4 var(--font-body); }
+.viz-menu-close {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    background: var(--surface-pill);
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+.viz-style-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+.viz-drag-handle { display: none; justify-content: center; padding: 3px 0 6px; touch-action: none; }
+.viz-drag-handle span { width: 32px; height: 4px; border-radius: 10px; background: var(--color-text-muted); opacity: 0.35; }
+.viz-menu[data-mode="sheet"] { padding-bottom: calc(0.8rem + env(safe-area-inset-bottom, 0px)); }
+.viz-menu[data-mode="sheet"] .viz-drag-handle { display: flex; }
+.viz-menu[data-popup-state="opening"],
+.viz-menu[data-popup-state="closing"] { will-change: transform, opacity; }
+
+.viz-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.32rem;
     width: 100%;
-    padding: 0.42rem 0.5rem;
-    border: 0;
+    min-height: 61px;
+    padding: 0.5rem 0.32rem;
+    border: 1px solid var(--color-border-subtle);
     border-radius: var(--radius-sm, 10px);
     background: transparent;
     color: var(--color-text-secondary);
@@ -367,13 +397,14 @@ body.light-mode .top-more-item:hover {
 
 .viz-menu-item[aria-checked="true"] {
     background: color-mix(in srgb, var(--color-accent) 11%, transparent);
+    border-color: color-mix(in srgb, var(--color-accent) 38%, var(--color-border));
     color: var(--color-text);
 }
 
 .viz-preview {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
+    width: 27px;
+    height: 30px;
+    min-width: 27px;
     border-radius: 9px;
     display: flex;
     align-items: center;
@@ -385,8 +416,8 @@ body.light-mode .top-more-item:hover {
 }
 
 .viz-preview svg {
-    width: 26px;
-    height: 26px;
+    width: 23px;
+    height: 23px;
     display: block;
 }
 
@@ -406,7 +437,7 @@ body.light-mode .top-more-item:hover {
 }
 
 .viz-menu-name {
-    font-size: 0.78rem;
+    font-size: 0.67rem;
     font-weight: 600;
     letter-spacing: -0.01em;
     white-space: nowrap;
@@ -416,7 +447,7 @@ body.light-mode .top-more-item:hover {
 
 .viz-menu-note {
     font-family: var(--font-mono);
-    font-size: 0.6rem;
+    font-size: 0.52rem;
     color: var(--color-text-muted);
     white-space: nowrap;
     overflow: hidden;
@@ -424,8 +455,11 @@ body.light-mode .top-more-item:hover {
 }
 
 .viz-menu-check {
+    position: absolute;
+    right: 5px;
+    top: 5px;
     color: var(--color-accent);
-    font-size: 0.66rem;
+    font-size: 0.48rem;
     opacity: 0;
     transform: scale(0.8);
     transition: opacity var(--transition-fast), transform var(--transition-fast);
@@ -441,6 +475,15 @@ body.light-mode .viz-menu {
     border-color: rgba(15, 23, 42, 0.12);
     box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.16);
 }
+.viz-controls { display: grid; gap: 0.45rem; border-top: 1px solid var(--color-border-subtle); padding-top: 0.65rem; }
+.viz-control { display: grid; gap: 0.15rem; color: var(--color-text-secondary); font: 500 0.7rem var(--font-body); }
+.viz-control > span { display: flex; align-items: center; justify-content: space-between; }
+.viz-control output { color: var(--color-accent); font: 500 0.59rem var(--font-mono); }
+.viz-control input { width: 100%; height: 20px; margin: 0; padding: 0; cursor: pointer; accent-color: var(--color-accent); touch-action: pan-y; }
+.viz-menu[data-compact="true"] { gap: 0.4rem; padding: 0.65rem; }
+.viz-menu[data-compact="true"] .viz-menu-head p { display: none; }
+.viz-menu[data-compact="true"] .viz-menu-item { min-height: 49px; }
+.viz-menu[data-compact="true"] .viz-controls { gap: 0.2rem; padding-top: 0.4rem; }
 
 /* Theme Toggle Icons */
 .theme-toggle-btn .icon-sun {

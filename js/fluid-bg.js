@@ -219,15 +219,18 @@
         }
         const elapsed = (now - startTime) * 0.001;
 
-        // Query Analyser bass energy (bins 0-6 represent 20Hz - 150Hz)
+        // Frequency-based mapping survives changes to the shared FFT size.
         let targetBass = 0.0;
         const analyser = window.__minkoiAnalyser;
         if (analyser) {
             try {
                 analyser.getByteFrequencyData(freqData);
                 let sum = 0;
-                const binCount = Math.min(8, freqData.length);
-                for (let i = 0; i < binCount; i++) {
+                const hzPerBin = analyser.context.sampleRate / analyser.fftSize;
+                const first = Math.max(1, Math.floor(35 / hzPerBin));
+                const last = Math.min(freqData.length, Math.ceil(180 / hzPerBin));
+                const binCount = Math.max(1, last - first);
+                for (let i = first; i < last; i++) {
                     sum += freqData[i];
                 }
                 const avg = sum / binCount;

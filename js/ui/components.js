@@ -190,6 +190,7 @@
             '.top-more-item',
             '.viz-menu-btn',
             '.viz-menu-item',
+            '.viz-menu-close',
             '.zen-ctrl-btn',
             '.zen-fab',
             '.lyrics-close-btn',

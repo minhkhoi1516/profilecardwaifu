@@ -203,8 +203,12 @@
             eqBands.air.frequency.value = 12000;
 
             analyser = audioCtx.createAnalyser();
-            analyser.fftSize = 256; // 128 frequency bins (shared by the avatar visualizer)
-            analyser.smoothingTimeConstant = 0.8;
+            // Resolve bass (~23 Hz/bin at 48 kHz). The feature engine owns
+            // attack/release; heavy FFT smoothing would hide transients.
+            analyser.fftSize = 2048;
+            analyser.minDecibels = -95;
+            analyser.maxDecibels = -15;
+            analyser.smoothingTimeConstant = 0.25;
 
             // Connect in series: Source -> GainNode -> Sub -> Bass -> Mid -> Treble -> Air -> Analyser -> Output
             audioSource = audioCtx.createMediaElementSource(audio);

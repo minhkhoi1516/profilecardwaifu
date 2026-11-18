@@ -1,1040 +1,696 @@
-/* ==========================================================================
-   MINKOI V4 · CHIBI AUDIO VISUALIZER
-   One lightweight canvas renderer, four styles, shared AnalyserNode data.
-   The chibi keeps its size and pop-out; the frame adapts to the artwork.
-   ========================================================================== */
+/* MINKOI V4 REFINED · ORGANIC SOUNDSTAGE
+   Pipeline: shared analyser -> features -> analytic physics -> cached geometry
+   -> one canvas. Artwork lives in its original, unclipped coordinate system. */
 (function (global) {
     'use strict';
-
     const doc = global.document;
-    const STORAGE_KEY = 'minkoi_visualizer_style';
-    const STYLE_ORDER = ['dual', 'crescent', 'orbit', 'eq'];
-
+    const stage = doc.getElementById('avatar-zone-wrap');
+    const art = stage?.querySelector('.avatar-art-stage');
+    const avatar = doc.getElementById('char-avatar');
     const canvas = doc.getElementById('waifu-visualizer-canvas');
-    const zone = doc.getElementById('avatar-zone-wrap');
     const audio = doc.getElementById('audio-player');
-    const disc = doc.querySelector('.avatar-backdrop-disc');
-    const colLeft = doc.querySelector('.col-left');
-    const identity = doc.querySelector('.identity-header');
-    const social = doc.querySelector('.social-destination-grid');
-    const card = doc.getElementById('main-card');
-    const avatarImg = doc.getElementById('char-avatar');
-    const vinyl = doc.getElementById('vinyl-disc');
-    const aura = doc.querySelector('.avatar-backdrop-disc');
-    const vinylGlow = vinyl?.querySelector('.audio-reactive-glow');
-    const auraGlow = aura?.querySelector('.audio-reactive-glow');
-    const menuBtn = doc.getElementById('viz-menu-btn');
-    const menu = doc.getElementById('viz-menu');
-    const uiBars = Array.from(doc.querySelectorAll('.live-visualizer-bars .viz-bar'));
-
-    if (!canvas || !zone || !audio) return;
-
+    const featuresAPI = global.MinkoiAudioFeatures;
+    if (!stage || !art || !canvas || !audio || !featuresAPI) return;
     const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
     if (!ctx) return;
 
-    const motionQuery = global.matchMedia ? global.matchMedia('(prefers-reduced-motion: reduce)') : null;
     const TAU = Math.PI * 2;
-
-    // ------------------------------------------------------------------
-    // STYLE DEFINITIONS
-    // Angles use canvas conventions: 0 = right, +PI/2 = down.
-    // `t` maps a bar to a logarithmic slice of the spectrum (0 bass, 1 air).
-    // ------------------------------------------------------------------
-    const STYLES = {
-        dual: {
-            arcs: [
-                { from: -0.98, to: -0.20, t0: 0.28, t1: 1.00, count: 13 },
-                { from: 0.06, to: 0.62, t0: 0.00, t1: 0.64, count: 13 }
-            ],
-            // On phones the identity block sits directly right of the chibi,
-            // so the arcs move to the open top and lower-right wedges.
-            compactArcs: [
-                { from: -0.82, to: -0.18, t0: 0.30, t1: 1.00, count: 11 },
-                { from: 0.28, to: 0.62, t0: 0.00, t1: 0.55, count: 9 }
-            ],
-            width: 2.1,
-            maxLen: 15,
-            ring: false,
-            sparkle: true
-        },
-        crescent: {
-            arcs: [
-                { from: 0.07, to: 0.93, t0: 0.0, t1: 1.0, count: 27 }
-            ],
-            compactArcs: [
-                { from: 0.22, to: 0.78, t0: 0.0, t1: 1.0, count: 19 }
-            ],
-            width: 1.9,
-            maxLen: 17,
-            ring: 'crescent',
-            sparkle: false
-        },
-        orbit: {
-            arcs: [
-                { from: -0.15, to: 0.19, t0: 0.05, t1: 0.85, count: 10 }
-            ],
-            compactArcs: [
-                { from: -0.86, to: -0.44, t0: 0.08, t1: 0.88, count: 9 }
-            ],
-            width: 2.0,
-            maxLen: 12,
-            ring: 'orbit',
-            sparkle: false
-        },
-        eq: {
-            arcs: [
-                { from: 0.30, to: 0.70, t0: 0.0, t1: 1.0, count: 7 }
-            ],
-            compactArcs: [
-                { from: 0.33, to: 0.68, t0: 0.0, t1: 1.0, count: 7 }
-            ],
-            width: 3.1,
-            maxLen: 13,
-            ring: false,
-            sparkle: false
-        }
-    };
-
-    const mobileQuery = global.matchMedia ? global.matchMedia('(max-width: 860px)') : null;
-    const isCompact = () => Boolean(mobileQuery && mobileQuery.matches);
-
-    // ------------------------------------------------------------------
-    // STATE
-    // ------------------------------------------------------------------
-    let ready = false;
-    let analyser = null;
-    let freqData = new Uint8Array(128);
-    let activeStyle = readStyle();
-
-    let geometry = null; // { baseR, reach, size, dpr, cx, cy, bars }
-    let levels = new Float32Array(0);
-    let palette = { a: '#38bdf8', b: '#818cf8' };
+    const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+    const names = { crown: 'Aurora Crown', halo: 'Spectral Halo', manga: 'Manga Soundwave', kinetic: 'Kinetic Orbit' };
+    const styles = Object.keys(names);
+    const legacy = { dual: 'crown', crescent: 'halo', eq: 'manga', orbit: 'kinetic' };
+    const reduced = global.matchMedia('(prefers-reduced-motion: reduce)');
+    const engine = featuresAPI.create();
+    const positions = new Float32Array(48);
+    const velocities = new Float32Array(48);
+    const targets = new Float32Array(48);
+    const crownPositions = new Float32Array(44);
+    const crownVelocities = new Float32Array(44);
+    const crownTargets = new Float32Array(44);
+    const crownLines = new Float32Array(44 * 4);
+    const crownValues = new Float32Array(44);
+    const haloLines = new Float32Array(64 * 4);
+    const haloValues = new Float32Array(64);
+    const clusterLines = new Float32Array(7 * 4);
+    const mangaPositions = new Float32Array(16);
+    const mangaVelocities = new Float32Array(16);
+    const mangaTargets = new Float32Array(16);
+    let waveGain = 1;
+    let waveDisplayGain = 1;
+    const peaks = new Float32Array(48);
+    const peakHold = new Float32Array(48);
+    const macro = new Float32Array(3);
+    const macroVelocity = new Float32Array(3);
+    const macroTarget = new Float32Array(3);
+    const weights = new Float32Array(4);
+    const orbitOffsets = new Float32Array([0, 2.35, 4.75]);
+    const haloRanges = [[5, 27], [16, 37], [5, 24], [20, 43]];
+    const barsUI = Array.from(doc.querySelectorAll('.live-visualizer-bars .viz-bar'));
+    const barValues = new Float32Array(barsUI.length).fill(-1);
+    const vinyl = doc.getElementById('vinyl-disc');
+    const pedestal = stage.querySelector('.avatar-backdrop-disc');
+    const vinylGlow = vinyl?.querySelector('.audio-reactive-glow');
+    const pedestalGlow = pedestal?.querySelector('.audio-reactive-glow');
+    const caption = doc.getElementById('soundstage-caption');
+    let style = readStyle();
+    let intensity = readNumber('minkoi_visualizer_intensity', 1, 0.55, 1.4);
+    let visualIntensity = intensity;
+    let reactivity = readNumber('minkoi_visualizer_reactivity', 1, 0.45, 1.45);
+    weights[styles.indexOf(style)] = 1;
+    let geometry = null;
+    let geometryKey = '';
+    let radius = 80;
+    let palette = ['#38bdf8', '#818cf8'];
+    let highlight = '#7dd3fc';
     let gradient = null;
-
-    let rafId = 0;
+    let gradientClock = 0;
+    let gradientStep = -1;
+    let raf = 0;
     let running = false;
-    let lastTs = 0;
-    let decayStart = 0;
-    let decaying = false;
-    let phase = 0;
-    let drawOpacity = 1;
+    let last = 0;
+    let settlingSince = 0;
+    let state = 'stopped';
+    let seeking = false;
+    let context = null;
+    let onsetCount = 0;
+    let orbitPhase = 0;
+    let orbitVelocity = 0;
+    let sceneOpacity = 0;
+    let motionEnergy = 0;
+    let longestBar = 0;
+    let damping = 0.85;
+    let resizeTimer = 0;
+    let idlePainted = false;
+    const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
+    const domCache = { vinylScale: '', discScale: '', vinylGlow: '', discGlow: '' };
 
-    let bassS = 0;
-    let midS = 0;
-    let trebleS = 0;
-    let vinylGlowKey = '';
-    let vinylScaleKey = '';
-    let auraGlowKey = '';
-    let auraScaleKey = '';
-
+    function read(key) { try { return global.localStorage.getItem(key); } catch (_) { return null; } }
+    function save(key, value) { try { global.localStorage.setItem(key, String(value)); } catch (_) {} }
     function readStyle() {
-        try {
-            const saved = global.localStorage?.getItem(STORAGE_KEY);
-            if (saved && STYLE_ORDER.indexOf(saved) !== -1) return saved;
-        } catch (_) { /* private mode */ }
-        return 'dual';
+        const saved = read('minkoi_visualizer_style');
+        return names[saved] ? saved : (legacy[saved] || 'crown');
     }
-
-    function persistStyle(style) {
-        try { global.localStorage?.setItem(STORAGE_KEY, style); } catch (_) { /* private mode */ }
+    function readNumber(key, fallback, min, max) {
+        const raw = read(key);
+        return raw !== null && Number.isFinite(Number(raw)) ? clamp(Number(raw), min, max) : fallback;
     }
-
-    function clamp(v, min, max) {
-        return v < min ? min : (v > max ? max : v);
-    }
-
-    function parseColor(input) {
-        const value = String(input || '').trim();
-        let m = /^#([0-9a-f]{3})$/i.exec(value);
-        if (m) {
-            return [parseInt(m[1][0] + m[1][0], 16), parseInt(m[1][1] + m[1][1], 16), parseInt(m[1][2] + m[1][2], 16)];
+    function colorParts(value) {
+        const hex = /^#([0-9a-f]{6})$/i.exec(value);
+        if (hex) {
+            const n = parseInt(hex[1], 16);
+            return [n >> 16, n >> 8 & 255, n & 255];
         }
-        m = /^#([0-9a-f]{6})$/i.exec(value);
-        if (m) {
-            return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16)];
-        }
-        m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i.exec(value);
-        if (m) return [Number(m[1]), Number(m[2]), Number(m[3])];
-        return null;
+        const rgb = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i.exec(value);
+        return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null;
     }
-
-    function mixColor(from, to, ratio) {
-        const a = parseColor(from);
-        const b = parseColor(to);
-        if (!a || !b) return from;
-        const mix = (i) => Math.round(a[i] + (b[i] - a[i]) * ratio);
-        return `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
+    function mixColor(value, amount, target) {
+        const parts = colorParts(value);
+        if (!parts) return value;
+        const [tr, tg, tb] = target || [255, 255, 255];
+        return `rgb(${Math.round(parts[0] + (tr - parts[0]) * amount)}, ${Math.round(parts[1] + (tg - parts[1]) * amount)}, ${Math.round(parts[2] + (tb - parts[2]) * amount)})`;
     }
-
-    // ------------------------------------------------------------------
-    // PALETTE (persona accent tokens, cached per persona)
-    // ------------------------------------------------------------------
-    function refreshPalette() {
+    function themeColor(value, darken) {
+        // Light mode needs contrast against paper; dark mode should keep the
+        // character accent vivid rather than blending it into the backdrop.
+        return darken ? mixColor(value, 0.3, [11, 16, 32]) : value;
+    }
+    function refreshPalette(event) {
         const cs = global.getComputedStyle(doc.documentElement);
-        const a = (cs.getPropertyValue('--color-accent') || '').trim();
-        const b = (cs.getPropertyValue('--color-accent-secondary') || '').trim();
-        if (a) palette.a = a;
-        if (b) palette.b = b;
-        // Cyan accents lose contrast on the ivory card; deepen them for canvas
-        // strokes only, keeping the DOM palette untouched.
-        if (doc.body.classList.contains('light-mode')) {
-            palette.a = mixColor(palette.a, '#0b1020', 0.34);
-            palette.b = mixColor(palette.b, '#0b1020', 0.22);
-        }
-        gradient = null;
+        const light = doc.body.classList.contains('light-mode');
+        // Registered color properties can still be transitioning when the
+        // persona event fires. Cache the committed theme target, not its old
+        // interpolated computed RGB value.
+        const persona = event?.detail?.persona || global.getCurrentPersona?.();
+        palette = [themeColor(persona?.accent || cs.getPropertyValue('--color-accent').trim() || '#38bdf8', light),
+            themeColor(persona?.accentSecondary || cs.getPropertyValue('--color-accent-secondary').trim() || '#818cf8', light)];
+        highlight = mixColor(palette[0], light ? 0.32 : 0.46);
+        buildGradient(gradientClock);
     }
-
-    function buildGradient() {
+    // The gradient itself travels as music advances, so the same bars keep
+    // shifting between the character accent and its lighter secondary tone.
+    function buildGradient(phase) {
         if (!geometry) return;
-        const g = ctx.createLinearGradient(0, geometry.size, geometry.size, 0);
-        g.addColorStop(0, palette.b);
-        g.addColorStop(0.55, palette.a);
-        g.addColorStop(1, palette.b);
+        if (typeof phase === 'number') gradientClock = phase;
+        gradientStep = Math.floor(gradientClock * 24);
+        const mid = 0.5 + Math.sin(gradientClock * TAU) * 0.24;
+        const g = ctx.createLinearGradient(geometry.cx - 125, 0, geometry.cx + 125, geometry.h * 0.92);
+        g.addColorStop(0, highlight);
+        g.addColorStop(clamp(mid - 0.18, 0, 0.72), palette[1]);
+        g.addColorStop(clamp(mid, 0.18, 0.82), palette[0]);
+        g.addColorStop(clamp(mid + 0.2, 0.3, 0.96), palette[1]);
+        g.addColorStop(1, highlight);
         gradient = g;
     }
 
-    // ------------------------------------------------------------------
-    // GEOMETRY — derived from real layout bounds, never a fixed ring size
-    // ------------------------------------------------------------------
-    function rayRectExit(cx, cy, dx, dy, rect) {
-        // Distance at which a ray leaves an axis-aligned rectangle (the card walls).
-        let tmax = Infinity;
-        if (Math.abs(dx) < 1e-6) {
-            if (cx < rect.left || cx > rect.right) return Infinity;
-        } else {
-            const t1 = (rect.left - cx) / dx;
-            const t2 = (rect.right - cx) / dx;
-            tmax = Math.min(tmax, Math.max(t1, t2));
-        }
-        if (Math.abs(dy) < 1e-6) {
-            if (cy < rect.top || cy > rect.bottom) return Infinity;
-        } else {
-            const t1 = (rect.top - cy) / dy;
-            const t2 = (rect.bottom - cy) / dy;
-            tmax = Math.min(tmax, Math.max(t1, t2));
-        }
-        return tmax;
+    // Layout reads occur only here, never in the rendering loop. No global
+    // minimum ray: the stage reserves space, each segment gets its own reach.
+    function rayRoom(dx, dy, cx, cy, w, h) {
+        let room = Infinity;
+        if (dx > 0.0001) room = Math.min(room, (w - 7 - cx) / dx);
+        if (dx < -0.0001) room = Math.min(room, (7 - cx) / dx);
+        if (dy > 0.0001) room = Math.min(room, (h - 34 - cy) / dy);
+        if (dy < -0.0001) room = Math.min(room, (7 - cy) / dy);
+        return room;
     }
-
-    function rayRectHit(cx, cy, dx, dy, rect) {
-        // Nearest positive distance at which a ray enters a text/control block.
-        let tmin = -Infinity;
-        let tmax = Infinity;
-        if (Math.abs(dx) < 1e-6) {
-            if (cx < rect.left || cx > rect.right) return Infinity;
-        } else {
-            let t1 = (rect.left - cx) / dx;
-            let t2 = (rect.right - cx) / dx;
-            if (t1 > t2) { const swap = t1; t1 = t2; t2 = swap; }
-            tmin = Math.max(tmin, t1);
-            tmax = Math.min(tmax, t2);
-        }
-        if (Math.abs(dy) < 1e-6) {
-            if (cy < rect.top || cy > rect.bottom) return Infinity;
-        } else {
-            let t1 = (rect.top - cy) / dy;
-            let t2 = (rect.bottom - cy) / dy;
-            if (t1 > t2) { const swap = t1; t1 = t2; t2 = swap; }
-            tmin = Math.max(tmin, t1);
-            tmax = Math.min(tmax, t2);
-        }
-        if (tmax < Math.max(tmin, 0)) return Infinity;
-        return tmin > 0 ? tmin : 0;
+    function radial(angle, band, delay, g) {
+        const dx = Math.cos(angle), dy = Math.sin(angle);
+        return { dx, dy, angle, band, delay, reach: rayRoom(dx, dy, g.cx, g.cy, g.w, g.h) - 3 };
     }
-
-    function inflate(rect, margin) {
-        return {
-            left: rect.left - margin,
-            top: rect.top - margin,
-            right: rect.right + margin,
-            bottom: rect.bottom + margin
-        };
-    }
-
     function measure() {
-        if (!zone || !colLeft || !identity || !social || !card) return;
-        const zr = zone.getBoundingClientRect();
-        const cardR = card.getBoundingClientRect();
-        const ir = identity.getBoundingClientRect();
-        const sr = social.getBoundingClientRect();
-        const discR = disc ? (disc.offsetWidth || (isCompact() ? 92 : 116)) / 2 : 46;
-        const avatarHalfW = avatarImg ? (avatarImg.offsetWidth || 0) / 2 : 0;
-        const compact = isCompact();
-
-        const cx = zr.left + zr.width / 2;
-        const cy = zr.top + zr.height * 0.52;
-
-        const inset = 8;
-        const walls = {
-            left: cardR.left + inset,
-            right: cardR.right - inset,
-            top: cardR.top + inset,
-            bottom: cardR.bottom - inset
-        };
-        // The chibi owns its space; text and social pills are obstacles that
-        // bars may pass beside but never through.
-        const obstacles = [];
-        if (ir.width && ir.height) obstacles.push(inflate({ left: ir.left, top: ir.top, right: ir.right, bottom: ir.bottom }, 8));
-        if (sr.width && sr.height) obstacles.push(inflate({ left: sr.left, top: sr.top, right: sr.right, bottom: sr.bottom }, 8));
-
-        function limit(angle) {
-            const dx = Math.cos(angle);
-            const dy = Math.sin(angle);
-            let t = rayRectExit(cx, cy, dx, dy, walls);
-            for (let i = 0; i < obstacles.length; i++) {
-                t = Math.min(t, rayRectHit(cx, cy, dx, dy, obstacles[i]));
-            }
-            return Number.isFinite(t) && t > 0 ? t : 0;
-        }
-
-        const def = STYLES[activeStyle];
-        const arcs = (compact && def.compactArcs) ? def.compactArcs : def.arcs;
-        const baseIdeal = Math.max(discR + 4, avatarHalfW + 2);
-        const maxLen = compact ? Math.max(9, Math.round(def.maxLen * 0.9)) : def.maxLen;
-        const barWidth = compact ? Math.max(1.8, def.width - 0.2) : def.width;
-
-        const bars = [];
-        arcs.forEach((arc) => {
-            for (let i = 0; i < arc.count; i++) {
-                const t = (i + 0.5) / arc.count;
-                const angle = (arc.from + (arc.to - arc.from) * t) * Math.PI;
-                const spec = arc.t0 + (arc.t1 - arc.t0) * t;
-                const bin = frequencyBin(spec);
-                bars.push({ angle, bin, t: spec, maxLen });
+        const w = stage.offsetWidth, h = stage.offsetHeight;
+        const dpr = Math.min(global.devicePixelRatio || 1, 2);
+        const key = [w, h, avatar.offsetWidth, avatar.offsetHeight, dpr].join('/');
+        if (key === geometryKey) return;
+        geometryKey = key;
+        const g = { w, h, cx: art.offsetLeft + art.offsetWidth / 2,
+            cy: art.offsetTop + art.offsetHeight * 0.52,
+            radius: Math.max(78, avatar.offsetWidth / 2 + 10),
+            extension: global.innerWidth <= 860 ? 36 : 44, crown: [], halo: [], crownGuide: null,
+            waveX: new Float32Array(16), waveY: new Float32Array(16), echoY: new Float32Array(16),
+            orbitRoom: new Float32Array(256) };
+        const segments = [[0.91, 1.22, 14], [1.30, 1.70, 16], [1.78, 2.09, 14]];
+        let index = 0;
+        segments.forEach(segment => {
+            for (let i = 0; i < segment[2]; i++) {
+                const angle = (segment[0] + (segment[1] - segment[0]) * (i + 0.5) / segment[2]) * Math.PI;
+                const distance = Math.abs(index - 21.5) / 21.5;
+                // Crown shoulders carry bass; the high arch follows the
+                // expressive mid/presence range, not nearly-silent 14 kHz bins.
+                const band = Math.round((1 - distance) * 29) + 5;
+                const bar = radial(angle, band, (index / 43) * 0.045, g);
+                bar.tip = Math.abs((i + 0.5) / segment[2] - 0.5) * 2;
+                g.crown.push(bar);
+                index++;
             }
         });
-
-        let minRay = Infinity;
-        for (let i = 0; i < bars.length; i++) {
-            const r = limit(bars[i].angle);
-            bars[i].room = Math.max(0, r - 3 - baseIdeal);
-            minRay = Math.min(minRay, r);
+        for (let i = 0; i < 64; i++) {
+            const range = haloRanges[Math.floor(i / 16)];
+            const band = Math.round(range[0] + (range[1] - range[0]) * (i % 16) / 15);
+            g.halo.push(radial(-Math.PI / 2 + i / 64 * TAU, band, 0, g));
         }
-        if (def.ring) {
-            for (let i = 0; i < 72; i++) minRay = Math.min(minRay, limit(i * TAU / 72) - 3);
+        const waveWidth = Math.min(244, w - 24);
+        for (let i = 0; i < 16; i++) g.waveX[i] = g.cx - waveWidth / 2 + i / 15 * waveWidth;
+        for (let i = 0; i < g.orbitRoom.length; i++) {
+            const angle = i / g.orbitRoom.length * TAU;
+            g.orbitRoom[i] = rayRoom(Math.cos(angle), Math.sin(angle), g.cx, g.cy, w, h) - 4;
         }
-
-        const baseR = Math.max(16, Math.min(baseIdeal, minRay - 4));
-        let reach = baseR;
-        for (let i = 0; i < bars.length; i++) {
-            const room = Math.max(0, limit(bars[i].angle) - 3 - baseR);
-            bars[i].len = Math.min(maxLen, room);
-            reach = Math.max(reach, baseR + bars[i].len);
-            bars[i].width = barWidth;
-            bars[i].dx = Math.cos(bars[i].angle);
-            bars[i].dy = Math.sin(bars[i].angle);
-            bars[i].x = bars[i].dx * baseR;
-            bars[i].y = bars[i].dy * baseR;
-        }
-        if (activeStyle === 'eq') {
-            const baseline = Math.min(baseR + maxLen, limit(Math.PI / 2) - 3);
-            const spacing = compact ? 5 : 6;
-            for (let i = 0; i < bars.length; i++) {
-                bars[i].x = (i - (bars.length - 1) / 2) * spacing;
-                bars[i].y = baseline;
-                bars[i].dx = 0;
-                bars[i].dy = -1;
-                bars[i].len = Math.min(maxLen, baseline - baseR + 2);
-            }
-        }
-        if (def.ring) reach = Math.max(reach, baseR + 6);
-
-        const size = Math.max(96, Math.ceil((reach + 8) * 2));
-        const dpr = clamp(global.devicePixelRatio || 1, 1, 2);
-        const pixels = Math.round(size * dpr);
-        if (canvas.width !== pixels || canvas.height !== pixels) {
-            canvas.width = pixels;
-            canvas.height = pixels;
-        }
-        canvas.style.width = size + 'px';
-        canvas.style.height = size + 'px';
+        // Keep independent subpaths rather than connecting the gaps.
+        g.crownGuide = new Path2D();
+        segments.forEach(segment => {
+            g.crownGuide.moveTo(g.cx + Math.cos(segment[0] * Math.PI) * (g.radius - 2), g.cy + Math.sin(segment[0] * Math.PI) * (g.radius - 2));
+            g.crownGuide.arc(g.cx, g.cy, g.radius - 2, segment[0] * Math.PI, segment[1] * Math.PI);
+        });
+        geometry = g;
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-        geometry = {
-            size,
-            dpr,
-            cx: size / 2,
-            cy: size / 2,
-            baseR,
-            reach,
-            bars,
-            arcs,
-            walls,
-            pageCx: cx,
-            pageCy: cy
-        };
-        levels = new Float32Array(bars.length);
-        gradient = null;
-        buildGradient();
-        ready = true;
-    }
-
-    // ------------------------------------------------------------------
-    // AUDIO SAMPLING (one read per frame, shared by every style)
-    // ------------------------------------------------------------------
-    function frequencyBin(t) {
-        const fft = analyser ? analyser.fftSize : 256;
-        const rate = analyser ? analyser.context.sampleRate : 48000;
-        const hz = 80 * Math.pow(12000 / 80, t);
-        return clamp(Math.round(hz * fft / rate), 1, fft / 2 - 1);
-    }
-
-    function ensureAnalyser() {
-        if (analyser && analyser.frequencyBinCount) return analyser;
-        const shared = global.__minkoiAnalyser;
-        if (shared && shared.frequencyBinCount) {
-            analyser = shared;
-            if (freqData.length !== analyser.frequencyBinCount) {
-                freqData = new Uint8Array(analyser.frequencyBinCount);
-            }
-            if (geometry) geometry.bars.forEach(bar => { bar.bin = frequencyBin(bar.t); });
-        }
-        return analyser;
-    }
-
-    function sampleAudio(dt) {
-        if (!ensureAnalyser()) return false;
-        try {
-            analyser.getByteFrequencyData(freqData);
-        } catch (_) {
-            return false;
-        }
-
-        const len = freqData.length;
-        const load = (from, to) => {
-            const end = Math.min(to, len - 1);
-            let sum = 0;
-            let count = 0;
-            for (let i = from; i <= end; i++) { sum += freqData[i]; count++; }
-            return count ? sum / (count * 255) : 0;
-        };
-        const targetBass = load(1, 4);
-        const targetMid = load(5, 14);
-        const targetTreble = load(15, 40);
-        const follow = (cur, next, ms) => cur + (next - cur) * (1 - Math.exp(-dt / ms));
-
-        bassS = follow(bassS, targetBass, 90);
-        midS = follow(midS, targetMid, 120);
-        trebleS = follow(trebleS, targetTreble, 140);
-
-        const silence = targetBass + targetMid + targetTreble < 0.035;
-        const attack = 1 - Math.exp(-dt / 45);
-        const release = 1 - Math.exp(-dt / 185);
-
-        for (let i = 0; i < geometry.bars.length; i++) {
-            const bar = geometry.bars[i];
-            const raw = (freqData[Math.min(bar.bin, len - 1)] || 0) / 255;
-            let target = Math.max(0, (raw - 0.055) / 0.945);
-            target = Math.pow(target, 0.82);
-            // Low end feels softer but carries a touch more body.
-            target *= 1 + (1 - bar.t) * 0.10 * bassS;
-            if (silence) target *= 0.35;
-            target = clamp(target, 0, 1);
-            const k = target > levels[i] ? attack : release;
-            levels[i] += (target - levels[i]) * k;
-        }
-
-        if (uiBars.length) {
-            for (let i = 0; i < uiBars.length; i++) {
-                const bin = Math.min(i + 1, len - 1);
-                const v = (freqData[bin] || 0) / 255;
-                uiBars[i].style.setProperty('--bar-scale', Math.max(0.18, Math.min(1, v)).toFixed(3));
-            }
-        }
-        return true;
-    }
-
-    // ------------------------------------------------------------------
-    // CANVAS DRAW
-    // ------------------------------------------------------------------
-    function drawBars(glow) {
-        const g = geometry;
-        // Four opacity buckets batch strokes without allocating paths per bar.
-        // Endpoints/trigonometry are cached by measure(), not recomputed here.
-        for (let bucket = 0; bucket < 4; bucket++) {
-            ctx.beginPath();
-            for (let i = 0; i < g.bars.length; i++) {
-                const value = levels[i];
-                const bar = g.bars[i];
-                if (Math.min(3, Math.floor(value * 4)) !== bucket || bar.len * value < 0.6) continue;
-                const x = g.cx + bar.x;
-                const y = g.cy + bar.y;
-                ctx.moveTo(x, y);
-                ctx.lineTo(x + bar.dx * bar.len * value, y + bar.dy * bar.len * value);
-            }
-            if (glow) {
-                ctx.globalAlpha = (0.44 + (bucket + 0.5) * 0.13) * 0.16 * drawOpacity;
-                ctx.strokeStyle = palette.b;
-                ctx.lineWidth = g.bars[0].width + 3.4;
-                ctx.stroke();
-            }
-            ctx.globalAlpha = (0.44 + (bucket + 0.5) * 0.13) * drawOpacity;
-            ctx.strokeStyle = gradient || palette.a;
-            ctx.lineWidth = g.bars[0].width;
-            ctx.stroke();
-        }
-    }
-
-    function drawArcGuide(def, alpha) {
-        const g = geometry;
-        ctx.globalAlpha = alpha * drawOpacity;
-        ctx.strokeStyle = palette.a;
-        ctx.lineWidth = 1;
-        const arcs = g.arcs || def.arcs;
-        for (let i = 0; i < arcs.length; i++) {
-            const arc = arcs[i];
-            ctx.beginPath();
-            ctx.arc(g.cx, g.cy, g.baseR + 0.5, arc.from * Math.PI, arc.to * Math.PI);
-            ctx.stroke();
-        }
-    }
-
-    function draw() {
-        if (!ready) return;
-        const g = geometry;
-        const def = STYLES[activeStyle];
-        const bass = clamp(bassS, 0, 1);
-        const treble = clamp(trebleS, 0, 1);
-
-        ctx.clearRect(0, 0, g.size, g.size);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
+        buildGradient();
+        if (!running) radius = g.radius;
+        render();
+    }
 
-        if (def.ring === 'crescent') {
-            drawArcGuide(def, 0.10 + bass * 0.06);
-        } else if (def.ring === 'orbit') {
-            ctx.globalAlpha = (0.14 + bass * 0.05) * drawOpacity;
-            ctx.strokeStyle = palette.a;
-            ctx.lineWidth = 1;
+    function updatePhysics(dt, playing) {
+        const f = engine.features;
+        const energy = f.envelope;
+        visualIntensity += (intensity - visualIntensity) * (1 - Math.exp(-dt / 0.12));
+        damping += ((0.94 - energy * 0.18) - damping) * (1 - Math.exp(-dt / 0.3));
+        for (let i = 0; i < positions.length; i++) {
+            const delayed = playing ? engine.delayed(i, (i / 47) * 0.045) : f.bands[i];
+            targets[i] = clamp(f.bands[i] * 0.72 + delayed * 0.28, 0, 1.1);
+            if (f.onset) velocities[i] += f.onset * (0.4 + (1 - i / 47) * f.kick) * reactivity;
+        }
+        if (f.onset) {
+            onsetCount++;
+            macroVelocity[1] += (f.onset * 1.2 + f.kick * 2.6) * reactivity;
+            orbitVelocity = Math.min(0.62, orbitVelocity + (f.onset * 0.12 + f.kick * 0.22) * reactivity);
+        }
+        featuresAPI.springVector(positions, velocities, targets, dt, 17 + energy * 7, damping);
+        for (let i = 0; i < geometry.crown.length; i++) {
+            const b = geometry.crown[i];
+            crownTargets[i] = clamp(f.bands[b.band] * 0.68 +
+                (playing ? engine.delayed(b.band, b.delay) : f.bands[b.band]) * 0.32, 0, 1.1);
+            if (f.onset) crownVelocities[i] += f.onset * (0.5 + Math.abs(b.dx) * f.kick) * reactivity;
+        }
+        featuresAPI.springVector(crownPositions, crownVelocities, crownTargets, dt, 15 + energy * 7, damping - 0.06);
+        let wavePower = 0;
+        for (let i = 0; i < mangaTargets.length; i++) {
+            const j = Math.round(i / 15 * 63);
+            const filtered = f.waveform[j] * 0.5 +
+                (f.waveform[Math.max(0, j - 1)] + f.waveform[Math.min(63, j + 1)]) * 0.25;
+            mangaTargets[i] = filtered + (f.waveform[j] - filtered) * f.treble * 0.24;
+            wavePower += filtered * filtered;
+        }
+        const wantedGain = Math.min(3.5, 0.28 / Math.max(0.08, Math.sqrt(wavePower / 16)));
+        waveGain += (wantedGain - waveGain) * (1 - Math.exp(-dt / 0.2));
+        for (let i = 0; i < mangaTargets.length; i++) {
+            mangaTargets[i] = clamp(mangaTargets[i] * waveGain, -0.95, 0.95);
+            if (f.onset) mangaVelocities[i] += f.onset * Math.sign(mangaTargets[i]) * 1.5 * reactivity;
+        }
+        featuresAPI.springVector(mangaPositions, mangaVelocities, mangaTargets, dt, 22 + f.mid * 10, 0.84);
+        let filteredWavePower = 0;
+        for (let i = 0; i < mangaPositions.length; i++) filteredWavePower += mangaPositions[i] * mangaPositions[i];
+        // Compensate cancellation introduced by temporal/physics filtering,
+        // not musical loudness: the envelope still controls the stroke's size.
+        // Never normalize absent audio into a moving decorative waveform.
+        const displayGain = f.silent ? 1 : clamp(0.42 / Math.max(0.02, Math.sqrt(filteredWavePower / 16)), 1, 6);
+        waveDisplayGain += (displayGain - waveDisplayGain) * (1 - Math.exp(-dt / 0.18));
+        macroTarget[0] = clamp(f.bass * 0.6 + energy * 0.4, 0, 1.1);
+        macroTarget[1] = 0;
+        macroTarget[2] = energy;
+        featuresAPI.springVector(macro, macroVelocity, macroTarget, dt, 13, 0.78);
+        motionEnergy = 0;
+        for (let i = 0; i < positions.length; i++) {
+            positions[i] = clamp(positions[i], -0.02, 1.25);
+            motionEnergy = Math.max(motionEnergy, Math.abs(positions[i]), Math.abs(velocities[i]) * 0.03);
+            if (positions[i] >= peaks[i]) { peaks[i] = positions[i]; peakHold[i] = 0.09; }
+            else if (peakHold[i] > 0) peakHold[i] -= dt;
+            else peaks[i] = Math.max(positions[i], peaks[i] - dt * 0.75);
+        }
+        for (let i = 0; i < crownPositions.length; i++) {
+            crownPositions[i] = clamp(crownPositions[i], -0.02, 1.25);
+            motionEnergy = Math.max(motionEnergy, Math.abs(crownPositions[i]), Math.abs(crownVelocities[i]) * 0.03);
+        }
+        radius += (geometry.radius - radius) * (1 - Math.exp(-dt / 0.15));
+        const fade = 1 - Math.exp(-dt / (playing && !f.silent ? 0.1 : 0.25));
+        sceneOpacity += ((playing && !f.silent ? 1 : 0) - sceneOpacity) * fade;
+        const selected = styles.indexOf(style);
+        for (let i = 0; i < weights.length; i++) weights[i] += ((i === selected ? 1 : 0) - weights[i]) * (1 - Math.exp(-dt / 0.085));
+        // Bounded music-driven momentum, not an independent CSS rotation.
+        const equilibrium = playing && !f.silent ? energy * 0.2 : 0;
+        const drag = Math.exp(-1.6 * dt);
+        orbitPhase = (orbitPhase + equilibrium * dt + (orbitVelocity - equilibrium) * (1 - drag) / 1.6) % TAU;
+        orbitVelocity = clamp(equilibrium + (orbitVelocity - equilibrium) * drag, 0, 0.62);
+        gradientClock += dt * (0.1 + energy * 0.42) + (f.onset || 0) * 0.2;
+        const nextStep = Math.floor(gradientClock * 24);
+        if (nextStep !== gradientStep) buildGradient(gradientClock);
+    }
+
+    function addBounds(x, y, r) {
+        bounds.left = Math.min(bounds.left, x - r);
+        bounds.right = Math.max(bounds.right, x + r);
+        bounds.top = Math.min(bounds.top, y - r);
+        bounds.bottom = Math.max(bounds.bottom, y + r);
+    }
+    function crown(alpha) {
+        const g = geometry, f = engine.features;
+        ctx.globalAlpha = alpha * (0.26 + f.envelope * 0.1);
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 1.1;
+        ctx.stroke(g.crownGuide);
+        const opening = clamp(macro[0] * 5 + macro[1] * 3, 0, 9);
+        for (let i = 0; i < g.crown.length; i++) {
+            const b = g.crown[i];
+            const value = Math.max(0, crownPositions[i] * 0.85 + f.mid * 0.18 + f.treble * b.tip * 0.12);
+            const r = radius + opening * (0.55 + Math.abs(b.dx) * 0.45);
+            const room = Math.max(0, b.reach - r);
+            const length = Math.min(room, 2.4 + value * g.extension * visualIntensity + macro[1] * 5);
+            const x = g.cx + b.dx * r, y = g.cy + b.dy * r;
+            crownValues[i] = value;
+            crownLines[i * 4] = x;
+            crownLines[i * 4 + 1] = y;
+            crownLines[i * 4 + 2] = x + b.dx * length;
+            crownLines[i * 4 + 3] = y + b.dy * length;
+            longestBar = Math.max(longestBar, length);
+            addBounds(x + b.dx * length, y + b.dy * length, 1.3);
+        }
+        // One wide translucent pass reads as glow without per-frame shadowBlur.
+        ctx.beginPath();
+        for (let i = 0; i < g.crown.length; i++) {
+            ctx.moveTo(crownLines[i * 4], crownLines[i * 4 + 1]);
+            ctx.lineTo(crownLines[i * 4 + 2], crownLines[i * 4 + 3]);
+        }
+        ctx.globalAlpha = alpha * (0.1 + f.envelope * 0.13);
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 7;
+        ctx.stroke();
+        for (let bucket = 0; bucket < 4; bucket++) {
             ctx.beginPath();
-            ctx.arc(g.cx, g.cy, g.baseR + 2.5, 0, TAU);
+            for (let i = 0; i < g.crown.length; i++) {
+                if (Math.min(3, Math.floor(crownValues[i] * 4)) !== bucket) continue;
+                ctx.moveTo(crownLines[i * 4], crownLines[i * 4 + 1]);
+                ctx.lineTo(crownLines[i * 4 + 2], crownLines[i * 4 + 3]);
+            }
+            ctx.globalAlpha = alpha * (0.66 + bucket * 0.12);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 2.6;
             ctx.stroke();
-
-            for (let i = 0; i < 3; i++) {
-                const angle = phase + (i * TAU) / 3;
-                const dotR = g.baseR + 2.5;
-                ctx.globalAlpha = (0.28 + treble * 0.36) * drawOpacity;
-                ctx.fillStyle = i === 0 ? palette.a : palette.b;
-                ctx.beginPath();
-                ctx.arc(g.cx + Math.cos(angle) * dotR, g.cy + Math.sin(angle) * dotR, 1 + treble * 1.3, 0, TAU);
-                ctx.fill();
-            }
         }
+    }
 
-        drawBars(def.sparkle || def.ring === 'crescent');
-
-        if (def.sparkle) {
-            for (let i = 0; i < 2; i++) {
-                const angle = (i === 0 ? -0.24 : 0.25) * Math.PI;
-                const r = g.baseR + 4;
-                ctx.globalAlpha = (0.22 + treble * 0.34) * drawOpacity;
-                ctx.fillStyle = i === 0 ? palette.a : palette.b;
-                ctx.beginPath();
-                ctx.arc(g.cx + Math.cos(angle) * r, g.cy + Math.sin(angle) * r, 0.9 + treble * 1.1, 0, TAU);
-                ctx.fill();
-            }
+    function halo(alpha) {
+        const g = geometry, f = engine.features;
+        const r = radius + clamp(macro[0] * 4 + macro[1] * 2, 0, 7);
+        ctx.globalAlpha = alpha * 0.38;
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.arc(g.cx, g.cy, r - 2, 0, TAU);
+        ctx.stroke();
+        for (let i = 0; i < g.halo.length; i++) {
+            const b = g.halo[i];
+            const value = Math.max(0, Math.pow(Math.max(0, positions[b.band]), 1.22) * 0.94 + f.treble * 0.08);
+            const room = Math.max(0, b.reach - r);
+            const length = Math.min(room, 2.4 + value * g.extension * visualIntensity);
+            const x = g.cx + b.dx * r, y = g.cy + b.dy * r;
+            haloValues[i] = value;
+            haloLines[i * 4] = x;
+            haloLines[i * 4 + 1] = y;
+            haloLines[i * 4 + 2] = x + b.dx * length;
+            haloLines[i * 4 + 3] = y + b.dy * length;
+            longestBar = Math.max(longestBar, length);
+            addBounds(x + b.dx * length, y + b.dy * length, 1.2);
         }
+        ctx.beginPath();
+        for (let i = 0; i < g.halo.length; i++) {
+            ctx.moveTo(haloLines[i * 4], haloLines[i * 4 + 1]);
+            ctx.lineTo(haloLines[i * 4 + 2], haloLines[i * 4 + 3]);
+        }
+        ctx.globalAlpha = alpha * (0.09 + f.envelope * 0.12);
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        for (let bucket = 0; bucket < 4; bucket++) {
+            ctx.beginPath();
+            for (let i = 0; i < g.halo.length; i++) {
+                if (Math.min(3, Math.floor(haloValues[i] * 4)) !== bucket) continue;
+                ctx.moveTo(haloLines[i * 4], haloLines[i * 4 + 1]);
+                ctx.lineTo(haloLines[i * 4 + 2], haloLines[i * 4 + 3]);
+            }
+            ctx.globalAlpha = alpha * (0.58 + bucket * 0.15);
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 2.1;
+            ctx.stroke();
+        }
+        // Short, held peak markers are independently driven per frequency band.
+        ctx.beginPath();
+        for (let i = 0; i < g.halo.length; i += 2) {
+            const b = g.halo[i];
+            if (peaks[b.band] < 0.2) continue;
+            const reach = Math.min(b.reach, r + 3 + peaks[b.band] * g.extension * 0.9 * visualIntensity);
+            ctx.moveTo(g.cx + b.dx * reach, g.cy + b.dy * reach);
+            ctx.lineTo(g.cx + b.dx * (reach + 0.8), g.cy + b.dy * (reach + 0.8));
+        }
+        ctx.globalAlpha = alpha * (0.22 + f.treble * 0.25);
+        ctx.strokeStyle = palette[0];
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+    }
 
+    function smoothWave(x, y) {
+        ctx.beginPath();
+        ctx.moveTo(x[0], y[0]);
+        for (let i = 0; i < x.length - 1; i++) {
+            const p = Math.max(0, i - 1), n = Math.min(x.length - 1, i + 2);
+            ctx.bezierCurveTo(x[i] + (x[i + 1] - x[p]) / 6, y[i] + (y[i + 1] - y[p]) / 6,
+                x[i + 1] - (x[n] - x[i]) / 6, y[i + 1] - (y[n] - y[i]) / 6, x[i + 1], y[i + 1]);
+        }
+        ctx.stroke();
+    }
+    function manga(alpha) {
+        const g = geometry, f = engine.features;
+        const baseline = g.cy + 72;
+        const amplitude = Math.min(46, 11 + macro[2] * 30 + f.bass * 12) * visualIntensity;
+        for (let i = 0; i < g.waveX.length; i++) {
+            const t = i / 15;
+            const taper = 4 * t * (1 - t);
+            // Both strokes originate in the actual aligned waveform. The echo
+            // uses nearby samples, not an unrelated repeating sine function.
+            const bend = (1 - taper) * -10;
+            const value = mangaPositions[i] * waveDisplayGain;
+            const center = baseline + bend;
+            const displacement = value * amplitude * taper;
+            const capacity = Math.max(4, displacement > 0 ? g.h - 36 - center : center - g.cy - 49);
+            g.waveY[i] = center + capacity * Math.tanh(displacement / capacity);
+            const echo = -mangaPositions[Math.min(15, i + 1)] * waveDisplayGain * amplitude * 0.52 * taper;
+            const echoCenter = center + 7;
+            const echoRoom = Math.max(4, echo > 0 ? g.h - 35 - echoCenter : echoCenter - g.cy - 51);
+            g.echoY[i] = echoCenter + echoRoom * Math.tanh(echo / echoRoom);
+            addBounds(g.waveX[i], g.waveY[i], 1.5);
+            addBounds(g.waveX[i], g.echoY[i], 1);
+        }
+        ctx.globalAlpha = alpha * 0.42;
+        ctx.strokeStyle = palette[1];
+        ctx.lineWidth = 1.4;
+        smoothWave(g.waveX, g.echoY);
+        ctx.globalAlpha = alpha * (0.1 + f.envelope * 0.12);
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 7;
+        smoothWave(g.waveX, g.waveY);
+        ctx.globalAlpha = alpha * (0.86 + f.mid * 0.14);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 3.2;
+        smoothWave(g.waveX, g.waveY);
+    }
+
+    function kinetic(alpha) {
+        const g = geometry, f = engine.features;
+        const rx = radius + 5 + macro[0] * 3;
+        const ry = radius * 0.88 + 5;
+        const tilt = -0.22;
+        ctx.strokeStyle = highlight;
+        ctx.lineWidth = 1.1;
+        ctx.globalAlpha = alpha * 0.46;
+        ctx.beginPath();
+        ctx.ellipse(g.cx, g.cy, rx, ry, tilt, 0, TAU);
+        ctx.stroke();
+        ctx.globalAlpha = alpha * 0.18;
+        ctx.beginPath();
+        ctx.ellipse(g.cx, g.cy, rx + 4, ry + 4, tilt + 0.25, 0.13 * Math.PI, 0.93 * Math.PI);
+        ctx.stroke();
+        const cosTilt = Math.cos(tilt), sinTilt = Math.sin(tilt);
+        for (let cluster = 0; cluster < 3; cluster++) {
+            const angle = orbitPhase + orbitOffsets[cluster];
+            const ox = Math.cos(angle), oy = Math.sin(angle);
+            const nx = g.cx + cosTilt * rx * ox - sinTilt * ry * oy;
+            const ny = g.cy + sinTilt * rx * ox + cosTilt * ry * oy;
+            ctx.globalAlpha = alpha * (0.5 + f.treble * 0.4);
+            ctx.fillStyle = cluster === 1 ? palette[1] : palette[0];
+            ctx.beginPath();
+            ctx.arc(nx, ny, 2.2 + f.treble * 1.8, 0, TAU);
+            ctx.fill();
+            addBounds(nx, ny, 4);
+            for (let i = 0; i < 7; i++) {
+                const a = angle - 0.3 + i * 0.075;
+                const x = cosTilt * rx * Math.cos(a) - sinTilt * ry * Math.sin(a);
+                const y = sinTilt * rx * Math.cos(a) + cosTilt * ry * Math.sin(a);
+                const direction = Math.atan2(y, x);
+                const dx = Math.cos(direction), dy = Math.sin(direction);
+                const index = Math.floor(((direction / TAU + 1) % 1) * 256);
+                const r = Math.sqrt(x * x + y * y);
+                const band = 5 + cluster * 9 + i * 2;
+                const value = Math.max(0, positions[band] * 0.85 + f.mid * 0.15);
+                const length = Math.min(Math.max(0, g.orbitRoom[index] - r),
+                    2.4 + value * g.extension * 1.05 * visualIntensity + macro[1] * 3);
+                clusterLines[i * 4] = g.cx + x;
+                clusterLines[i * 4 + 1] = g.cy + y;
+                clusterLines[i * 4 + 2] = g.cx + x + dx * length;
+                clusterLines[i * 4 + 3] = g.cy + y + dy * length;
+                longestBar = Math.max(longestBar, length);
+                addBounds(g.cx + x + dx * length, g.cy + y + dy * length, 1.3);
+            }
+            ctx.beginPath();
+            for (let i = 0; i < 7; i++) {
+                ctx.moveTo(clusterLines[i * 4], clusterLines[i * 4 + 1]);
+                ctx.lineTo(clusterLines[i * 4 + 2], clusterLines[i * 4 + 3]);
+            }
+            ctx.globalAlpha = alpha * (0.1 + f.envelope * 0.12);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = highlight;
+            ctx.stroke();
+            ctx.globalAlpha = alpha * (0.62 + f.mid * 0.3);
+            ctx.lineWidth = 2.4;
+            ctx.strokeStyle = gradient;
+            ctx.stroke();
+        }
+    }
+
+    function render() {
+        if (!geometry) return;
+        const g = geometry;
+        ctx.clearRect(0, 0, g.w, g.h);
+        longestBar = 0;
+        bounds.left = g.cx; bounds.right = g.cx; bounds.top = g.cy; bounds.bottom = g.cy;
+        const opacity = Math.max(0.15, sceneOpacity);
+        if (weights[0] > 0.005) crown(opacity * weights[0]);
+        if (weights[1] > 0.005) halo(opacity * weights[1]);
+        if (weights[2] > 0.005) manga(opacity * weights[2]);
+        if (weights[3] > 0.005) kinetic(opacity * weights[3]);
         ctx.globalAlpha = 1;
-
-        if (vinyl) {
-            const glowKey = ((0.12 + bass * 0.76 + midS * 0.12) * drawOpacity).toFixed(3);
-            const scaleKey = (1 + bass * 0.035).toFixed(3);
-            if (vinylGlow && glowKey !== vinylGlowKey) {
-                vinylGlow.style.opacity = glowKey;
-                vinylGlowKey = glowKey;
-            }
-            if (scaleKey !== vinylScaleKey) {
-                vinyl.style.scale = scaleKey;
-                vinylScaleKey = scaleKey;
-            }
-        }
-        if (aura) {
-            const glowKey = ((0.12 + bass * 0.88) * drawOpacity).toFixed(3);
-            const scaleKey = (1 + bass * 0.04).toFixed(3);
-            if (auraGlow && glowKey !== auraGlowKey) {
-                auraGlow.style.opacity = glowKey;
-                auraGlowKey = glowKey;
-            }
-            if (scaleKey !== auraScaleKey) {
-                aura.style.transform = `translate(-50%, -50%) scale(${scaleKey})`;
-                auraScaleKey = scaleKey;
-            }
-        }
     }
 
-    function resetReactiveStyles() {
-        vinylGlowKey = '';
-        vinylScaleKey = '';
-        auraGlowKey = '';
-        auraScaleKey = '';
-        if (vinyl) {
-            vinyl.classList.remove('audio-reactive');
-            vinyl.style.scale = '';
+    function reactiveDOM() {
+        const f = engine.features;
+        const v = (1 + f.bass * 0.035).toFixed(3);
+        const d = (1 + f.bass * 0.04).toFixed(3);
+        const glow = (sceneOpacity * (0.12 + f.bass * 0.8)).toFixed(2);
+        if (vinyl && v !== domCache.vinylScale) { vinyl.style.scale = v; domCache.vinylScale = v; }
+        if (pedestal && d !== domCache.discScale) { pedestal.style.transform = `translate(-50%, -50%) scale(${d})`; domCache.discScale = d; }
+        if (vinylGlow && glow !== domCache.vinylGlow) { vinylGlow.style.opacity = glow; domCache.vinylGlow = glow; }
+        if (pedestalGlow && glow !== domCache.discGlow) { pedestalGlow.style.opacity = glow; domCache.discGlow = glow; }
+        for (let i = 0; i < barsUI.length; i++) {
+            const value = Math.max(0.18, Math.min(1, positions[Math.round(i / Math.max(1, barsUI.length - 1) * 47)]));
+            if (Math.abs(value - barValues[i]) < 0.015) continue;
+            barsUI[i].style.transform = `scaleY(${value.toFixed(3)})`;
+            barValues[i] = value;
         }
-        if (aura) {
-            aura.classList.remove('audio-reactive');
-            aura.style.transform = '';
-        }
+    }
+    function clearDOM() {
+        if (vinyl) { vinyl.style.scale = ''; vinyl.classList.remove('audio-reactive'); }
+        if (pedestal) { pedestal.style.transform = ''; pedestal.classList.remove('audio-reactive'); }
         if (vinylGlow) vinylGlow.style.opacity = '';
-        if (auraGlow) auraGlow.style.opacity = '';
-        for (let i = 0; i < uiBars.length; i++) uiBars[i].style.setProperty('--bar-scale', '0.18');
+        if (pedestalGlow) pedestalGlow.style.opacity = '';
+        barsUI.forEach(bar => { bar.style.transform = ''; bar.style.setProperty('--bar-scale', '0.18'); });
+        barValues.fill(-1);
+        Object.keys(domCache).forEach(key => { domCache[key] = ''; });
     }
-
-    function clearCanvas() {
-        if (!geometry) return;
-        ctx.clearRect(0, 0, geometry.size, geometry.size);
-        levels.fill(0);
-        bassS = 0;
-        midS = 0;
-        trebleS = 0;
+    function changeState(next) {
+        if (next === state) return;
+        state = next;
+        stage.dataset.audioState = next;
+        updateCaption();
     }
-
-    // ------------------------------------------------------------------
-    // LOOP — one controller for all four styles
-    // ------------------------------------------------------------------
+    function updateCaption() {
+        if (!caption) return;
+        caption.textContent = names[style] + (state === 'suspended' ? ' · Chờ âm thanh' : state === 'buffering' ? ' · Đang tải' : '');
+    }
+    function playbackState() {
+        if (audio.ended) return 'ended';
+        if (audio.paused) return 'paused';
+        if (!context || context.state !== 'running') return 'suspended';
+        if (seeking) return 'seeking';
+        if (audio.readyState < 2) return 'buffering';
+        return 'playing';
+    }
     function tick(now) {
-        rafId = 0;
+        raf = 0;
         if (!running) return;
-
-        if (doc.hidden || doc.body.classList.contains('zen-mode') || motionQuery?.matches) {
-            running = false;
-            clearCanvas();
-            resetReactiveStyles();
-            return;
-        }
-
-        const dt = lastTs ? clamp(now - lastTs, 8, 48) : 16.67;
-        lastTs = now;
-
-        const playing = !audio.paused && !audio.ended && ensureAnalyser();
+        if (doc.hidden || reduced.matches || doc.body.classList.contains('zen-mode')) { stop(); return; }
+        const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+        last = now;
+        const next = playbackState();
+        changeState(next);
+        const playing = next === 'playing';
         if (playing) {
-            decaying = false;
-            drawOpacity = 1;
-            phase += dt * 0.0001;
-            sampleAudio(dt);
+            engine.sample(global.__minkoiAnalyser, dt, reactivity);
+            settlingSince = 0;
         } else {
-            if (!decaying) {
-                decaying = true;
-                decayStart = now;
-            }
-            const decay = Math.exp(-dt / 150);
-            drawOpacity = Math.exp(-(now - decayStart) / 180);
-            for (let i = 0; i < levels.length; i++) levels[i] *= decay;
-            bassS *= decay;
-            midS *= decay;
-            trebleS *= decay;
-            if (now - decayStart > 620) {
-                running = false;
-                clearCanvas();
-                resetReactiveStyles();
-                return;
-            }
+            engine.decay(dt);
+            if (!settlingSince) settlingSince = now;
         }
-
-        draw();
-        rafId = global.requestAnimationFrame(tick);
-    }
-
-    function start() {
-        if (doc.hidden || doc.body.classList.contains('zen-mode')) return;
-        if (motionQuery && motionQuery.matches) {
-            stop();
-            clearCanvas();
-            resetReactiveStyles();
+        updatePhysics(dt, playing);
+        let mixing = false;
+        for (let i = 0; i < weights.length; i++) if (i !== styles.indexOf(style) && weights[i] > 0.005) mixing = true;
+        const idle = playing && engine.features.silent && motionEnergy < 0.002 && !mixing;
+        if (!idle || !idlePainted) { render(); reactiveDOM(); }
+        idlePainted = idle;
+        if (!playing && now - settlingSince > 950 && motionEnergy < 0.015) {
+            running = false;
+            clearDOM();
+            sceneOpacity = 0;
+            peaks.fill(0);
+            peakHold.fill(0);
+            orbitVelocity = 0;
+            render();
             return;
         }
-        if (!ensureAnalyser()) return;
+        raf = global.requestAnimationFrame(tick);
+    }
+    function attachContext() {
+        const next = global.__minkoiAudioCtx;
+        if (!next || next === context) return;
+        if (context) context.removeEventListener('statechange', onContextState);
+        context = next;
+        context.addEventListener('statechange', onContextState);
+    }
+    function onContextState() { engine.reset(false); start(); }
+    function start() {
+        attachContext();
+        const next = playbackState();
+        changeState(next);
+        if (next !== 'playing') engine.decay(0);
+        if (doc.hidden || reduced.matches || doc.body.classList.contains('zen-mode')) {
+            if (next !== 'playing') engine.decay(1);
+            return;
+        }
         if (running) return;
-        // The card can move while hidden (Zen, font loads, viewport changes).
-        // Read layout only on restart, never in the render loop.
         measure();
         if (!geometry) return;
+        if (audio.paused && motionEnergy < 0.001) { render(); return; }
         running = true;
+        last = 0;
+        settlingSince = 0;
         vinyl?.classList.add('audio-reactive');
-        aura?.classList.add('audio-reactive');
-        lastTs = 0;
-        decaying = false;
-        rafId = global.requestAnimationFrame(tick);
+        pedestal?.classList.add('audio-reactive');
+        raf = global.requestAnimationFrame(tick);
     }
-
     function stop() {
-        if (rafId) global.cancelAnimationFrame(rafId);
-        rafId = 0;
-        running = false;
-        decaying = false;
-        lastTs = 0;
-        clearCanvas();
-        resetReactiveStyles();
+        if (raf) global.cancelAnimationFrame(raf);
+        raf = 0; running = false; last = 0;
+        sceneOpacity = 0;
+        clearDOM();
+        if (geometry) ctx.clearRect(0, 0, geometry.w, geometry.h);
     }
-
-    // ------------------------------------------------------------------
-    // AUDIO LIFECYCLE
-    // ------------------------------------------------------------------
-    audio.addEventListener('play', () => {
-        start();
-    });
-    audio.addEventListener('pause', () => {
-        if (running) {
-            decaying = true;
-            decayStart = global.performance.now();
-        }
-    });
-    audio.addEventListener('ended', () => {
-        if (running) {
-            decaying = true;
-            decayStart = global.performance.now();
-        }
-    });
-
-    global.addEventListener('minkoi:zenchange', () => {
-        if (doc.body.classList.contains('zen-mode')) {
-            stop();
-            clearCanvas();
-            resetReactiveStyles();
-        } else if (!audio.paused) {
-            start();
-        }
-    });
-
-    doc.addEventListener('visibilitychange', () => {
-        if (doc.hidden) {
-            stop();
-        } else if (!audio.paused) {
-            start();
-        }
-    });
-
-    // ------------------------------------------------------------------
-    // STYLE SWITCHING
-    // ------------------------------------------------------------------
-    function syncMenuSelection() {
-        if (!menu) return;
-        menu.querySelectorAll('.viz-menu-item').forEach((item) => {
-            const checked = item.dataset.vizStyle === activeStyle;
-            item.setAttribute('aria-checked', checked ? 'true' : 'false');
-        });
-    }
-
-    function setStyle(style, options) {
-        if (!STYLES[style]) return;
-        const changed = style !== activeStyle;
-        activeStyle = style;
-        if (options?.persist !== false) persistStyle(style);
-        syncMenuSelection();
-        if (!changed) return;
-
-        // Geometry depends on the style's angular coverage; rebuild without
-        // touching the audio graph, playback position or the chibi.
-        measure();
-        clearCanvas();
-        if (!audio.paused) start();
-        global.dispatchEvent(new CustomEvent('minkoi:vizstyle', { detail: { style } }));
-    }
-
-    // ------------------------------------------------------------------
-    // GEOMETRY REFRESH
-    // ------------------------------------------------------------------
-    let resizeTimer = 0;
     function scheduleMeasure() {
         if (resizeTimer) return;
-        resizeTimer = global.setTimeout(() => {
-            resizeTimer = 0;
-            if (doc.hidden || doc.body.classList.contains('zen-mode')) return;
-            const wasRunning = running;
-            measure();
-            clearCanvas();
-            if (wasRunning && !audio.paused) start();
-        }, 120);
+        resizeTimer = global.setTimeout(() => { resizeTimer = 0; measure(); }, 90);
+    }
+    function setStyle(next, options) {
+        next = legacy[next] || next;
+        if (!names[next]) return;
+        style = next;
+        idlePainted = false;
+        if (options?.persist !== false) save('minkoi_visualizer_style', next);
+        updateCaption();
+        if (!audio.paused || running) start();
+        else { weights.fill(0); weights[styles.indexOf(style)] = 1; render(); }
+        global.dispatchEvent(new CustomEvent('minkoi:vizstyle', { detail: { style } }));
+    }
+    function setControl(key, value, options) {
+        if (!Number.isFinite(Number(value))) return;
+        if (key === 'intensity') intensity = clamp(Number(value), 0.55, 1.4);
+        else if (key === 'reactivity') reactivity = clamp(Number(value), 0.45, 1.45);
+        else return;
+        if (options?.persist !== false) save('minkoi_visualizer_' + key, key === 'intensity' ? intensity : reactivity);
+        if (!audio.paused) start();
     }
 
+    ['play', 'playing', 'pause', 'ended', 'waiting'].forEach(event => audio.addEventListener(event, start));
+    audio.addEventListener('seeking', () => { seeking = true; engine.reset(false); start(); });
+    audio.addEventListener('seeked', () => { seeking = false; engine.reset(false); start(); });
+    audio.addEventListener('emptied', () => { engine.reset(true); start(); });
+    doc.addEventListener('visibilitychange', () => { if (doc.hidden) stop(); else if (!audio.paused) { engine.reset(false); start(); } });
+    reduced.addEventListener('change', () => { if (reduced.matches) stop(); else if (!audio.paused) start(); });
+    global.addEventListener('minkoi:zenchange', () => { if (doc.body.classList.contains('zen-mode')) stop(); else if (!audio.paused) start(); });
+    global.addEventListener('minkoi:persona', event => { refreshPalette(event); scheduleMeasure(); });
+    global.addEventListener('minkoi:themechange', refreshPalette);
     global.addEventListener('resize', scheduleMeasure, { passive: true });
-    global.visualViewport?.addEventListener('resize', scheduleMeasure, { passive: true });
-    global.addEventListener('minkoi:persona', () => {
-        refreshPalette();
-        // Persona artwork has its own optical size (Sakura Miku is taller and
-        // wider), so the frame must re-measure after the swap.
-        scheduleMeasure();
-    });
-    global.addEventListener('minkoi:themechange', () => {
-        refreshPalette();
-        buildGradient();
-    });
-    global.addEventListener('load', scheduleMeasure, { passive: true });
-    avatarImg?.addEventListener('load', scheduleMeasure);
+    avatar.addEventListener('load', scheduleMeasure);
     if (global.ResizeObserver) {
         const observer = new global.ResizeObserver(scheduleMeasure);
-        [zone, avatarImg, identity, social, colLeft].filter(Boolean).forEach(el => observer.observe(el));
+        [stage, art, avatar].forEach(el => observer.observe(el));
     }
-    if (doc.fonts && doc.fonts.ready) {
-        doc.fonts.ready.then(scheduleMeasure).catch(() => {});
-    }
-    if (mobileQuery?.addEventListener) mobileQuery.addEventListener('change', scheduleMeasure);
-    if (motionQuery?.addEventListener) {
-        motionQuery.addEventListener('change', () => {
-            if (motionQuery.matches) {
-                stop();
-                clearCanvas();
-                resetReactiveStyles();
-            } else if (!audio.paused) {
-                start();
-            }
-        });
-    }
-
-    // ==================================================================
-    // MIUIX STYLE MENU
-    // ==================================================================
-    let menuState = 'closed'; // closed | opening | open | closing
-    let menuGen = 0;
-    let releaseTrap = null;
-    let originX = 50;
-    let originY = 0;
-
-    const springLib = global.MinkoiSpring;
-    const fractionSpring = springLib ? springLib.createSpring({
-        initial: 0,
-        target: 0,
-        preset: springLib.PRESETS.LIST_POPUP,
-        precision: 0.002,
-        velocityPrecision: 0.03,
-        onUpdate: applyFraction
-    }) : null;
-
-    function applyFraction(raw) {
-        if (!menu) return;
-        const f = clamp(raw, 0, 1.04);
-        const scale = 0.86 + 0.14 * f;
-        const alpha = clamp(f * 1.45, 0, 1);
-        menu.style.transformOrigin = originX + 'px ' + originY + 'px';
-        menu.style.transform = 'translateY(' + ((1 - f) * 6).toFixed(2) + 'px) scale(' + scale.toFixed(4) + ')';
-        menu.style.opacity = alpha.toFixed(3);
-    }
-
-    function setMenuState(next) {
-        menuState = next;
-        if (!menu || !menuBtn) return;
-        menu.dataset.popupState = next;
-        const expanded = next === 'opening' || next === 'open';
-        menuBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        menu.inert = !expanded;
-        if (!expanded) menu.setAttribute('aria-hidden', 'true');
-        else menu.removeAttribute('aria-hidden');
-    }
-
-    function positionMenu() {
-        if (!menu || !menuBtn) return;
-        const r = menuBtn.getBoundingClientRect();
-        const vw = global.innerWidth || doc.documentElement.clientWidth;
-        const vh = global.innerHeight || doc.documentElement.clientHeight;
-        const margin = 8;
-        const width = Math.min(276, vw - margin * 2);
-        menu.style.width = width + 'px';
-        menu.style.maxHeight = (vh - margin * 2) + 'px';
-
-        const mh = menu.offsetHeight || 240;
-        let left = r.right - width;
-        left = Math.max(margin, Math.min(vw - width - margin, left));
-        let top = r.bottom + 8;
-        let originBottom = false;
-        if (top + mh > vh - margin && r.top - 8 - mh > margin) {
-            top = r.top - 8 - mh;
-            originBottom = true;
+    doc.fonts?.ready.then(scheduleMeasure);
+    global.MinkoiVisualizer = Object.freeze({
+        start, stop, setStyle, setControl, getStyle: () => style,
+        getControls: () => ({ intensity, reactivity }),
+        getMetrics: () => {
+            const f = engine.features;
+            const rect = stage.getBoundingClientRect();
+            return { style, state, running, sampling: running && state === 'playing', intensity, reactivity,
+                canvasSize: geometry?.w || 0, baseRadius: radius, onsetCount, longestBar, palette: palette.slice(),
+                bounds: { left: rect.left + bounds.left, right: rect.left + bounds.right,
+                    top: rect.top + bounds.top, bottom: rect.top + bounds.bottom },
+                audio: { rms: f.rms, bass: f.bass, mid: f.mid, treble: f.treble,
+                    envelope: f.envelope, reference: f.reference, flux: f.flux, silent: f.silent },
+                rawEnergy: { bass: f.rawBass, mid: f.rawMid, treble: f.rawTreble },
+                physics: { opening: macro[0], impulse: macro[1], energy: motionEnergy, orbitVelocity, orbitPhase },
+                bands: Array.from(f.bands), positions: Array.from(positions), waveform: Array.from(f.waveform) };
         }
-        top = Math.max(margin, Math.min(vh - mh - margin, top));
-        menu.style.left = left + 'px';
-        menu.style.top = top + 'px';
-
-        const centerX = r.left + r.width / 2;
-        originX = clamp(centerX - left, 14, width - 14);
-        originY = originBottom ? mh : 0;
-        if (fractionSpring) applyFraction(fractionSpring.value);
-    }
-
-    function releaseCurrentTrap(restoreFocus) {
-        if (!releaseTrap) return;
-        const fn = releaseTrap;
-        releaseTrap = null;
-        fn({ restoreFocus: restoreFocus !== false });
-    }
-
-    function openMenu() {
-        if (!menu || !menuBtn || menuState === 'opening' || menuState === 'open') return;
-        // Re-opening while the exit spring is still running keeps its current
-        // fraction, so the popup reverses instead of snapping to zero.
-        const interrupted = menuState === 'closing';
-        global.MinkoiUI?.closeAllOverlays?.('viz-menu', { restoreFocus: false });
-        menuGen++;
-        if (fractionSpring) fractionSpring.onComplete = null;
-        setMenuState('opening');
-        menu.style.visibility = 'visible';
-        menu.style.pointerEvents = 'auto';
-        positionMenu();
-        if (!interrupted) applyFraction(0);
-        if (global.MinkoiUI?.pushFocusTrap) {
-            releaseCurrentTrap(false);
-            releaseTrap = global.MinkoiUI.pushFocusTrap(menu, menuBtn, { initialFocus: true });
-        }
-        if (fractionSpring) {
-            const gen = menuGen;
-            fractionSpring.setTarget(1, {
-                onComplete: () => {
-                    if (gen !== menuGen || menuState !== 'opening') return;
-                    setMenuState('open');
-                    applyFraction(1);
-                }
-            });
-        } else {
-            applyFraction(1);
-            setMenuState('open');
-        }
-    }
-
-    function closeMenu(options) {
-        const opts = options || {};
-        if (!menu || menuState === 'closing' || menuState === 'closed') return;
-        menuGen++;
-        if (fractionSpring) fractionSpring.onComplete = null;
-        setMenuState('closing');
-        menu.style.pointerEvents = 'none';
-        releaseCurrentTrap(opts.restoreFocus !== false);
-
-        const finish = () => {
-            if (menuState !== 'closing') return;
-            setMenuState('closed');
-            menu.style.visibility = 'hidden';
-            menu.style.pointerEvents = 'none';
-        };
-
-        if (opts.instant) {
-            if (fractionSpring) fractionSpring.snap(0);
-            applyFraction(0);
-            finish();
-        } else if (fractionSpring) {
-            const gen = menuGen;
-            fractionSpring.setTarget(0, {
-                onComplete: () => {
-                    if (gen !== menuGen) return;
-                    finish();
-                }
-            });
-        } else {
-            applyFraction(0);
-            finish();
-        }
-    }
-
-    function onMenuButtonClick(e) {
-        e.preventDefault();
-        if (menuState === 'opening' || menuState === 'open') closeMenu({ restoreFocus: true });
-        else openMenu();
-    }
-
-    if (menuBtn && menu) {
-        // Escape the card's overflow clipping and stacking context.
-        if (menu.parentElement !== doc.body) doc.body.appendChild(menu);
-        setMenuState('closed');
-        syncMenuSelection();
-
-        menuBtn.addEventListener('click', onMenuButtonClick);
-
-        menu.querySelectorAll('.viz-menu-item').forEach((item) => {
-            item.addEventListener('click', (event) => {
-                setStyle(item.dataset.vizStyle, { persist: true });
-                if (global.MinkoiFeedback) global.MinkoiFeedback.commit(item, event);
-                closeMenu({ restoreFocus: true });
-            });
-        });
-
-        doc.addEventListener('click', (e) => {
-            if (menuState !== 'opening' && menuState !== 'open') return;
-            if (menu.contains(e.target) || menuBtn.contains(e.target)) return;
-            closeMenu({ restoreFocus: false });
-        });
-
-        doc.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && (menuState === 'opening' || menuState === 'open')) {
-                e.preventDefault();
-                closeMenu({ restoreFocus: true });
-            }
-        });
-
-        menu.addEventListener('keydown', (e) => {
-            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-            const items = Array.from(menu.querySelectorAll('.viz-menu-item'));
-            if (!items.length) return;
-            e.preventDefault();
-            const current = items.indexOf(doc.activeElement);
-            const delta = e.key === 'ArrowDown' ? 1 : -1;
-            items[(current + delta + items.length) % items.length].focus();
-        });
-
-        global.MinkoiUI?.registerOverlay?.('viz-menu', {
-            isOpen: () => menuState === 'opening' || menuState === 'open',
-            close: closeMenu
-        });
-
-        global.addEventListener('resize', () => {
-            if (menuState === 'opening' || menuState === 'open') positionMenu();
-        }, { passive: true });
-        doc.addEventListener('scroll', e => {
-            if (!menu.contains(e.target)) closeMenu({ restoreFocus: false });
-        }, { passive: true, capture: true });
-        global.addEventListener('minkoi:zenchange', () => {
-            if (doc.body.classList.contains('zen-mode')) closeMenu({ restoreFocus: false });
-        });
-    }
-
-    // ------------------------------------------------------------------
-    // BOOT
-    // ------------------------------------------------------------------
+    });
     refreshPalette();
     measure();
-    syncMenuSelection();
-
-    function barBounds() {
-        if (!geometry) return null;
-        const g = geometry;
-        const zr = zone.getBoundingClientRect();
-        const cx = zr.left + zr.width / 2;
-        const cy = zr.top + zr.height * 0.52;
-        let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
-        for (let i = 0; i < g.bars.length; i++) {
-            const b = g.bars[i];
-            const x = cx + b.x;
-            const y = cy + b.y;
-            const ex = x + b.dx * b.len;
-            const ey = y + b.dy * b.len;
-            left = Math.min(left, Math.min(x, ex) - b.width / 2);
-            right = Math.max(right, Math.max(x, ex) + b.width / 2);
-            top = Math.min(top, Math.min(y, ey) - b.width / 2);
-            bottom = Math.max(bottom, Math.max(y, ey) + b.width / 2);
-        }
-        return {
-            left: Math.round(left * 10) / 10,
-            right: Math.round(right * 10) / 10,
-            top: Math.round(top * 10) / 10,
-            bottom: Math.round(bottom * 10) / 10
-        };
-    }
-
-    global.MinkoiVisualizer = Object.freeze({
-        start,
-        stop,
-        setStyle,
-        getStyle: () => activeStyle,
-        getMetrics: () => ({
-            style: activeStyle,
-            canvasSize: geometry ? geometry.size : 0,
-            bars: geometry ? geometry.bars.length : 0,
-            baseRadius: geometry ? Math.round(geometry.baseR * 10) / 10 : 0,
-            reach: geometry ? Math.round(geometry.reach * 10) / 10 : 0,
-            running,
-            compact: isCompact(),
-            bounds: barBounds()
-        })
-    });
-
-    // If playback somehow started before this module booted.
+    updateCaption();
     if (!audio.paused) start();
 })(window);
