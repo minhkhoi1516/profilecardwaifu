@@ -6,6 +6,8 @@
     inherits: true;
     initial-value: #38bdf8;
 }
+/* App-like surfaces: native Android tap highlights read as stray blue rectangles. */
+html { -webkit-tap-highlight-color: transparent; }
 @property --color-accent-glow {
     syntax: '<color>';
     inherits: true;
@@ -130,6 +132,53 @@ body.light-mode .dropdown-flyout, body.light-mode .lyrics-drawer-modal, body.lig
 .haptic-feedback-state { margin-left: auto; font-size: 0.65rem; color: var(--color-text-muted); }
 .top-more-item[aria-checked="true"] .haptic-feedback-state { color: var(--color-accent); }
 .top-more-item:disabled { opacity: 0.55; cursor: default; }
+/* Compact material preference inside the existing overflow menu. */
+.top-more-material {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+    padding: 0.3rem 0.45rem 0.4rem;
+}
+.top-more-material-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+.top-more-material-label i { color: var(--color-accent); font-size: 0.68rem; }
+.nav-material-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.22rem;
+    padding: 2px;
+    border-radius: 12px;
+    background: var(--surface-pill);
+    border: 1px solid var(--color-border-subtle);
+}
+.nav-material-switch button {
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: 600 0.68rem var(--font-body);
+    padding: 0.36rem 0.3rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 180ms ease, color 180ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.nav-material-switch button[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--color-accent) 20%, var(--surface-hover));
+    color: var(--color-text);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+body.light-mode .nav-material-switch button[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--color-accent) 16%, #ffffff);
+    color: #262b33;
+    box-shadow: inset 0 1px 0 #ffffff;
+}
 .sheet-drag-handle {
     display: none;
     width: 38px;
@@ -175,12 +224,16 @@ body.light-mode .dropdown-flyout, body.light-mode .lyrics-drawer-modal, body.lig
     position: relative;
     padding: 4px 6px;
     border-radius: 999px;
-    background: var(--surface-pill);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)), var(--surface-pill);
     border: 1px solid var(--color-border-subtle);
-    box-shadow: inset 0 1px 0 var(--color-border-subtle);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    box-shadow: inset 0 1px 0 var(--color-border-subtle), 0 8px 22px -20px rgba(0, 0, 0, 0.7);
+    /* Static surface blur only: the moving lens must never repaint a backdrop. */
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    /* Horizontal input belongs to the shared gesture engine, vertical to the page. */
     touch-action: pan-y pinch-zoom;
+    overscroll-behavior-x: contain;
+    -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -190,13 +243,75 @@ body.light-mode .dropdown-flyout, body.light-mode .lyrics-drawer-modal, body.lig
     bottom: 4px;
     left: 0;
     border-radius: 999px;
-    background: linear-gradient(150deg, rgba(255, 255, 255, 0.18), color-mix(in srgb, var(--color-accent) 22%, transparent));
-    border: 1px solid var(--color-border-active);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 10px rgba(0, 0, 0, 0.12);
+    /* Material A · frosted: translucent tint, soft sheen, crisp text above it. */
+    background:
+        radial-gradient(120% 100% at 18% 0%, rgba(255, 255, 255, 0.26), transparent 58%),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07) 44%, color-mix(in srgb, var(--color-accent) 22%, transparent));
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34), inset 0 -8px 14px -12px rgba(0, 0, 0, 0.55), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
     pointer-events: none;
     z-index: 1;
     transform-origin: left center;
     contain: layout style;
+    overflow: hidden;
+    /* Render-only material transition; geometry stays owned by the springs. */
+    transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+.liquid-glass-indicator::before,
+.liquid-glass-indicator::after {
+    content: '';
+    position: absolute;
+    pointer-events: none;
+    border-radius: inherit;
+    transition: opacity 220ms ease;
+}
+.liquid-glass-indicator::before {
+    /* Frosted inner sheen */
+    inset: 1px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 58%);
+    opacity: 1;
+}
+.liquid-glass-indicator::after {
+    /* Material B · optical rim: tiny Fresnel/chromatic edge, not neon. */
+    inset: 0;
+    padding: 1px;
+    background: conic-gradient(from 208deg,
+        rgba(158, 224, 255, 0.55), rgba(255, 255, 255, 0.08) 26%,
+        rgba(255, 150, 210, 0.26) 52%, rgba(255, 255, 255, 0.06) 76%,
+        rgba(158, 224, 255, 0.45));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+}
+/* Material B · liquid: clearer glass, deeper curvature and specular depth. */
+body[data-nav-material="liquid"] .liquid-glass-indicator {
+    background:
+        radial-gradient(92% 120% at 16% 0%, rgba(255, 255, 255, 0.34), transparent 52%),
+        radial-gradient(84% 120% at 86% 112%, color-mix(in srgb, var(--color-accent) 42%, transparent), transparent 62%),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.03) 46%, rgba(255, 255, 255, 0.1));
+    border-color: rgba(255, 255, 255, 0.42);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5),
+        inset 0 -10px 18px -12px color-mix(in srgb, var(--color-accent) 60%, transparent),
+        0 8px 20px -10px rgba(0, 0, 0, 0.5);
+}
+body[data-nav-material="liquid"] .liquid-glass-indicator::before { opacity: 0.35; }
+body[data-nav-material="liquid"] .liquid-glass-indicator::after { opacity: 1; }
+body.light-mode .liquid-glass-indicator {
+    background:
+        radial-gradient(120% 100% at 18% 0%, rgba(255, 255, 255, 0.9), transparent 58%),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.42) 48%, color-mix(in srgb, var(--color-accent) 14%, transparent));
+    border-color: rgba(50, 48, 43, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 4px 12px -7px rgba(51, 45, 35, 0.34);
+}
+body.light-mode[data-nav-material="liquid"] .liquid-glass-indicator {
+    background:
+        radial-gradient(90% 120% at 16% 0%, rgba(255, 255, 255, 0.96), transparent 52%),
+        radial-gradient(84% 120% at 86% 112%, color-mix(in srgb, var(--color-accent) 24%, transparent), transparent 62%),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.28) 46%, rgba(255, 255, 255, 0.56));
+    border-color: rgba(50, 48, 43, 0.24);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98), inset 0 -8px 16px -12px color-mix(in srgb, var(--color-accent) 40%, transparent), 0 6px 16px -9px rgba(51, 45, 35, 0.36);
 }
 .audio-category-nav .cat-tab,
 body.light-mode .audio-category-nav .cat-tab:is(.active, :hover) {
@@ -208,6 +323,7 @@ body.light-mode .audio-category-nav .cat-tab:is(.active, :hover) {
     color: var(--color-text-muted);
     text-shadow: none;
     touch-action: pan-y pinch-zoom;
+    -webkit-tap-highlight-color: transparent;
 }
 .audio-category-nav .cat-tab:is(.active, :hover, .drag-candidate),
 body.light-mode .audio-category-nav .cat-tab:is(.active, :hover) { color: var(--color-text); }
@@ -295,5 +411,5 @@ body.light-mode.zen-mode .banner-stage::after {
 }
 @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
-    .liquid-glass-indicator { transition: none; will-change: auto; }
+    .liquid-glass-indicator, .liquid-glass-indicator::before, .liquid-glass-indicator::after { transition: none; will-change: auto; }
 }

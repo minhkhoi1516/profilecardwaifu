@@ -1401,6 +1401,7 @@
     // Directional Trailing-Edge Stretch, Damped Boundary Resistance, Velocity Fling
     // ----------------------------------------------------------------------
     const liquidNavInstances = new WeakMap();
+    const NAV_CLICK_SUPPRESS_MS = 260;
 
     function initLiquidGlassNav(navEl, onSelect) {
         if (!navEl) return null;
@@ -1410,6 +1411,7 @@
             return instance;
         }
 
+        const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
         let indicator = null;
 
         function ensureIndicator() {
@@ -1441,17 +1443,34 @@
         let rightSpring = null;
         let scaleYSpring = null;
 
-        let gestureState = 'idle'; // 'idle' | 'pressed' | 'dragging' | 'settling'
-        let dragPointerId = null;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let targetPointerClientX = 0;
+        // idle -> pressed -> (lens | scrub) -> settling | flinging -> idle
+        let state = 'idle';
+        let pointerId = null;
+        let startX = 0;
+        let startY = 0;
+        let pressRegion = 'strip';
+        let horizontalBlocked = false;
+
         let suppressClickUntil = 0;
         let dragRaf = 0;
         let dragFrameTime = 0;
-        let maxScrollRange = 0;
+        let pendingX = 0;
+        let hasPendingX = false;
 
-        // Cached geometry during active gestures (zero layout thrashing during moves)
+        let scrollRaf = 0;
+        let scrollFrameTime = 0;
+        let scrollStart = 0;
+        let scrollVelocity = 0;
+
+        let settleVersion = 0;
+        let committingSelect = false;
+        let renderQueued = false;
+        let destroyed = false;
+        let resizeFrame = 0;
+        let lastRelease = null;
+        let lastScrub = null;
+
+        // Cached geometry during a gesture, so no frame performs layout reads.
         let cachedNavRectLeft = 0;
         let cachedNavRectRight = 0;
         let cachedTabs = [];
@@ -1460,29 +1479,29 @@
         let baseTabWidth = 64;
         let minContentX = 0;
         let maxContentX = 0;
+        let maxScrollRange = 0;
 
-        // Authoritative current physical bounds of the liquid capsule
+        // Authoritative physical bounds of the liquid capsule, in content space.
         let currentLeft = 0;
         let currentRight = 64;
+        let squashValue = 1;
         let lastRenderedWidth = -1;
-        let lastDragUpdate = 0;
         let lastRenderedTransform = '';
         let lastRenderedRadius = '';
-        let destroyed = false;
-        let resizeFrame = 0;
 
         function getActiveTab() {
             return navEl.querySelector('.cat-tab.active') || navEl.querySelector('.cat-tab');
         }
 
         function getCandidateTab(projX) {
-            if (!cachedTabs || !cachedTabs.length) return null;
-            const searchCenter = Number.isFinite(projX) ? projX : (currentLeft + currentRight) / 2;
+            if (!cachedTabs.length) return null;
+            const center = Number.isFinite(projX) ? projX : (currentLeft + currentRight) / 2;
             let best = null;
             let minDist = Infinity;
             for (let i = 0; i < cachedTabs.length; i++) {
                 const item = cachedTabs[i];
-                const dist = Math.abs(searchCenter - item.center);
+                if (!item.el.isConnected) continue;
+                const dist = Math.abs(center - item.center);
                 if (dist < minDist) {
                     minDist = dist;
                     best = item;
@@ -1491,178 +1510,196 @@
             return best;
         }
 
-        function renderCapsule(left, right, boundarySquash = 1) {
+        function setWillChange(on) {
+            if (indicator) indicator.style.willChange = on ? 'transform' : '';
+        }
+
+        // Fling projection is a hint, never a teleport: cap the predicted
+        // travel so a single noisy velocity sample cannot skip several tabs.
+        function projectFling(vel) {
+            const limit = Math.min(190, Math.max(70, baseTabWidth * 1.5));
+            return clamp(Number.isFinite(vel) ? vel * 0.18 : 0, -limit, limit);
+        }
+
+        function renderCapsule(left, right) {
             const ind = ensureIndicator();
             if (!ind) return;
             let safeLeft = Number.isFinite(left) ? left : 0;
-            const safeRight = Number.isFinite(right) ? Math.max(safeLeft + 16, right) : safeLeft + 64;
-            const rawWidth = Math.max(16, safeRight - safeLeft);
-            // Coupled edges: a single capsule cannot stretch across the whole bar.
-            const w = Math.min(rawWidth, Math.max(32, baseTabWidth * 1.6));
+            const rawRight = Number.isFinite(right) ? Math.max(safeLeft + 16, right) : safeLeft + 64;
+            const rawWidth = Math.max(16, rawRight - safeLeft);
+            // Coupled edges: one capsule never smears across the whole strip.
+            const widthLimit = Math.max(56, baseTabWidth * 1.6);
+            const w = Math.min(rawWidth, widthLimit);
             safeLeft += (rawWidth - w) / 2;
 
-            // Compute volume-preserving squash
             const standardW = Math.max(16, baseTabWidth);
-            const stretchRatio = Math.max(0.88, Math.min(1.22, w / standardW));
-            const squashRatio = Math.max(0.82, Math.min(1.18, (1 / Math.sqrt(stretchRatio)) * boundarySquash));
+            const stretch = w / standardW;
+            // Vertical volume is spring-smoothed during drag, not re-laid-out.
+            const squash = clamp(squashValue, 0.84, 1.07);
 
             if (Math.abs(lastRenderedWidth - w) >= 0.5) {
                 ind.style.width = `${w.toFixed(1)}px`;
                 lastRenderedWidth = w;
             }
-            const transform = `translate3d(${safeLeft.toFixed(1)}px, 0, 0) scale(1, ${squashRatio.toFixed(3)})`;
+            const transform = `translate3d(${safeLeft.toFixed(1)}px, 0, 0) scale(1, ${squash.toFixed(3)})`;
             if (transform !== lastRenderedTransform) {
                 ind.style.transform = transform;
                 lastRenderedTransform = transform;
             }
-            const strain = Math.min(1, Math.abs(w / standardW - 1));
-            const radius = `${(26 + strain * 18).toFixed(1)}px / ${(26 - strain * 3).toFixed(1)}px`;
+            const strain = Math.min(1, Math.abs(stretch - 1));
+            const radius = `${(26 + strain * 16).toFixed(1)}px / ${(26 - strain * 2).toFixed(1)}px`;
             if (radius !== lastRenderedRadius) {
                 ind.style.borderRadius = radius;
                 lastRenderedRadius = radius;
             }
         }
 
-        function updateCandidateHighlight(projCenter) {
-            const candidate = getCandidateTab(projCenter);
-            if (cachedTabs) {
-                for (let i = 0; i < cachedTabs.length; i++) {
-                    const item = cachedTabs[i];
-                    item.el.classList.toggle('drag-candidate', Boolean(candidate && item.el === candidate.el));
-                }
-            }
-        }
-
-        function computePhysicalDrag(clientX) {
-            const now = global.performance.now();
-            const dt = lastDragUpdate ? Math.min(64, Math.max(0, now - lastDragUpdate)) : 16.67;
-            lastDragUpdate = now;
-            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
-            const rawX = fingerContentX - grabOffset;
-
-            const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
-            const speed = Math.abs(vel);
-
-            // Dynamically adapt nominal width as the indicator glides across different tabs
-            const candidate = getCandidateTab(rawX + baseTabWidth / 2);
-            if (candidate && candidate.width > 0) {
-                baseTabWidth += (candidate.width - baseTabWidth) * (1 - Math.exp(-dt / 95));
-            }
-
-            // Miuix Smooth Directional Edge-Lag & Elastic Surface Tension Model:
-            // Continuous lag that smoothly transitions through zero during direction reversals
-            // and combines velocity with elastic displacement stretching.
-            const displacement = rawX - anchorLeft;
-            const stationaryFactor = Math.min(1, speed / 25);
-            const dispLag = Math.min(26, Math.abs(displacement) * 0.32) * stationaryFactor;
-            const velLag = Math.min(28, (speed * 0.035 + 8 * Math.tanh(speed / 80)) * stationaryFactor);
-            const trailLag = Math.max(velLag, dispLag);
-            const dirWeight = Math.abs(vel) > 2 ? Math.tanh(vel / 100) : (displacement !== 0 ? Math.sign(displacement) : 0);
-
-            let nextLeft = rawX;
-            let nextRight = rawX + baseTabWidth;
-
-            if (dirWeight > 0.05) {
-                // Moving right: right edge leads forward, left edge follows finger
-                nextRight += trailLag * Math.abs(dirWeight);
-            } else if (dirWeight < -0.05) {
-                // Moving left: left edge leads forward, right edge follows finger
-                nextLeft -= trailLag * Math.abs(dirWeight);
-            }
-
-            // Damped elastic resistance at container boundaries with organic liquid surface tension
-            let boundarySquash = 1;
-            if (nextLeft < minContentX) {
-                const overshoot = minContentX - nextLeft;
-                const damped = spLib ? spLib.obtainDampingDistance(-overshoot, 36) : -overshoot * 0.28;
-                nextLeft = minContentX + damped;
-                const strain = Math.min(0.28, Math.abs(damped) / 36);
-                boundarySquash = 1 + strain * 0.40;
-                nextRight = nextLeft + baseTabWidth * (1 - strain * 0.25);
-            } else if (nextRight > maxContentX) {
-                const overshoot = nextRight - maxContentX;
-                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 36) : overshoot * 0.28;
-                nextRight = maxContentX + damped;
-                const strain = Math.min(0.28, Math.abs(damped) / 36);
-                boundarySquash = 1 + strain * 0.40;
-                nextLeft = nextRight - baseTabWidth * (1 - strain * 0.25);
-            }
-
-            currentLeft = nextLeft;
-            currentRight = nextRight;
-
-            renderCapsule(currentLeft, currentRight, boundarySquash);
-
-            // Projected center for predictive fling candidate selection (Miuix fling tau = 0.18s)
-            const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
-            updateCandidateHighlight(projCenter);
+        function queueLensRender() {
+            if (renderQueued) return;
+            renderQueued = true;
+            const run = () => {
+                renderQueued = false;
+                if (destroyed || state === 'lens' || state === 'scrub') return;
+                if (!leftSpring || !rightSpring) return;
+                currentLeft = leftSpring.value;
+                currentRight = rightSpring.value;
+                renderCapsule(currentLeft, currentRight);
+            };
+            if (typeof queueMicrotask === 'function') queueMicrotask(run);
+            else Promise.resolve().then(run);
         }
 
         function ensureSprings() {
             ensureIndicator();
             if (leftSpring && rightSpring) return;
-            const activeTab = getActiveTab();
-            const initX = activeTab ? activeTab.offsetLeft : 0;
-            const initW = activeTab ? activeTab.offsetWidth : 64;
+            const active = getActiveTab();
+            const initX = active ? active.offsetLeft : 0;
+            const initW = active ? active.offsetWidth : 64;
+            currentLeft = initX;
+            currentRight = initX + initW;
+            baseTabWidth = Math.max(16, initW);
+            squashValue = 1;
 
             if (!spLib) {
-                currentLeft = initX;
-                currentRight = initX + initW;
                 renderCapsule(currentLeft, currentRight);
                 return;
             }
 
-            const edgePreset = spLib.PRESETS.EDGE_LEADING || spLib.PRESETS.LIQUID_GLASS;
-            const trailPreset = spLib.PRESETS.EDGE_TRAILING || spLib.PRESETS.LIQUID_STRETCH;
-
-            let isSpringCommitPending = false;
-            const commitSpringRender = () => {
-                isSpringCommitPending = false;
-                if (gestureState === 'dragging') return;
-                currentLeft = leftSpring ? leftSpring.value : currentLeft;
-                currentRight = rightSpring ? rightSpring.value : currentRight;
-                renderCapsule(currentLeft, currentRight);
-            };
-
-            const onSpringUpdate = () => {
-                if (gestureState === 'dragging') return;
-                if (!isSpringCommitPending) {
-                    isSpringCommitPending = true;
-                    // Microtask executes in the SAME frame's RAF tick before style/paint,
-                    // eliminating the 1-frame latency pipeline stall of nested RAFs.
-                    if (typeof queueMicrotask === 'function') {
-                        queueMicrotask(commitSpringRender);
-                    } else {
-                        Promise.resolve().then(commitSpringRender);
-                    }
-                }
-            };
-
             leftSpring = spLib.createSpring({
                 initial: initX,
                 target: initX,
-                preset: edgePreset,
-                precision: 0.2,
-                onUpdate: onSpringUpdate
+                preset: spLib.PRESETS.EDGE_LEADING || spLib.PRESETS.LIQUID_GLASS,
+                precision: 0.35,
+                velocityPrecision: 1.5,
+                onUpdate: queueLensRender
             });
-
             rightSpring = spLib.createSpring({
                 initial: initX + initW,
                 target: initX + initW,
-                preset: trailPreset,
-                precision: 0.2,
-                onUpdate: onSpringUpdate
+                preset: spLib.PRESETS.EDGE_TRAILING || spLib.PRESETS.LIQUID_STRETCH,
+                precision: 0.35,
+                velocityPrecision: 1.5,
+                onUpdate: queueLensRender
             });
-
-            currentLeft = initX;
-            currentRight = initX + initW;
-            baseTabWidth = initW;
+            scaleYSpring = spLib.createSpring({
+                initial: 1,
+                target: 1,
+                preset: spLib.PRESETS.LIQUID_STRETCH,
+                precision: 0.002,
+                velocityPrecision: 0.01,
+                onUpdate: (value) => {
+                    squashValue = value;
+                    queueLensRender();
+                }
+            });
             renderCapsule(currentLeft, currentRight);
+        }
+
+        function settleTo(targetLeft, targetRight, opts) {
+            const options = opts || {};
+            const wasSettling = state === 'settling';
+            const version = ++settleVersion;
+            state = 'settling';
+            setWillChange(true);
+            ensureSprings();
+            baseTabWidth = Math.max(16, targetRight - targetLeft);
+            if (scaleYSpring) scaleYSpring.setTarget(1);
+
+            // Both edges must come to rest before the gesture is idle again,
+            // otherwise the slower trailing edge would jump to its destination.
+            let pendingEdges = 2;
+            const finish = () => {
+                if (version !== settleVersion || state !== 'settling') return;
+                state = 'idle';
+                currentLeft = targetLeft;
+                currentRight = targetRight;
+                renderCapsule(targetLeft, targetRight);
+                setWillChange(false);
+                if (typeof options.onDone === 'function') options.onDone();
+            };
+            const edgeDone = () => {
+                if (version !== settleVersion || state !== 'settling') return;
+                pendingEdges -= 1;
+                if (pendingEdges <= 0) finish();
+            };
+
+            if (!spLib || !leftSpring || !rightSpring) {
+                currentLeft = targetLeft;
+                currentRight = targetRight;
+                finish();
+                return;
+            }
+
+            const movingRight = targetLeft > currentLeft;
+            const lead = spLib.PRESETS.EDGE_LEADING;
+            const trail = spLib.PRESETS.EDGE_TRAILING;
+            const impulse = Number.isFinite(options.impulse) ? clamp(options.impulse, -1600, 1600) : 0;
+
+            // Adopt the authoritative capsule geometry before re-targeting.
+            // A free-drag gesture never moved the springs, so they are synced
+            // here and the release velocity is injected as a momentum impulse.
+            // A retarget during a settle keeps the live spring velocity instead.
+            const keepLeftVelocity = wasSettling ? leftSpring.velocity : 0;
+            const keepRightVelocity = wasSettling ? rightSpring.velocity : 0;
+            leftSpring.snap(currentLeft);
+            rightSpring.snap(currentRight);
+            leftSpring.velocity = keepLeftVelocity + impulse * 0.55;
+            rightSpring.velocity = keepRightVelocity + impulse * 0.55;
+
+            if (movingRight) {
+                rightSpring.setTarget(targetRight, { dampingRatio: lead.dampingRatio, stiffness: lead.stiffness, onComplete: edgeDone });
+                leftSpring.setTarget(targetLeft, { dampingRatio: trail.dampingRatio, stiffness: trail.stiffness, onComplete: edgeDone });
+            } else {
+                leftSpring.setTarget(targetLeft, { dampingRatio: lead.dampingRatio, stiffness: lead.stiffness, onComplete: edgeDone });
+                rightSpring.setTarget(targetRight, { dampingRatio: trail.dampingRatio, stiffness: trail.stiffness, onComplete: edgeDone });
+            }
+        }
+
+        function scrollTabIntoView(tab, smooth) {
+            if (!tab || !tab.isConnected) return;
+            const margin = 10;
+            const viewLeft = navEl.scrollLeft;
+            const viewRight = viewLeft + navEl.clientWidth;
+            const tabLeft = tab.offsetLeft;
+            const tabRight = tabLeft + tab.offsetWidth;
+            if (tabLeft >= viewLeft + margin && tabRight <= viewRight - margin) return;
+            const targetLeft = tabLeft < viewLeft + margin
+                ? tabLeft - margin
+                : tabRight - navEl.clientWidth + margin;
+            const maxLeft = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
+            const left = Math.max(0, Math.min(maxLeft, targetLeft));
+            try {
+                navEl.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+            } catch (_) {
+                navEl.scrollLeft = left;
+            }
         }
 
         function syncIndicator() {
             if (destroyed || !navEl.isConnected) return;
-            if (gestureState === 'dragging' || gestureState === 'pressed') return;
+            if (committingSelect) return;
+            if (state === 'pressed' || state === 'lens' || state === 'scrub' || state === 'flinging') return;
+
             const wasDetached = !indicator || !indicator.isConnected;
             ensureIndicator();
             if (wasDetached) {
@@ -1671,333 +1708,426 @@
                 lastRenderedRadius = '';
             }
 
-            const activeTab = getActiveTab();
-            if (!activeTab) return;
-            const targetLeft = activeTab.offsetLeft;
-            const targetWidth = activeTab.offsetWidth;
+            const active = getActiveTab();
+            if (!active) return;
+            const targetLeft = active.offsetLeft;
+            const targetWidth = active.offsetWidth;
+            if (!targetWidth) return;
             const targetRight = targetLeft + targetWidth;
-
-            if (!targetWidth) {
-                // ResizeObserver/font readiness will retry once layout is available.
-                return;
-            }
-
             baseTabWidth = targetWidth;
             ensureSprings();
-            gestureState = 'idle';
-            if (leftSpring) leftSpring.onComplete = null;
-            if (rightSpring) rightSpring.onComplete = null;
 
-            if (wasDetached || !spLib || (spLib.isAccessibilityReducedMotion
-                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion())) {
+            const reduced = spLib && (spLib.isAccessibilityReducedMotion
+                ? spLib.isAccessibilityReducedMotion() : spLib.isReducedMotion());
+            if (wasDetached || !spLib || reduced) {
+                settleVersion++;
                 if (leftSpring) leftSpring.snap(targetLeft);
                 if (rightSpring) rightSpring.snap(targetRight);
+                if (scaleYSpring) scaleYSpring.snap(1);
+                squashValue = 1;
                 currentLeft = targetLeft;
                 currentRight = targetRight;
+                state = 'idle';
                 renderCapsule(targetLeft, targetRight);
+                setWillChange(false);
                 return;
             }
 
-            // Directional spring targeting
-            const movingRight = targetLeft > currentLeft;
-            const leadPreset = spLib.PRESETS.EDGE_LEADING;
-            const trailPreset = spLib.PRESETS.EDGE_TRAILING;
+            // A rapid retarget keeps the current velocity: never reset the physics.
+            if (state === 'settling'
+                && Math.abs(leftSpring.target - targetLeft) < 0.5
+                && Math.abs(rightSpring.target - targetRight) < 0.5) {
+                return;
+            }
+            settleTo(targetLeft, targetRight);
+        }
 
-            if (leftSpring && rightSpring) {
-                if (movingRight) {
-                    rightSpring.setTarget(targetRight, { dampingRatio: leadPreset.dampingRatio, stiffness: leadPreset.stiffness });
-                    leftSpring.setTarget(targetLeft, { dampingRatio: trailPreset.dampingRatio, stiffness: trailPreset.stiffness });
-                } else {
-                    leftSpring.setTarget(targetLeft, { dampingRatio: leadPreset.dampingRatio, stiffness: leadPreset.stiffness });
-                    rightSpring.setTarget(targetRight, { dampingRatio: trailPreset.dampingRatio, stiffness: trailPreset.stiffness });
+        function updateCandidateHighlight(projCenter) {
+            const candidate = getCandidateTab(projCenter);
+            cachedTabs.forEach(item => {
+                item.el.classList.toggle('drag-candidate', Boolean(candidate && item.el === candidate.el));
+            });
+        }
+
+        function stepLens(clientX, dt) {
+            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+            const rawX = fingerContentX - grabOffset;
+            const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
+            const speed = Math.abs(vel);
+
+            const candidate = getCandidateTab(rawX + baseTabWidth / 2);
+            if (candidate && candidate.width > 0) {
+                baseTabWidth += (candidate.width - baseTabWidth) * (1 - Math.exp(-dt / 95));
+            }
+
+            const displacement = rawX - anchorLeft;
+            const stationaryFactor = Math.min(1, speed / 25);
+            const dispLag = Math.min(24, Math.abs(displacement) * 0.3) * stationaryFactor;
+            const velLag = Math.min(26, (speed * 0.03 + 8 * Math.tanh(speed / 80)) * stationaryFactor);
+            const trailLag = Math.max(velLag, dispLag);
+            const dirWeight = Math.abs(vel) > 2
+                ? Math.tanh(vel / 100)
+                : (displacement !== 0 ? Math.sign(displacement) : 0);
+
+            let nextLeft = rawX;
+            let nextRight = rawX + baseTabWidth;
+            if (dirWeight > 0.05) {
+                nextRight += trailLag * Math.min(1, dirWeight);
+            } else if (dirWeight < -0.05) {
+                nextLeft -= trailLag * Math.min(1, -dirWeight);
+            }
+
+            let boundaryStrain = 0;
+            if (nextLeft < minContentX) {
+                const overshoot = minContentX - nextLeft;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 42) : overshoot * 0.3;
+                nextLeft = minContentX - damped;
+                boundaryStrain = Math.min(0.3, Math.abs(damped) / 42);
+                nextRight = Math.min(nextRight, nextLeft + baseTabWidth * (1 + boundaryStrain * 0.5));
+            } else if (nextRight > maxContentX) {
+                const overshoot = nextRight - maxContentX;
+                const damped = spLib ? spLib.obtainDampingDistance(overshoot, 42) : overshoot * 0.3;
+                nextRight = maxContentX + damped;
+                boundaryStrain = Math.min(0.3, Math.abs(damped) / 42);
+                nextLeft = Math.max(nextLeft, nextRight - baseTabWidth * (1 + boundaryStrain * 0.5));
+            }
+
+            currentLeft = nextLeft;
+            currentRight = nextRight;
+            renderCapsule(currentLeft, currentRight);
+
+            if (scaleYSpring) {
+                const stretch = (currentRight - currentLeft) / Math.max(16, baseTabWidth);
+                const targetSquash = clamp(1 - Math.max(0, stretch - 1) * 0.28 + boundaryStrain * 0.16, 0.86, 1.06);
+                if (Math.abs(scaleYSpring.target - targetSquash) > 0.0015) {
+                    scaleYSpring.setTarget(targetSquash);
                 }
+            } else {
+                squashValue = 1;
             }
+
+            const projCenter = (currentLeft + currentRight) / 2 + projectFling(vel);
+            updateCandidateHighlight(projCenter);
         }
 
-        function advanceEdgeScroll(now) {
-            const dt = dragFrameTime ? Math.min(32, Math.max(0, now - dragFrameTime)) : 0;
-            dragFrameTime = now;
+        function edgeScrollSpeed() {
+            if (maxScrollRange <= 0) return 0;
             const edgeZone = 44;
-            let speed = 0;
-            if (targetPointerClientX < cachedNavRectLeft + edgeZone) {
-                speed = -Math.min(1, Math.max(0, (cachedNavRectLeft + edgeZone - targetPointerClientX) / edgeZone));
-            } else if (targetPointerClientX > cachedNavRectRight - edgeZone) {
-                speed = Math.min(1, Math.max(0, (targetPointerClientX - cachedNavRectRight + edgeZone) / edgeZone));
+            if (pendingX < cachedNavRectLeft + edgeZone) {
+                return -Math.min(1, Math.max(0, (cachedNavRectLeft + edgeZone - pendingX) / edgeZone));
             }
-            if (speed) navEl.scrollLeft = Math.max(0, Math.min(maxScrollRange, navEl.scrollLeft + speed * dt * 0.72));
+            if (pendingX > cachedNavRectRight - edgeZone) {
+                return Math.min(1, Math.max(0, (pendingX - cachedNavRectRight + edgeZone) / edgeZone));
+            }
+            return 0;
         }
 
-        function onPointerDown(e) {
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
-            if (gestureState === 'dragging' || e.isPrimary === false) return;
+        function runDragLoop(now) {
+            dragRaf = 0;
+            if (state !== 'lens') return;
+            const dt = dragFrameTime ? Math.min(48, Math.max(0, now - dragFrameTime)) : 16.67;
+            dragFrameTime = now;
 
-            let pressedTab = e.target && e.target.closest ? e.target.closest('.cat-tab') : null;
-            const activeTab = getActiveTab();
-            if (!activeTab) return;
-
-            if (!pressedTab && (e.target === navEl || navEl.contains(e.target))) {
-                const rect = navEl.getBoundingClientRect();
-                const pos = e.clientX - rect.left + navEl.scrollLeft;
-                const buttons = navEl.querySelectorAll('.cat-tab');
-                let nearest = null;
-                let minDistance = Infinity;
-                buttons.forEach(tab => {
-                    const center = tab.offsetLeft + tab.offsetWidth * 0.5;
-                    const dist = Math.abs(center - pos);
-                    if (dist < minDistance) {
-                        nearest = tab;
-                        minDistance = dist;
-                    }
-                });
-                pressedTab = nearest;
-            }
-            if (!pressedTab || !navEl.contains(pressedTab)) return;
-
-            ensureSprings();
-
-            if (leftSpring) leftSpring.onComplete = null;
-            if (rightSpring) rightSpring.onComplete = null;
-            lastDragUpdate = 0;
-            dragFrameTime = 0;
-
-            // Cancel any ongoing programmatic scroll
-            try {
-                navEl.scrollTo({ left: navEl.scrollLeft, behavior: 'auto' });
-            } catch (_) {
-                navEl.scrollLeft = navEl.scrollLeft;
+            const speed = edgeScrollSpeed();
+            if (speed) {
+                const before = navEl.scrollLeft;
+                navEl.scrollLeft = clamp(before + speed * dt * 0.45, 0, maxScrollRange);
+                if (navEl.scrollLeft !== before) hasPendingX = true;
             }
 
-            dragPointerId = e.pointerId;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            targetPointerClientX = e.clientX;
-
-            if (velocityTracker) {
-                velocityTracker.reset();
-                velocityTracker.addPoint(e.clientX, e.clientY);
+            if (hasPendingX) {
+                hasPendingX = false;
+                stepLens(pendingX, dt);
             }
+            dragRaf = global.requestAnimationFrame(runDragLoop);
+        }
 
+        function beginLens(clientX) {
+            if (pointerId === null) return;
             const navRect = navEl.getBoundingClientRect();
             cachedNavRectLeft = navRect.left;
             cachedNavRectRight = navRect.right;
             maxScrollRange = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
-
-            const tabs = Array.from(navEl.querySelectorAll('.cat-tab'));
-            cachedTabs = tabs.map(t => ({
+            cachedTabs = Array.from(navEl.querySelectorAll('.cat-tab')).map(t => ({
                 el: t,
                 left: t.offsetLeft,
                 width: t.offsetWidth,
                 center: t.offsetLeft + t.offsetWidth / 2,
                 cat: t.dataset.cat
             }));
-
-            const pressedItem = cachedTabs.find(t => t.el === pressedTab) || cachedTabs.find(t => t.el === activeTab);
-            baseTabWidth = pressedItem ? pressedItem.width : activeTab.offsetWidth;
-            anchorLeft = pressedItem ? pressedItem.left : activeTab.offsetLeft;
-
             minContentX = cachedTabs.length ? cachedTabs[0].left : 0;
             maxContentX = cachedTabs.length
                 ? cachedTabs[cachedTabs.length - 1].left + cachedTabs[cachedTabs.length - 1].width
-                : 360;
+                : navEl.scrollWidth;
 
-            const fingerContentX = e.clientX - cachedNavRectLeft + navEl.scrollLeft;
-            grabOffset = fingerContentX - anchorLeft;
+            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+            grabOffset = fingerContentX - currentLeft;
+            anchorLeft = currentLeft;
 
-            gestureState = 'pressed';
+            if (leftSpring) leftSpring.snap(currentLeft);
+            if (rightSpring) rightSpring.snap(currentRight);
 
-            // Subtle tactile compress
-            const ind = ensureIndicator();
-            if (ind) {
-                ind.classList.add('is-pressed');
+            state = 'lens';
+            hasPendingX = true;
+            pendingX = clientX;
+            dragFrameTime = 0;
+            navEl.classList.add('is-liquid-dragging');
+            if (indicator) {
+                indicator.classList.remove('is-pressed');
+                indicator.classList.add('is-dragging');
             }
-            if (pressedTab !== activeTab) {
-                if (leftSpring) leftSpring.setTarget(anchorLeft);
-                if (rightSpring) rightSpring.setTarget(anchorLeft + baseTabWidth);
-            }
+            setWillChange(true);
+            try {
+                navEl.setPointerCapture(pointerId);
+            } catch (_) {}
+            if (!dragRaf) dragRaf = global.requestAnimationFrame(runDragLoop);
         }
 
-        function runDragPhysicsLoop(now) {
-            if (gestureState !== 'dragging') {
-                dragRaf = 0;
+        function beginScrub() {
+            if (pointerId === null) return;
+            state = 'scrub';
+            scrollStart = navEl.scrollLeft;
+            scrollVelocity = 0;
+            navEl.classList.add('is-liquid-dragging');
+            setWillChange(false);
+            try {
+                navEl.setPointerCapture(pointerId);
+            } catch (_) {}
+            if (indicator) indicator.classList.remove('is-pressed');
+        }
+
+        function updateScrub(clientX) {
+            const next = clamp(scrollStart - (clientX - startX), 0, maxScrollRange);
+            navEl.scrollLeft = next;
+        }
+
+        function startScrollFling(velocity) {
+            scrollVelocity = velocity;
+            if (Math.abs(scrollVelocity) < 24) {
+                state = 'idle';
+                navEl.classList.remove('is-liquid-dragging');
                 return;
             }
-            advanceEdgeScroll(now);
-            computePhysicalDrag(targetPointerClientX);
-            dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
+            state = 'flinging';
+            scrollFrameTime = 0;
+            if (!scrollRaf) scrollRaf = global.requestAnimationFrame(stepScrollFling);
+        }
+
+        function stepScrollFling(now) {
+            scrollRaf = 0;
+            if (state !== 'flinging') return;
+            const dt = scrollFrameTime ? Math.min(48, Math.max(0, now - scrollFrameTime)) : 16.67;
+            scrollFrameTime = now;
+            const before = navEl.scrollLeft;
+            const next = before + scrollVelocity * dt / 1000;
+            const clamped = clamp(next, 0, maxScrollRange);
+            navEl.scrollLeft = clamped;
+            if (clamped === 0 || clamped === maxScrollRange) scrollVelocity = 0;
+            scrollVelocity *= Math.exp(-dt / 360);
+            if (Math.abs(scrollVelocity) < 18) {
+                scrollVelocity = 0;
+                state = 'idle';
+                navEl.classList.remove('is-liquid-dragging');
+                return;
+            }
+            scrollRaf = global.requestAnimationFrame(stepScrollFling);
+        }
+
+        function cancelScrollFling() {
+            if (scrollRaf) {
+                global.cancelAnimationFrame(scrollRaf);
+                scrollRaf = 0;
+            }
+            scrollVelocity = 0;
+        }
+
+        function releasePointerCapture() {
+            if (pointerId === null) return;
+            const id = pointerId;
+            try {
+                if (navEl.hasPointerCapture(id)) navEl.releasePointerCapture(id);
+            } catch (_) {}
+        }
+
+        function endGestureVisuals() {
+            navEl.classList.remove('is-liquid-dragging');
+            if (indicator) {
+                indicator.classList.remove('is-dragging');
+                indicator.classList.remove('is-pressed');
+            }
+            if (cachedTabs.length) cachedTabs.forEach(item => item.el.classList.remove('drag-candidate'));
+            hasPendingX = false;
+        }
+
+        function surrenderPointer() {
+            releasePointerCapture();
+            pointerId = null;
+            endGestureVisuals();
+            state = 'idle';
+            horizontalBlocked = false;
+        }
+
+        function onPointerDown(e) {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (pointerId !== null || e.isPrimary === false) return;
+            if (!navEl.contains(e.target)) return;
+            if (!getActiveTab()) return;
+
+            cancelScrollFling();
+            // Freeze any in-flight smooth scroll so this gesture owns the offset.
+            const frozenScroll = navEl.scrollLeft;
+            try { navEl.scrollTo({ left: frozenScroll, behavior: 'auto' }); } catch (_) { navEl.scrollLeft = frozenScroll; }
+            ensureSprings();
+
+            pointerId = e.pointerId;
+            startX = e.clientX;
+            startY = e.clientY;
+            pendingX = e.clientX;
+            hasPendingX = false;
+            horizontalBlocked = false;
+            dragFrameTime = 0;
+
+            const navRect = navEl.getBoundingClientRect();
+            cachedNavRectLeft = navRect.left;
+            maxScrollRange = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
+            const contentX = e.clientX - navRect.left + navEl.scrollLeft;
+            pressRegion = (contentX >= currentLeft - 6 && contentX <= currentRight + 6) ? 'lens' : 'strip';
+
+            if (velocityTracker) {
+                velocityTracker.reset();
+                velocityTracker.addPoint(e.clientX, e.clientY);
+            }
+
+            state = 'pressed';
+            if (indicator) indicator.classList.toggle('is-pressed', pressRegion === 'lens');
         }
 
         function onPointerMove(e) {
-            if (dragPointerId === null || e.pointerId !== dragPointerId) return;
+            if (pointerId === null || e.pointerId !== pointerId) return;
+            if (velocityTracker) velocityTracker.addPoint(e.clientX, e.clientY);
+            pendingX = e.clientX;
 
-            if (velocityTracker) {
-                velocityTracker.addPoint(e.clientX, e.clientY);
-            }
-            targetPointerClientX = e.clientX;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
 
-            const deltaX = e.clientX - dragStartX;
-            const deltaY = e.clientY - dragStartY;
-
-            if (gestureState === 'pressed') {
-                if (Math.abs(deltaY) > 7 && Math.abs(deltaY) > Math.abs(deltaX)) {
-                    // Immediate natural surrender to vertical page scroll
-                    gestureState = 'idle';
-                    dragPointerId = null;
-                    if (indicator) indicator.classList.remove('is-pressed');
-                    syncIndicator();
+            if (state === 'pressed') {
+                if (Math.abs(dy) > 9 && Math.abs(dy) > Math.abs(dx) * 1.1) {
+                    // Natural surrender to the native vertical page scroll.
+                    surrenderPointer();
                     return;
                 }
-
-                if (Math.abs(deltaX) > 6 && Math.abs(deltaX) >= Math.abs(deltaY) * 0.75) {
-                    gestureState = 'dragging';
-                    navEl.classList.add('is-liquid-dragging');
-                    if (indicator) indicator.classList.add('is-dragging');
-                    try {
-                        navEl.setPointerCapture(e.pointerId);
-                    } catch (_) {}
-                    // Halt previous springs during direct finger control
-                    // Preserve the capsule's visible origin when a gesture interrupts
-                    // a jump to a different tab; direct dragging must never teleport.
-                    grabOffset = e.clientX - cachedNavRectLeft + navEl.scrollLeft - currentLeft;
-                    anchorLeft = currentLeft;
-                    if (leftSpring) leftSpring.snap(currentLeft);
-                    if (rightSpring) rightSpring.snap(currentRight);
-                    if (!dragRaf) {
-                        dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
+                if (!horizontalBlocked && Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy) * 1.05) {
+                    if (pressRegion === 'lens') {
+                        beginLens(e.clientX);
+                    } else if (maxScrollRange > 0) {
+                        beginScrub();
+                    } else {
+                        // Nothing to scroll and the lens was not grabbed: keep the tap alive.
+                        horizontalBlocked = true;
                     }
                 }
             }
 
-            if (gestureState !== 'dragging') return;
-
-            e.preventDefault();
-            computePhysicalDrag(targetPointerClientX);
-            if (!dragRaf) {
-                dragRaf = global.requestAnimationFrame(runDragPhysicsLoop);
+            if (state === 'lens') {
+                e.preventDefault();
+                hasPendingX = true;
+            } else if (state === 'scrub') {
+                e.preventDefault();
+                updateScrub(e.clientX);
             }
         }
 
-        function onPointerUp(e, cancelled = false) {
-            if (dragPointerId === null || e.pointerId !== dragPointerId) return;
-            // A fast release can happen before the queued drag RAF. Always process the
-            // final real finger position before settling, or selection uses stale glass.
-            if (!cancelled && gestureState === 'dragging' && Number.isFinite(e.clientX)) {
-                targetPointerClientX = e.clientX;
-                if (velocityTracker && Number.isFinite(e.clientY)) {
-                    velocityTracker.addPoint(e.clientX, e.clientY);
-                }
-                computePhysicalDrag(targetPointerClientX);
+        function finishLensGesture(e, cancelled) {
+            const now = performance.now();
+            const vel = (!cancelled && velocityTracker) ? velocityTracker.getVelocity().vx : 0;
+            const center = (currentLeft + currentRight) / 2;
+            const target = !cancelled
+                ? getCandidateTab(center + projectFling(vel))
+                : null;
+            const fallback = getActiveTab();
+            const targetTab = target ? target.el : fallback;
+            if (!targetTab) {
+                state = 'idle';
+                endGestureVisuals();
+                syncIndicator();
+                return;
             }
-            const capturedPointerId = dragPointerId;
-            dragPointerId = null;
+
+            const active = getActiveTab();
+            const moved = Math.abs(center - (anchorLeft + baseTabWidth / 2));
+            const shouldSelect = !cancelled && targetTab.dataset.cat
+                && (!active || active.dataset.cat !== targetTab.dataset.cat)
+                && (moved > 10 || Math.abs(vel) > 220);
+
+            suppressClickUntil = now + NAV_CLICK_SUPPRESS_MS;
+            lastRelease = { vel: Math.round(vel), center: Math.round(center), target: targetTab.dataset.cat };
+
+            if (shouldSelect) {
+                committingSelect = true;
+                try {
+                    if (typeof instance.onSelect === 'function') {
+                        instance.onSelect(targetTab.dataset.cat, { fromLiquidDrag: true });
+                    }
+                    global.MinkoiFeedback?.commit(targetTab, e);
+                } finally {
+                    committingSelect = false;
+                }
+            }
+
+            const targetLeft = targetTab.offsetLeft;
+            const targetWidth = targetTab.offsetWidth;
+            settleTo(targetLeft, targetLeft + targetWidth, {
+                impulse: cancelled ? 0 : vel,
+                onDone: () => scrollTabIntoView(targetTab, true)
+            });
+        }
+
+        function onPointerUp(e, cancelled) {
+            if (pointerId === null || (e && e.pointerId !== pointerId)) return;
+            const endingState = state;
+            const endX = (e && Number.isFinite(e.clientX)) ? e.clientX : pendingX;
+            const wasCancelled = cancelled === true;
+            if (!wasCancelled && velocityTracker && e) velocityTracker.addPoint(e.clientX, e.clientY);
+
+            releasePointerCapture();
+            pointerId = null;
 
             if (dragRaf) {
                 global.cancelAnimationFrame(dragRaf);
                 dragRaf = 0;
             }
 
-            try {
-                if (navEl.hasPointerCapture(capturedPointerId)) {
-                    navEl.releasePointerCapture(capturedPointerId);
+            if (endingState === 'lens') {
+                if (!wasCancelled) {
+                    hasPendingX = false;
+                    stepLens(endX, 16.67);
                 }
-            } catch (_) {}
-
-            navEl.classList.remove('is-liquid-dragging');
-            if (indicator) {
-                indicator.classList.remove('is-dragging');
-                indicator.classList.remove('is-pressed');
+                endGestureVisuals();
+                finishLensGesture(e, wasCancelled);
+                return;
             }
 
-            if (cachedTabs) {
-                cachedTabs.forEach(t => t.el.classList.remove('drag-candidate'));
-            }
-
-            const wasDragging = gestureState === 'dragging';
-            gestureState = wasDragging ? 'settling' : 'idle';
-
-            if (wasDragging) {
+            if (endingState === 'scrub') {
+                const vel = (velocityTracker && !wasCancelled) ? velocityTracker.getVelocity().vx : 0;
+                endGestureVisuals();
                 suppressClickUntil = performance.now() + 180;
+                lastScrub = { vel: Math.round(vel), from: Math.round(navEl.scrollLeft) };
+                startScrollFling(-vel);
+                return;
             }
 
-            if (wasDragging && !cancelled) {
-                const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
-                // Miuix natural fling projection window (tau = 0.18s)
-                const projCenter = (currentLeft + currentRight) / 2 + vel * 0.18;
-                const targetItem = getCandidateTab(projCenter);
-                const targetTab = targetItem ? targetItem.el : getActiveTab();
-
-                if (targetTab) {
-                    const targetCat = targetTab.dataset.cat;
-                    const targetLeft = targetTab.offsetLeft;
-                    const targetWidth = targetTab.offsetWidth;
-                    const targetRight = targetLeft + targetWidth;
-                    baseTabWidth = targetWidth;
-
-                    if (leftSpring && rightSpring) {
-                        leftSpring.snap(currentLeft);
-                        rightSpring.snap(currentRight);
-
-                        // Inherit fling impulse with Miuix directional edge physics
-                        const impulse = Math.max(-1800, Math.min(1800, vel));
-                        leftSpring.impulse(impulse);
-                        rightSpring.impulse(impulse);
-
-                        const movingRight = targetLeft > currentLeft;
-                        const leadPreset = spLib.PRESETS.EDGE_LEADING;
-                        const trailPreset = spLib.PRESETS.EDGE_TRAILING;
-
-                        const settleComplete = () => {
-                            gestureState = 'idle';
-                            currentLeft = targetLeft;
-                            currentRight = targetRight;
-                            renderCapsule(targetLeft, targetRight);
-                        };
-
-                        if (movingRight) {
-                            rightSpring.setTarget(targetRight, {
-                                dampingRatio: leadPreset.dampingRatio,
-                                stiffness: leadPreset.stiffness
-                            });
-                            leftSpring.setTarget(targetLeft, {
-                                dampingRatio: trailPreset.dampingRatio,
-                                stiffness: trailPreset.stiffness,
-                                onComplete: settleComplete
-                            });
-                        } else {
-                            leftSpring.setTarget(targetLeft, {
-                                dampingRatio: leadPreset.dampingRatio,
-                                stiffness: leadPreset.stiffness
-                            });
-                            rightSpring.setTarget(targetRight, {
-                                dampingRatio: trailPreset.dampingRatio,
-                                stiffness: trailPreset.stiffness,
-                                onComplete: settleComplete
-                            });
-                        }
-                    } else {
-                        gestureState = 'idle';
-                        currentLeft = targetLeft;
-                        currentRight = targetRight;
-                        renderCapsule(targetLeft, targetRight);
-                    }
-
-                    if (typeof instance.onSelect === 'function') {
-                        instance.onSelect(targetCat, { fromLiquidDrag: true });
-                    }
-                    global.MinkoiFeedback?.commit(targetTab, e);
-                } else {
-                    gestureState = 'idle';
-                    syncIndicator();
-                }
-            } else {
-                gestureState = 'idle';
-                syncIndicator();
+            if (endingState === 'flinging') {
+                cancelScrollFling();
+                state = 'idle';
+                endGestureVisuals();
+                return;
             }
+
+            endGestureVisuals();
+            state = 'idle';
         }
 
         function onPointerCancel(e) {
-            if (indicator) {
-                indicator.classList.remove('is-pressed');
-            }
             onPointerUp(e, true);
         }
 
@@ -2009,18 +2139,17 @@
         };
         navEl.addEventListener('click', onNavClick, true);
 
-
         navEl.addEventListener('pointerdown', onPointerDown, { passive: true });
-        navEl.addEventListener('lostpointercapture', onPointerCancel, { passive: true });
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
+        navEl.addEventListener('wheel', cancelScrollFling, { passive: true });
 
         let resizeObserver = null;
         if (typeof ResizeObserver === 'function') {
             resizeObserver = new ResizeObserver(() => {
                 if (destroyed) return;
-                if (dragPointerId !== null) onPointerUp({ pointerId: dragPointerId }, true);
+                if (pointerId !== null) onPointerUp({ pointerId, clientX: pendingX, clientY: startY }, true);
                 if (resizeFrame) return;
                 resizeFrame = global.requestAnimationFrame(() => {
                     resizeFrame = 0;
@@ -2037,7 +2166,20 @@
             indicator: indicator,
             onSelect: onSelect,
             sync: syncIndicator,
-            debug: () => ({ gestureState, dragPointerId, currentLeft, currentRight, baseTabWidth, lastRenderedWidth, vel: velocityTracker ? velocityTracker.getVelocity().vx : -999 }),
+            debug: () => ({
+                gestureState: state,
+                state,
+                dragPointerId: pointerId,
+                currentLeft,
+                currentRight,
+                baseTabWidth,
+                lastRenderedWidth,
+                squash: squashValue,
+                scrollLeft: navEl.scrollLeft,
+                vel: velocityTracker ? velocityTracker.getVelocity().vx : -999,
+                lastRelease,
+                lastScrub
+            }),
             destroy() {
                 destroyed = true;
                 if (resizeFrame) {
@@ -2052,12 +2194,13 @@
                     global.cancelAnimationFrame(dragRaf);
                     dragRaf = 0;
                 }
-                dragPointerId = null;
-                gestureState = 'idle';
-                navEl.classList.remove('is-liquid-dragging');
+                cancelScrollFling();
+                pointerId = null;
+                state = 'idle';
+                endGestureVisuals();
                 navEl.removeEventListener('click', onNavClick, true);
                 navEl.removeEventListener('pointerdown', onPointerDown);
-                navEl.removeEventListener('lostpointercapture', onPointerCancel);
+                navEl.removeEventListener('wheel', cancelScrollFling);
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);
                 global.removeEventListener('pointercancel', onPointerCancel);
@@ -2088,9 +2231,51 @@
         }
     }
 
+    // ------------------------------------------------------------------
+    // Shared navigation material preference: one physics engine, two
+    // render-only materials. Switching never touches the capsule geometry.
+    // ------------------------------------------------------------------
+    const NAV_MATERIAL_KEY = 'minkoi_nav_material';
+    let navMaterial = 'frosted';
+
+    function applyNavMaterial(value, persist) {
+        navMaterial = value === 'liquid' ? 'liquid' : 'frosted';
+        if (doc.body) doc.body.dataset.navMaterial = navMaterial;
+        doc.querySelectorAll('.nav-material-switch button[data-nav-material]').forEach(btn => {
+            btn.setAttribute('aria-pressed', btn.dataset.navMaterial === navMaterial ? 'true' : 'false');
+        });
+        if (persist) {
+            try { global.localStorage?.setItem(NAV_MATERIAL_KEY, navMaterial); } catch (_) {}
+        }
+        global.dispatchEvent(new CustomEvent('minkoi:nav-material', { detail: { material: navMaterial } }));
+        return navMaterial;
+    }
+
+    function initNavMaterial() {
+        let saved = 'frosted';
+        try {
+            const stored = global.localStorage?.getItem(NAV_MATERIAL_KEY);
+            if (stored === 'liquid' || stored === 'frosted') saved = stored;
+        } catch (_) {}
+        applyNavMaterial(saved, false);
+
+        doc.querySelectorAll('.nav-material-switch button[data-nav-material]').forEach(btn => {
+            if (btn.dataset.materialBound === '1') return;
+            btn.dataset.materialBound = '1';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (btn.dataset.navMaterial === navMaterial) return;
+                applyNavMaterial(btn.dataset.navMaterial, true);
+                global.MinkoiFeedback?.selection();
+            });
+        });
+    }
+
     function init() {
         initPressFeedback();
         initTopMorePopup();
+        initNavMaterial();
     }
 
     if (doc.readyState === 'loading') {
@@ -2111,6 +2296,7 @@
         syncTabIndicator: syncTabIndicator,
         syncLiquidGlassNav: syncTabIndicator,
         initLiquidGlassNav: initLiquidGlassNav,
+        setNavMaterial: applyNavMaterial,
         createMiuixPanelOverlay: createMiuixPanelOverlay,
         getPanelController: getPanelController
     });

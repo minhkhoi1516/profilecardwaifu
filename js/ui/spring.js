@@ -33,8 +33,10 @@
         LIQUID_DRAG: Object.freeze({ dampingRatio: 0.92, stiffness: 1200 }),
         LIQUID_STRETCH: Object.freeze({ dampingRatio: 0.76, stiffness: 520 }),
         // V4.0 Natural Physics Additions
-        EDGE_LEADING: Object.freeze(folmeSpring(0.90, 0.24)),
-        EDGE_TRAILING: Object.freeze(folmeSpring(0.80, 0.34)),
+        // The lens needs a visible, restrained settle: leading edge arrives
+        // quickly with a light overshoot, trailing edge lags and springs back.
+        EDGE_LEADING: Object.freeze(folmeSpring(0.78, 0.30)),
+        EDGE_TRAILING: Object.freeze(folmeSpring(0.65, 0.38)),
         NAV_FOLLOW: Object.freeze(folmeSpring(1.00, 0.14)),
         HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
         TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22)),
@@ -354,7 +356,7 @@
      */
     function createVelocityTracker() {
         const samples = [];
-        const MAX_WINDOW_MS = 120;
+        const MAX_WINDOW_MS = 140;
 
         return {
             reset() {
@@ -362,29 +364,50 @@
             },
             addPoint(x, y) {
                 const now = performance.now();
-                samples.push({ x: Number(x) || 0, y: Number(y) || 0, time: now });
-                // Prune old samples
-                while (samples.length > 1 && (now - samples[0].time) > MAX_WINDOW_MS) {
+                const px = Number(x) || 0;
+                const py = Number(y) || 0;
+                const last = samples[samples.length - 1];
+                // A repeated position carries no velocity information and would
+                // otherwise dilute the estimate when the finger pauses.
+                if (last && last.x === px && last.y === py) return;
+                samples.push({ x: px, y: py, time: now });
+                const newest = samples[samples.length - 1].time;
+                while (samples.length > 2 && (newest - samples[0].time) > MAX_WINDOW_MS) {
                     samples.shift();
                 }
             },
             getVelocity() {
-                if (samples.length < 2) return { vx: 0, vy: 0 };
+                const n = samples.length;
+                if (n < 2) return { vx: 0, vy: 0 };
                 const now = performance.now();
-                const newest = samples[samples.length - 1];
-                if ((now - newest.time) > MAX_WINDOW_MS) {
-                    return { vx: 0, vy: 0 };
+                if ((now - samples[n - 1].time) > MAX_WINDOW_MS) return { vx: 0, vy: 0 };
+                // Least-squares slope across the sample window: stable with
+                // irregular pointer cadence, unlike a first/last difference.
+                const t0 = samples[0].time;
+                let sumT = 0;
+                let sumX = 0;
+                let sumY = 0;
+                for (let i = 0; i < n; i++) {
+                    sumT += samples[i].time - t0;
+                    sumX += samples[i].x;
+                    sumY += samples[i].y;
                 }
-                while (samples.length > 1 && (now - samples[0].time) > MAX_WINDOW_MS) {
-                    samples.shift();
+                const meanT = sumT / n;
+                const meanX = sumX / n;
+                const meanY = sumY / n;
+                let numX = 0;
+                let numY = 0;
+                let den = 0;
+                for (let i = 0; i < n; i++) {
+                    const dt = (samples[i].time - t0) - meanT;
+                    numX += dt * (samples[i].x - meanX);
+                    numY += dt * (samples[i].y - meanY);
+                    den += dt * dt;
                 }
-                if (samples.length < 2) return { vx: 0, vy: 0 };
-                const oldest = samples[0];
-                const dt = (newest.time - oldest.time) / 1000;
-                if (dt <= 0.005) return { vx: 0, vy: 0 };
+                if (den < 1) return { vx: 0, vy: 0 };
                 return {
-                    vx: Math.max(-4000, Math.min(4000, (newest.x - oldest.x) / dt)),
-                    vy: Math.max(-4000, Math.min(4000, (newest.y - oldest.y) / dt))
+                    vx: Math.max(-6000, Math.min(6000, (numX / den) * 1000)),
+                    vy: Math.max(-6000, Math.min(6000, (numY / den) * 1000))
                 };
             }
         };
