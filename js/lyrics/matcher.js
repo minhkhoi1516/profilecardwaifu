@@ -80,6 +80,15 @@
         }
 
         const warnings = [];
+        // An ID/Spotify match must never override an explicit audio/persona
+        // conflict (notably Alya/Mahiru covers and vocal/Inst variants).
+        if (track.id != null && candidate.trackId != null && String(track.id) !== String(candidate.trackId)) {
+            return { matched: false, score: 0, confidence: 'rejected', reason: 'track-id-mismatch', warnings: [] };
+        }
+        if ((track.persona && candidate.persona && track.persona !== candidate.persona) ||
+            (track.file && candidate.file && track.file !== candidate.file)) {
+            return { matched: false, score: 0, confidence: 'rejected', reason: 'audio-identity-mismatch', warnings: [] };
+        }
         const trackVer = detectVersion(track);
         const candVer = detectVersion(candidate);
 

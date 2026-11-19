@@ -45,6 +45,10 @@
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
+            if (Number.isFinite(line.endMs)) {
+                maxTimestampMs = Math.max(maxTimestampMs, line.endMs);
+                if (Number.isFinite(line.startMs) && line.endMs < line.startMs) errors.push(`Dòng #${i + 1}: endMs < startMs`);
+            }
             if (Number.isFinite(line.startMs)) {
                 if (line.startMs < 0) {
                     errors.push(`Dòng #${i + 1} có timestamp âm (${line.startMs}ms)`);
@@ -104,6 +108,23 @@
         } else if (doc.syncLevel === 'line') {
             warnings.push('Chỉ có timing theo dòng (line-level) — chưa có word/syllable timing gốc');
         }
+        const correctedCount = lines.filter(l => Number.isFinite(l.correctedStartMs) || Number.isFinite(l.correctedEndMs)).length;
+        const estimatedCount = lines.filter(l => l.timingStatus === 'estimated').length;
+        if (correctedCount > 0) {
+            warnings.push(`${correctedCount} dòng có hiệu chỉnh thời gian tách khỏi mốc nguồn; có thể hoàn tác trong Editor.`);
+        }
+        if (estimatedCount > 0) {
+            warnings.push(`${estimatedCount} dòng dùng thời gian ước lượng, không phải mốc nguồn đã xác minh.`);
+        }
+
+        const missingLayers = {
+            jp: lines.filter(l => !l.isInterlude && !l.jp).length,
+            romaji: lines.filter(l => !l.isInterlude && !l.romaji).length,
+            vi: lines.filter(l => !l.isInterlude && !l.translation).length
+        };
+        if (doc.status === 'draft') warnings.push('Bản nháp: văn bản/phiên âm/bản dịch và thời gian chưa được kiểm chứng bằng nghe đối chiếu.');
+        (doc.reviewNotes || []).forEach(note => warnings.push(note));
+        if (Object.values(missingLayers).some(Boolean)) warnings.push(`Tầng còn thiếu: Nhật ${missingLayers.jp}, Romaji ${missingLayers.romaji}, Việt ${missingLayers.vi}`);
 
         const durationCoverage = (effectiveDurMs && effectiveDurMs > 0 && maxTimestampMs > 0)
             ? Math.min(1, Math.round((maxTimestampMs / effectiveDurMs) * 100) / 100)
@@ -123,10 +144,14 @@
             longGaps,
             metrics: {
                 lineCount: lines.length,
+                missingLayers,
                 timedTokenCount,
                 durationCoverage,
                 maxTimestampMs,
-                trackDurationMs: effectiveDurMs
+                trackDurationMs: effectiveDurMs,
+                timingStatus: doc.timingStatus || 'source-unverified',
+                correctedCount,
+                estimatedCount
             }
         };
     }

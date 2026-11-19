@@ -75,11 +75,12 @@
         }
 
         setState({ track, doc, diagnostics, matchResult }) {
+            const contentChanged = this.currentTrack?.id !== track?.id || this.currentDoc !== doc;
             this.currentTrack = track;
             this.currentDoc = doc;
             this.currentDiag = diagnostics;
             this.currentMatch = matchResult;
-            if (this.isOpen) {
+            if (this.isOpen && contentChanged) {
                 this.render();
             }
         }
@@ -110,7 +111,10 @@
             const Cache = ns.Cache;
 
             const existingCustom = Cache?.getCustomImport(track);
-            const prefillText = existingCustom?.rawText || (doc && doc.lines?.length ? exportDocumentAsLRC(doc) : '');
+            // JSON is lossless: all three layers, IDs, tokens, end times and
+            // provenance survive editing. Legacy LRC imports remain accepted.
+            const prefillText = existingCustom?.rawText || (doc && doc.lines?.length ? JSON.stringify(doc, null, 2) : '');
+            const missing = (doc?.lines || []).filter(l => !l.isInterlude && (!l.jp || !l.romaji || !l.translation)).length;
 
             const warningsHtml = (diag?.warnings || []).map(w => `<li><i class="fas fa-triangle-exclamation"></i> ${escapeHtml(w)}</li>`).join('');
             const errorsHtml = (diag?.errors || []).map(e => `<li class="is-error"><i class="fas fa-circle-xmark"></i> ${escapeHtml(e)}</li>`).join('');
@@ -138,18 +142,21 @@
 
                     <div class="editor-import-box">
                         <div class="editor-label-row">
-                            <label for="lyrics-import-textarea">Nạp TTML / Enhanced LRC (<code>&lt;mm:ss.xx&gt;</code>) / LRC cho track này:</label>
+                             <label for="lyrics-import-textarea">Sửa JSON ba tầng (jp / romaji / vi / startMs / endMs), hoặc nạp TTML / ELRC / LRC / transcript:</label>
                             <label class="editor-upload-btn" title="Chọn file .ttml, .lrc hoặc .txt từ thiết bị">
                                 <i class="fas fa-file-arrow-up"></i> Chọn file
-                                <input type="file" id="lyrics-file-input" accept=".ttml,.xml,.lrc,.elrc,.txt" hidden>
+                                 <input type="file" id="lyrics-file-input" accept=".json,.ttml,.xml,.lrc,.elrc,.txt" hidden>
                             </label>
                         </div>
                         <textarea id="lyrics-import-textarea" class="editor-textarea" rows="7" spellcheck="false" placeholder="[00:12.50]<00:12.50>君<00:12.90>の<00:13.30>こと<00:13.90>&#10;hoặc dán XML TTML (<tt xmlns='http://www.w3.org/ns/ttml'>...) để bật Apple Music Sing word/syllable sweep">${escapeHtml(prefillText)}</textarea>
-                        <div class="editor-preview-status" id="lyrics-editor-preview-msg"></div>
+                         <div class="editor-preview-status" id="lyrics-editor-preview-msg" role="status">${missing} câu cần bổ sung tầng lời. Bản sửa chỉ lưu trên trình duyệt này.</div>
                         <div class="editor-btn-row">
                             <button type="button" class="editor-btn" id="lyrics-preview-parse-btn"><i class="fas fa-vial"></i> Kiểm tra định dạng</button>
                             <button type="button" class="editor-btn primary" id="lyrics-save-custom-btn"><i class="fas fa-check"></i> Áp dụng cho bài này</button>
-                            <button type="button" class="editor-btn" id="lyrics-export-lrc-btn"><i class="fas fa-download"></i> Xuất LRC</button>
+                             <button type="button" class="editor-btn" id="lyrics-export-lrc-btn"><i class="fas fa-download"></i> Xuất LRC</button>
+                             <button type="button" class="editor-btn" id="lyrics-export-json-btn">Xuất JSON ba tầng</button>
+                             <button type="button" class="editor-btn" id="lyrics-legacy-btn">Đối chiếu dữ liệu cũ</button>
+                             ${track?.id === 14 ? '<button type="button" class="editor-btn" id="lyrics-review-source-btn">Xem transcript chưa xác minh bản audio</button>' : ''}
                             ${doc?.isCustomImported ? '<button type="button" class="editor-btn danger" id="lyrics-reset-custom-btn"><i class="fas fa-rotate-left"></i> Khôi phục gốc</button>' : ''}
                         </div>
                     </div>
@@ -164,6 +171,24 @@
             const textarea = this.panel.querySelector('#lyrics-import-textarea');
             const previewMsg = this.panel.querySelector('#lyrics-editor-preview-msg');
             const fileInput = this.panel.querySelector('#lyrics-file-input');
+            this.panel.querySelector('#lyrics-review-source-btn')?.addEventListener('click', async e => {
+                e.stopPropagation();
+                try {
+                    const response = await global.fetch('js/lyrics/data/track-14.json');
+                    if (!response.ok) throw new Error('Không nạp được transcript');
+                    const draft = await response.json();
+                    if (!this.isOpen || this.currentTrack !== track) return;
+                    textarea.value = JSON.stringify(draft, null, 2);
+                    previewMsg.textContent = 'Chỉ để đối chiếu. Chưa xác minh vocal; bản audio vẫn giữ trạng thái instrumental.';
+                } catch (error) { previewMsg.textContent = error.message; }
+            });
+            this.panel.querySelector('#lyrics-legacy-btn')?.addEventListener('click', e => {
+                e.stopPropagation();
+                const legacy = ns.Repository.getCandidateForTrack(track);
+                if (!legacy) { previewMsg.textContent = 'Bài mới chưa có dữ liệu cũ.'; return; }
+                textarea.value = JSON.stringify(legacy, null, 2);
+                previewMsg.textContent = 'Đang xem bản cũ để đối chiếu; chỉ thay đổi khi bấm Áp dụng.';
+            });
 
             fileInput?.addEventListener('change', (e) => {
                 const file = e.target.files?.[0];
@@ -230,6 +255,17 @@
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
+
+            this.panel.querySelector('#lyrics-export-json-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!doc) return;
+                const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json;charset=utf-8' }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `minkoi-track-${track.id}-lyrics.json`;
+                a.click();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
 

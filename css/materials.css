@@ -372,6 +372,53 @@ body.zen-mode .card-container .vinyl-disc-wrap.spinning :is(.vinyl-platter, .vin
     -webkit-backdrop-filter: blur(12px) saturate(120%);
     box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.4);
 }
+
+/* Zen Dock 2.0 · frosted surface tinted by the active persona accent.
+   Blur radius stays constant so theme changes never animate a filter. */
+.zen-mini-dock {
+    /* Dark glass base in both themes: the dock sits on artwork and keeps the
+       same light text tokens as the Zen lyric card. Only the accent tint moves. */
+    background:
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--color-accent) 18%, transparent),
+            color-mix(in srgb, var(--color-accent-secondary) 11%, transparent)),
+        rgba(14, 17, 24, 0.72);
+    border-color: color-mix(in srgb, var(--color-accent) 38%, rgba(255, 255, 255, 0.22));
+    box-shadow:
+        0 18px 44px -18px rgba(0, 0, 0, 0.62),
+        0 0 26px color-mix(in srgb, var(--color-accent) 22%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+    /* The dock is always dark glass over artwork; keep light text tokens even
+       when the page itself is in Light Mode. */
+    --color-text: #f4f6fa;
+    --color-text-secondary: #cbd0da;
+    --color-border: rgba(255, 255, 255, 0.2);
+    --surface-2: rgba(255, 255, 255, 0.1);
+    --surface-hover: rgba(255, 255, 255, 0.18);
+}
+
+/* More opaque fallback when the browser cannot blur the wallpaper behind it. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .zen-mini-dock {
+        background:
+            linear-gradient(135deg,
+                color-mix(in srgb, var(--color-accent) 14%, transparent),
+                color-mix(in srgb, var(--color-accent-secondary) 9%, transparent)),
+            rgba(14, 17, 24, 0.94);
+    }
+}
+
+.zen-lyrics-btn[aria-pressed="true"] {
+    color: var(--color-accent);
+    border-color: color-mix(in srgb, var(--color-accent) 48%, var(--color-border));
+    background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-2));
+}
+
+.zen-lyrics-btn[aria-pressed="false"] {
+    color: var(--color-text-secondary);
+    opacity: 0.78;
+}
 /* Zen lyrics always sit on artwork, so keep light text tokens even in Light Mode. */
 .zen-ambient-lyric {
     --color-text: #f1f2f5;

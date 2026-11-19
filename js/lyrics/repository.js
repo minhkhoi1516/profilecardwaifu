@@ -639,9 +639,29 @@
         return Object.values(REPOSITORY_ENTRIES);
     }
 
+    const SOURCE_TRACKS = new Set([1, 2, 3, 4, 5, 6, 12, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]);
+    const sourceDocuments = new Map();
+    async function loadCandidateForTrack(track, signal) {
+        const legacy = getCandidateForTrack(track);
+        if (!track || !SOURCE_TRACKS.has(track.id) || ns.Matcher.detectVersion(track) === 'instrumental') return legacy;
+        if (sourceDocuments.has(track.id)) return sourceDocuments.get(track.id);
+        try {
+            const response = await global.fetch(`js/lyrics/data/track-${track.id}.json?v=trilingual-1`, { signal });
+            if (!response.ok) return legacy;
+            const candidate = await response.json();
+            if (!ns.Matcher.matchTrack(track, candidate).matched) return legacy;
+            sourceDocuments.set(track.id, candidate);
+            return candidate;
+        } catch (error) {
+            if (error.name === 'AbortError') throw error;
+            return legacy;
+        }
+    }
+
     ns.Repository = {
         ENTRIES: REPOSITORY_ENTRIES,
         getCandidateForTrack,
+        loadCandidateForTrack,
         getAllEntries
     };
 })(typeof window !== 'undefined' ? window : globalThis);

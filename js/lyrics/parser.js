@@ -20,6 +20,11 @@
         if (!rawText || typeof rawText !== 'string') return 'plain';
         const trimmed = rawText.trim();
         if (!trimmed) return 'plain';
+        if (/^[\[{]/.test(trimmed)) {
+            try { const data = JSON.parse(trimmed); if (Array.isArray(data) || Array.isArray(data.lines)) return 'json'; } catch (_) {}
+        }
+        if (/^\d+:\d+:\d+(?:\.\d+)?\s*->/m.test(trimmed)) return 'transcript';
+        if (/\(\d+:\d{2}(?:\.\d+)?\)/.test(trimmed)) return 'inline';
         if (/<\s*(?:tt|tt:tt)\b/i.test(trimmed) || /xmlns(?::tt)?\s*=\s*["']http:\/\/www\.w3\.org\/ns\/ttml/i.test(trimmed)) {
             return 'ttml';
         }
@@ -77,7 +82,7 @@
         const bgTokens = [];
         let inlineTranslation = '';
 
-        function walk(node, activeAgent, activeBg, activeStartMs, activeEndMs) {
+        function walk(node, activeAgent, activeBg, activeStartMs, activeEndMs, explicitToken = false) {
             if (!node) return;
             if (node.nodeType === 3) { // TEXT_NODE
                 const val = node.nodeValue || '';
@@ -87,8 +92,9 @@
                 if (!clean) return;
                 const tok = {
                     text: clean,
-                    startMs: activeStartMs,
-                    endMs: activeEndMs,
+                    startMs: explicitToken ? activeStartMs : null,
+                    endMs: explicitToken ? activeEndMs : null,
+                    explicitToken,
                     isBackground: activeBg,
                     speaker: activeAgent || null
                 };
@@ -118,6 +124,7 @@
             const beginAttr = getAttrNS(node, 'begin');
             const endAttr = getAttrNS(node, 'end');
             const durAttr = getAttrNS(node, 'dur');
+            const tokenTimed = explicitToken || (localName === 'span' && Boolean(beginAttr || endAttr));
 
             let nodeStart = beginAttr ? parseMs(beginAttr) : activeStartMs;
             let nodeEnd = endAttr ? parseMs(endAttr) : activeEndMs;
@@ -135,8 +142,9 @@
                 if (text.length > 0) {
                     const tok = {
                         text,
-                        startMs: nodeStart,
-                        endMs: nodeEnd,
+                        startMs: tokenTimed ? nodeStart : null,
+                        endMs: tokenTimed ? nodeEnd : null,
+                        explicitToken: tokenTimed,
                         isBackground: isBgNode,
                         speaker: agent || null
                     };
@@ -147,7 +155,7 @@
             }
 
             for (let i = 0; i < node.childNodes.length; i++) {
-                walk(node.childNodes[i], agent, isBgNode, nodeStart, nodeEnd);
+                walk(node.childNodes[i], agent, isBgNode, nodeStart, nodeEnd, tokenTimed);
             }
         }
 
@@ -211,7 +219,7 @@
             const divBegin = parentDiv ? parseTimecodeToMs(getAttrNS(parentDiv, 'begin')) : null;
             const res = collectTtmlParagraph(p, parseTimecodeToMs, getAttrNS(parentDiv, 'agent'), divBegin);
 
-            const mainTimed = res.tokens.filter(t => !t.isWhitespace && Number.isFinite(t.startMs));
+            const mainTimed = res.tokens.filter(t => t.explicitToken && t.text.trim() && Number.isFinite(t.startMs));
             const leadText = res.tokens.map(t => t.text).join('').trim();
 
             if (mainTimed.length > 0) {
@@ -245,7 +253,7 @@
             }
 
             // Emit background vocal sub-line cleanly when x-bg tokens exist
-            const bgTimed = res.bgTokens.filter(t => !t.isWhitespace && Number.isFinite(t.startMs));
+            const bgTimed = res.bgTokens.filter(t => t.explicitToken && t.text.trim() && Number.isFinite(t.startMs));
             const bgText = res.bgTokens.map(t => t.text).join('').trim();
             if (bgText) {
                 const bgStart = bgTimed.length > 0 ? bgTimed[0].startMs : res.pStart;
@@ -530,6 +538,30 @@
         };
     }
 
+    // Interval transcript timing belongs to the entire supplied segment. Never
+    // subdivide it into imaginary word/syllable timestamps.
+    function parseTranscript(rawText, options = {}) {
+        const { parseTimecodeToMs } = getNormalizer();
+        const lines = [];
+        const re = /^(\d+:\d+:\d+(?:\.\d+)?)\s*->\s*(\d+:\d+:\d+(?:\.\d+)?):\s?(.*)$/gm;
+        let m;
+        while ((m = re.exec(rawText)) !== null) {
+            lines.push({ startMs: parseTimecodeToMs(m[1]), endMs: parseTimecodeToMs(m[2]), text: m[3], status: 'needs-review', timingSource: 'imported' });
+        }
+        return { source: options.source || 'transcript-import', format: 'transcript', status: 'draft', confidence: 'draft', lines };
+    }
+
+    function parseInlineTranscript(rawText, options = {}) {
+        const { parseTimecodeToMs } = getNormalizer();
+        const matches = Array.from(rawText.matchAll(/\((\d+:\d{2}(?:\.\d+)?)\)\s*/g));
+        const lines = matches.map((m, i) => ({
+            startMs: parseTimecodeToMs(m[1]),
+            text: rawText.slice(m.index + m[0].length, matches[i + 1]?.index ?? rawText.length).trim(),
+            status: 'needs-review', timingSource: 'imported'
+        }));
+        return { source: options.source || 'inline-import', format: 'inline', status: 'draft', confidence: 'draft', lines };
+    }
+
     /**
      * Unified parser entry point supporting TTML, ELRC, LRC, Plain, or pre-structured JSON objects.
      */
@@ -552,7 +584,15 @@
         const format = (options.format && options.format !== 'auto') ? options.format.toLowerCase() : detectFormat(rawText);
 
         let parsed;
-        if (format === 'ttml') {
+        if (format === 'json') {
+            const data = JSON.parse(rawText);
+            parsed = Array.isArray(data) ? { lines: data } : data;
+            if (!Array.isArray(parsed.lines)) throw new Error('JSON cần có mảng lines');
+        } else if (format === 'transcript') {
+            parsed = parseTranscript(rawText, options);
+        } else if (format === 'inline') {
+            parsed = parseInlineTranscript(rawText, options);
+        } else if (format === 'ttml') {
             parsed = parseTTML(rawText, options);
         } else if (format === 'elrc' || format === 'lrc') {
             parsed = parseLRC(rawText, options);
@@ -567,6 +607,8 @@
         parseTTML,
         parseLRC,
         parsePlainText,
+        parseTranscript,
+        parseInlineTranscript,
         parse
     };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -159,13 +159,14 @@
         }
 
         // Priority 5: Repository curated metadata / synced entries verified via Matcher
-        const candidate = Repository.getCandidateForTrack(track);
+        const candidate = await Repository.loadCandidateForTrack(track, signal);
+        throwIfAborted(signal);
         const matchResult = candidate
             ? Matcher.matchTrack(track, candidate)
             : { matched: false, score: 0, confidence: 'none', reason: 'no-candidate', warnings: [] };
 
         let finalDoc;
-        if (candidate && candidate.isInstrumental) {
+        if (candidate && candidate.isInstrumental && matchResult.matched) {
             finalDoc = Normalizer.normalizeDocument({ ...candidate, isInstrumental: true, syncLevel: 'instrumental' }, track);
         } else if (candidate && matchResult.matched) {
             finalDoc = Normalizer.normalizeDocument(candidate, track);

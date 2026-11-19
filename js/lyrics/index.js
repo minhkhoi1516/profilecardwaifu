@@ -34,6 +34,7 @@
         const tapSyncToggleBtn = document.getElementById('tap-sync-toggle-btn');
 
         const zenAmbientLyric = document.getElementById('zen-ambient-lyric');
+        const zenLyricJp = document.getElementById('zen-lyric-jp');
         const zenLyricRomaji = document.getElementById('zen-lyric-romaji');
         const zenLyricVi = document.getElementById('zen-lyric-vi');
 
@@ -46,7 +47,10 @@
         let activeLoadController = null;
         let loadSequence = 0;
 
-        let viewMode = safeGet('minkoi_lyrics_mode', 'karaoke');
+        let viewMode = safeGet('minkoi_lyrics_mode', 'floating');
+        const displayPresets = ['jp,romaji,vi', 'jp,vi', 'jp,romaji', 'jp', 'romaji', 'vi'];
+        let displayLayers = safeGet('minkoi_lyrics_layers', 'jp,romaji,vi');
+        if (!displayPresets.includes(displayLayers)) displayLayers = displayPresets[0];
 
         const syncEngine = new ns.SyncEngine(audio, {
             shouldAnimate: () => {
@@ -77,6 +81,7 @@
                 tapSyncBtn: tapSyncToggleBtn,
                 recenterBtn: lyricsRecenterBtn,
                 zenAmbientBox: zenAmbientLyric,
+                zenJp: zenLyricJp,
                 zenRomaji: zenLyricRomaji,
                 zenVi: zenLyricVi
             },
@@ -114,6 +119,72 @@
         );
 
         renderer.setViewMode(viewMode);
+        renderer.setDisplayLayers(displayLayers);
+
+        // Compact child popover: shares the site's spring scheduler and stays
+        // inside the drawer focus trap. Closing immediately removes hit targets.
+        const displayBtn = document.getElementById('lyrics-display-btn');
+        const displayMenu = document.getElementById('lyrics-display-menu');
+        let displayOpen = false;
+        let displayGeneration = 0;
+        const displaySpring = global.MinkoiSpring?.createSpring({
+            initial: 0, precision: 0.01, velocityPrecision: 0.05,
+            onUpdate: value => {
+                if (!displayMenu) return;
+                displayMenu.style.opacity = String(Math.max(0, Math.min(1, value)));
+                displayMenu.style.transform = `translateY(${(1 - value) * -5}px) scale(${0.94 + value * 0.06})`;
+            }
+        });
+        function toggleDisplayMenu(open) {
+            if (!displayMenu || !displayBtn) return;
+            const generation = ++displayGeneration;
+            displayOpen = open;
+            displayBtn.setAttribute('aria-expanded', String(open));
+            displayMenu.inert = !open;
+            if (open) displayMenu.hidden = false;
+            const done = () => {
+                if (generation !== displayGeneration) return;
+                if (!open) displayMenu.hidden = true;
+            };
+            if (displaySpring) displaySpring.setTarget(open ? 1 : 0, { onComplete: done });
+            else { displayMenu.style.opacity = open ? '1' : '0'; done(); }
+        }
+        function setDisplayLayers(value) {
+            if (!displayPresets.includes(value)) return;
+            displayLayers = value;
+            safeSet('minkoi_lyrics_layers', value);
+            renderer.setDisplayLayers(value);
+            displayMenu?.querySelectorAll('[data-lyrics-layers]').forEach(button => {
+                button.setAttribute('aria-pressed', String(button.dataset.lyricsLayers === value));
+            });
+            syncEngine.forceSync(true);
+        }
+        setDisplayLayers(displayLayers);
+        displayBtn?.addEventListener('click', e => {
+            e.stopPropagation(); toggleDisplayMenu(!displayOpen);
+            if (displayOpen) displayMenu.querySelector('[aria-pressed="true"]')?.focus();
+        });
+        displayMenu?.addEventListener('click', e => {
+            const button = e.target.closest('[data-lyrics-layers]');
+            if (!button) return;
+            e.stopPropagation(); setDisplayLayers(button.dataset.lyricsLayers);
+            toggleDisplayMenu(false); displayBtn.focus();
+        });
+        displayMenu?.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                e.preventDefault(); e.stopPropagation();
+                toggleDisplayMenu(false); displayBtn.focus();
+            } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) {
+                e.preventDefault();
+                const buttons = Array.from(displayMenu.querySelectorAll('button'));
+                const i = buttons.indexOf(document.activeElement);
+                const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (e.key === 'ArrowDown' ? 1 : -1) + buttons.length) % buttons.length;
+                buttons[next].focus();
+            }
+        });
+        document.addEventListener('click', e => {
+            if (displayOpen && !e.target.closest('.lyrics-display-wrap')) toggleDisplayMenu(false);
+        });
 
         function updateOffsetUI(offsetSec) {
             if (!offsetValText) return;
@@ -161,11 +232,13 @@
             const mySeq = ++loadSequence;
 
             currentTrack = track;
+            currentDoc = null;
+            renderer.renderLoading(track);
+            syncEngine.setDocument(null);
             const trackOffset = ns.Cache.getTrackOffsetSec(track);
             syncEngine.setUserOffsetSec(trackOffset);
             updateOffsetUI(trackOffset);
             renderer.setTapSyncMode(false);
-            renderer.renderLoading(track);
 
             try {
                 const durSec = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : null;
@@ -239,6 +312,7 @@
                     }
                 },
                 onBeforeClose: () => {
+                    toggleDisplayMenu(false);
                     editor.close();
                     if (!document.body.classList.contains('zen-mode')) {
                         syncEngine.stopLoop();
@@ -346,7 +420,8 @@
         if (lyricsModeToggle) {
             lyricsModeToggle.addEventListener('click', (e) => {
                 e.stopPropagation();
-                viewMode = viewMode === 'karaoke' ? 'full' : 'karaoke';
+                const modes = ['floating', 'karaoke', 'full'];
+                viewMode = modes[(modes.indexOf(viewMode) + 1) % modes.length];
                 safeSet('minkoi_lyrics_mode', viewMode);
                 renderer.setViewMode(viewMode);
                 syncEngine.forceSync(true);
@@ -449,6 +524,7 @@
             closeLyrics,
             adjustOffset,
             resetOffset,
+            setDisplayLayers,
             loadLyricsForTrack,
             getState: () => ({
                 track: currentTrack,

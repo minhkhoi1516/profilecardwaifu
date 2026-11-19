@@ -42,6 +42,7 @@
     <link rel="stylesheet" href="css/style-right.css?v=4-refined-dev">
     <link rel="stylesheet" href="css/style-responsive.css?v=4-refined-dev">
     <link rel="stylesheet" href="css/materials.css?v=4-refined-dev">
+    <link rel="stylesheet" href="css/lyrics-trilingual.css?v=4-refined-dev">
 </head>
 <body>
 
@@ -391,6 +392,9 @@
             <button class="zen-ctrl-btn" id="zen-next-track" type="button" title="Bài kế tiếp (K)" aria-label="Bài kế tiếp">
                 <i class="fas fa-forward-step" aria-hidden="true"></i>
             </button>
+            <button class="zen-ctrl-btn zen-lyrics-btn" id="zen-lyrics-toggle" type="button" title="Ẩn lời bài hát trong Zen" aria-label="Ẩn lời bài hát trong Zen" aria-pressed="true" aria-controls="zen-ambient-lyric">
+                <i class="fas fa-closed-captioning" aria-hidden="true"></i>
+            </button>
             <button class="zen-ctrl-btn zen-exit-btn" id="zen-exit-btn" type="button" title="Thoát màn hình chờ (Esc / Z)" aria-label="Thoát màn hình chờ">
                 <i class="fas fa-compress" aria-hidden="true"></i>
             </button>
@@ -406,6 +410,7 @@
 
     <!-- ZEN AMBIENT FLOATING LYRIC (Anime MV Screensaver) -->
     <div class="zen-ambient-lyric" id="zen-ambient-lyric" aria-hidden="true">
+        <p class="zen-lyric-jp" id="zen-lyric-jp" lang="ja"></p>
         <p class="zen-lyric-romaji" id="zen-lyric-romaji"></p>
         <p class="zen-lyric-vi" id="zen-lyric-vi"></p>
     </div>
@@ -421,6 +426,17 @@
                     <button class="lyrics-mode-btn" id="lyrics-mode-toggle" type="button" title="Chuyển chế độ xem lời">
                         <i class="fas fa-align-left" aria-hidden="true"></i> <span id="lyrics-mode-label">Toàn bài</span>
                     </button>
+                    <div class="lyrics-display-wrap">
+                        <button type="button" class="lyrics-mode-btn" id="lyrics-display-btn" aria-expanded="false" aria-controls="lyrics-display-menu"><i class="fas fa-language" aria-hidden="true"></i> Hiển thị lời</button>
+                        <div id="lyrics-display-menu" class="lyrics-display-menu" role="group" aria-label="Hiển thị lời" hidden inert>
+                            <button type="button" data-lyrics-layers="jp,romaji,vi" aria-pressed="true">Nhật + Romaji + Việt</button>
+                            <button type="button" data-lyrics-layers="jp,vi" aria-pressed="false">Nhật + Việt</button>
+                            <button type="button" data-lyrics-layers="jp,romaji" aria-pressed="false">Nhật + Romaji</button>
+                            <button type="button" data-lyrics-layers="jp" aria-pressed="false">Chỉ Nhật</button>
+                            <button type="button" data-lyrics-layers="romaji" aria-pressed="false">Chỉ Romaji</button>
+                            <button type="button" data-lyrics-layers="vi" aria-pressed="false">Chỉ Việt</button>
+                        </div>
+                    </div>
                 </div>
                 <h3 class="lyrics-track-title" id="lyrics-title">可爱くてごめん</h3>
                 <span class="lyrics-track-artist" id="lyrics-artist">Alya Kujou</span>

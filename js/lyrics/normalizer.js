@@ -51,7 +51,7 @@
         }
 
         // Clock notation: [HH:]MM:SS[.fff] or [HH:]MM:SS[:ff]
-        const clockMatch = trimmed.match(/^(?:(\d{1,3}):)?(\d{1,3}):(\d{1,2})(?:[.:](\d{1,4}))?$/);
+        const clockMatch = trimmed.match(/^(?:(\d{1,3}):)?(\d{1,3}):(\d{1,2})(?:[.:](\d{1,9}))?$/);
         if (clockMatch) {
             const hasHours = clockMatch[1] !== undefined;
             const hours = hasHours ? parseInt(clockMatch[1], 10) : 0;
@@ -129,6 +129,7 @@
     }
 
     function computeLineDisplayText(line) {
+        if (typeof line.jp === 'string' && line.jp.length > 0) return line.jp;
         if (typeof line.text === 'string' && line.text.length > 0) return line.text;
         if (typeof line.romaji === 'string' && line.romaji.length > 0) return line.romaji;
         if (Array.isArray(line.tokens) && line.tokens.length > 0) {
@@ -172,9 +173,44 @@
                 endMs = parseTimecodeToMs(raw.end);
             }
 
+            // Source anchors are immutable user-import timestamps. Corrections
+            // live beside them so every edit can be compared and undone without
+            // destroying the original cue.
+            const sourceStartMs = Number.isFinite(raw.sourceStartMs)
+                ? Math.max(0, Math.round(raw.sourceStartMs))
+                : (Number.isFinite(startMs) ? startMs : null);
+            const sourceEndMs = Number.isFinite(raw.sourceEndMs)
+                ? Math.max(0, Math.round(raw.sourceEndMs))
+                : (Number.isFinite(endMs) ? endMs : null);
+            let correctedStartMs = Number.isFinite(raw.correctedStartMs)
+                ? Math.max(0, Math.round(raw.correctedStartMs))
+                : null;
+            let correctedEndMs = Number.isFinite(raw.correctedEndMs)
+                ? Math.max(0, Math.round(raw.correctedEndMs))
+                : null;
+            // An editor-exported startMs that differs from its source anchor is
+            // itself the correction, even without an explicit corrected value.
+            if (correctedStartMs === null && sourceStartMs !== null && Number.isFinite(startMs) && startMs !== sourceStartMs) {
+                correctedStartMs = startMs;
+            }
+            if (correctedEndMs === null && sourceEndMs !== null && Number.isFinite(endMs) && endMs !== sourceEndMs) {
+                correctedEndMs = endMs;
+            }
+            if (Number.isFinite(raw.correctedStartMs)) startMs = correctedStartMs;
+            if (Number.isFinite(raw.correctedEndMs)) endMs = correctedEndMs;
+            const userOffsetMs = Number.isFinite(raw.userOffsetMs) ? Math.round(raw.userOffsetMs) : 0;
+            const tokenShiftMs = (Number.isFinite(startMs) && Number.isFinite(raw.startMs))
+                ? startMs - Math.round(raw.startMs) : 0;
+
             let tokens = null;
             if (Array.isArray(raw.tokens) && raw.tokens.length > 0) {
                 tokens = raw.tokens.map(t => normalizeToken(t, startMs));
+                if (tokenShiftMs !== 0) {
+                    for (const tok of tokens) {
+                        if (Number.isFinite(tok.startMs)) tok.startMs = Math.max(0, tok.startMs + tokenShiftMs);
+                        if (Number.isFinite(tok.endMs)) tok.endMs = Math.max(0, tok.endMs + tokenShiftMs);
+                    }
+                }
                 // Fill token endMs strictly from explicit next token timestamp or explicit line endMs
                 for (let i = 0; i < tokens.length; i++) {
                     const tok = tokens[i];
@@ -212,17 +248,42 @@
 
             const text = computeLineDisplayText({ ...raw, tokens });
             const translation = typeof raw.vi === 'string' ? raw.vi : (typeof raw.translation === 'string' ? raw.translation : '');
+            const jp = typeof raw.jp === 'string' ? raw.jp : (containsJapanese(text) ? text : '');
+            // A Japanese import is not its own romanization. Old Romaji-only
+            // documents still render as Latin text, without fabricated Japanese.
+            const romaji = typeof raw.romaji === 'string' && !containsJapanese(raw.romaji)
+                ? raw.romaji : (!containsJapanese(text) ? text : '');
 
             return {
+                id: raw.id || `track-${doc.trackId ?? trackMeta?.id ?? 'custom'}-line-${idx + 1}`,
                 index: idx,
                 startMs,
                 endMs,
                 text,
-                romaji: typeof raw.romaji === 'string' ? raw.romaji : text,
+                jp,
+                romaji,
                 translation,
+                vi: translation,
+                status: raw.status || doc.status || 'draft',
+                timingSource: raw.timingSource || doc.timingSource || 'imported',
+                endTimingSource: raw.endTimingSource || null,
+                sourceStartMs,
+                sourceEndMs,
+                correctedStartMs,
+                correctedEndMs,
+                userOffsetMs,
+                timingStatus: raw.timingStatus
+                    || doc.timingStatus
+                    || (raw.endTimingSource === 'estimated' ? 'estimated' : 'source-unverified'),
+                source: raw.source || doc.source || 'unknown',
+                romanizationStatus: raw.romanizationStatus || null,
+                translationSource: raw.translationSource || null,
+                translationStatus: raw.translationStatus || null,
+                reviewReason: raw.reviewReason || null,
+                isInterlude: Boolean(raw.isInterlude),
                 speaker: raw.speaker || null,
                 isBackground: Boolean(raw.isBackground),
-                isJapanese: containsJapanese(text),
+                isJapanese: Boolean(jp),
                 tokens: hasValidTimedTokens(tokens) ? tokens : null
             };
         });
@@ -286,7 +347,7 @@
         }
 
         return {
-            schemaVersion: 2,
+            schemaVersion: 3,
             trackId: doc.trackId ?? trackMeta?.id ?? null,
             spotifyTrackId: doc.spotifyTrackId || trackMeta?.spotifyTrackId || null,
             title: doc.title || trackMeta?.name || '',
@@ -296,7 +357,15 @@
             durationMs: doc.durationMs || trackMeta?.durationMs || null,
             source: doc.source || 'unknown',
             format: doc.format || 'structured',
-            confidence: doc.confidence || (syncLevel === 'unavailable' ? 'none' : 'verified'),
+            confidence: doc.confidence || (syncLevel === 'unavailable' ? 'none' : 'draft'),
+            status: doc.status || 'draft',
+            timingSource: doc.timingSource || 'imported',
+            timingStatus: doc.timingStatus || 'source-unverified',
+            reviewNotes: doc.reviewNotes || [],
+            sourceTitle: doc.sourceTitle || '',
+            sourceArtist: doc.sourceArtist || '',
+            file: doc.file || trackMeta?.file || '',
+            persona: doc.persona || trackMeta?.persona || '',
             syncLevel,
             offsetMs,
             isInstrumental,

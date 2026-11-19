@@ -39,7 +39,7 @@
             const active = lines[ans];
             const next = lines[ans + 1];
             const gapEnd = Number.isFinite(active.endMs) ? active.endMs : null;
-            if (gapEnd !== null && next && Number.isFinite(next.startMs) && (next.startMs - gapEnd) >= 6000 && timeMs > gapEnd + 500) {
+            if (gapEnd !== null && timeMs > gapEnd + 500 && (!next || (Number.isFinite(next.startMs) && next.startMs > timeMs))) {
                 return -1;
             }
         }
@@ -309,7 +309,7 @@
             // Re-anchor smoothly during native playback ticks and update even if RAF paused
             if (this.audio && Math.abs((this.audio.currentTime || 0) - this.lastAudioTimeSec) > 0.25) {
                 this.forceHardSnap = true;
-                this.emitSnapshot(true);
+                this.emitSnapshot(false);
             } else if (!this.rafId) {
                 this.emitSnapshot(false);
             }

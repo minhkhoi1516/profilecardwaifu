@@ -422,7 +422,7 @@
         audio.load();
 
         if (trackNameEl) trackNameEl.textContent = track.name;
-        if (trackArtistEl) trackArtistEl.textContent = track.artist;
+        if (trackArtistEl) trackArtistEl.textContent = `${track.artist}${track.versionLabel ? ` · ${track.versionLabel}` : ''}`;
         if (currentTrackNumEl) currentTrackNumEl.textContent = (currentTrackIndex + 1).toString();
         if (totalTracksNumEl) totalTracksNumEl.textContent = fullPlaylist.length.toString();
 
@@ -1737,7 +1737,7 @@
         const filtered = visible.filter(song => {
             if (!searchQuery) return true;
             const q = searchQuery.toLowerCase();
-            return song.name.toLowerCase().includes(q) || song.artist.toLowerCase().includes(q);
+            return `${song.name} ${song.artist} ${song.versionLabel || song.version || ''}`.toLowerCase().includes(q);
         });
 
         const scrollBox = document.getElementById('playlist-items-scroll');
@@ -1758,7 +1758,7 @@
                     <span class="row-num">${isPlaying ? '<i class="fas fa-volume-high"></i>' : visible.indexOf(song) + 1}</span>
                     <span class="row-info">
                         <span class="row-title">${song.name}</span>
-                        <span class="row-artist">${song.artist}${persona && currentFilter === 'all' ? ` · ${persona.name}` : ''}</span>
+                        <span class="row-artist">${song.artist}${song.versionLabel ? ` · ${song.versionLabel}` : ''}${persona && currentFilter === 'all' ? ` · ${persona.name}` : ''}</span>
                     </span>
                     <button class="row-fav-btn ${isFav ? 'active' : ''}" data-favid="${song.id}" type="button" title="${isFav ? 'Bỏ yêu thích' : 'Yêu thích'}">
                         <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>

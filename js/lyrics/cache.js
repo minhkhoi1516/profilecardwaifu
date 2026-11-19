@@ -64,7 +64,7 @@
         }
         const persisted = readJsonMap(STORAGE_CACHE_KEY);
         const item = persisted[key];
-        if (item && item.schemaVersion === CACHE_SCHEMA) {
+        if (item && item.schemaVersion === 3) {
             memoryCache.set(key, item);
             return item;
         }
@@ -108,8 +108,11 @@
     function getTrackOffsetSec(track) {
         if (!track) return 0;
         const map = readJsonMap(STORAGE_OFFSETS_KEY);
-        const key = String(track.id ?? track.file ?? 'default');
-        const val = parseFloat(map[key]);
+        const key = buildCacheKey(track);
+        // Read old ID-only offsets without deleting them. New writes bind the
+        // calibration to the audio file/version, just like custom imports.
+        const legacyKey = String(track.id ?? track.file ?? 'default');
+        const val = parseFloat(Object.prototype.hasOwnProperty.call(map, key) ? map[key] : map[legacyKey]);
         return Number.isFinite(val) ? val : 0.0;
     }
 
@@ -117,12 +120,9 @@
         if (!track) return 0;
         const clamped = Math.max(-15.0, Math.min(15.0, Math.round((Number(seconds) || 0) * 10) / 10));
         const map = readJsonMap(STORAGE_OFFSETS_KEY);
-        const key = String(track.id ?? track.file ?? 'default');
-        if (Math.abs(clamped) < 0.001) {
-            delete map[key];
-        } else {
-            map[key] = clamped;
-        }
+        const key = buildCacheKey(track);
+        // Store zero explicitly so a reset does not resurrect a legacy offset.
+        map[key] = clamped;
         safeSet(STORAGE_OFFSETS_KEY, JSON.stringify(map));
         return clamped;
     }

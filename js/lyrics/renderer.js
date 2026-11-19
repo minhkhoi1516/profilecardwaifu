@@ -50,11 +50,35 @@
             this.lastScrolledIndex = -1;
             this.lastZenLineIndex = -2;
             this.zenTokenRefs = [];
+            this.zenPending = null;
+            this.zenRenderedIndex = -1;
 
-            this.viewMode = 'karaoke'; // 'karaoke' | 'full'
+            this.viewMode = 'floating'; // 'floating' | 'karaoke' | 'full'
             this.tapSyncActive = false;
             this.isUserScrolling = false;
             this.scrollPauseTimer = null;
+            this.displayLayers = ['jp', 'romaji', 'vi'];
+            this.scrollSpring = global.MinkoiSpring?.createSpring({
+                initial: 0, precision: 0.5, velocityPrecision: 2,
+                onUpdate: value => { if (this.dom.body) this.dom.body.scrollTop = value; }
+            });
+            this.zenMotion = global.MinkoiSpring?.createSpring({
+                initial: 1, precision: 0.01, velocityPrecision: 0.05,
+                onUpdate: value => {
+                    const box = this.dom.zenAmbientBox;
+                    if (!box) return;
+                    box.style.setProperty('--lyric-enter-y', `${((1 - value) * 7).toFixed(2)}px`);
+                    box.style.setProperty('--lyric-enter-opacity', String(Math.max(0, Math.min(1, 0.2 + value * 0.8))));
+                    // Swap content only after the outgoing phrase has softened.
+                    // Retarget this same spring; no second timeline/RAF exists.
+                    if (value < 0.5 && this.zenPending) {
+                        const commit = this.zenPending;
+                        this.zenPending = null;
+                        commit();
+                        this.zenMotion.setTarget(1);
+                    }
+                }
+            });
 
             this._bindScrollDetection();
         }
@@ -64,7 +88,8 @@
             if (!body) return;
 
             const markManualScroll = () => {
-                if (this.viewMode !== 'karaoke' || !this.doc || this.lineRefs.length === 0) return;
+                if (this.viewMode === 'full' || !this.doc || this.lineRefs.length === 0) return;
+                if (this.scrollSpring) this.scrollSpring.snap(body.scrollTop);
                 this.isUserScrolling = true;
                 this._syncRecenterVisibility(true);
                 if (this.scrollPauseTimer) clearTimeout(this.scrollPauseTimer);
@@ -87,7 +112,7 @@
 
         _syncRecenterVisibility(show) {
             if (!this.dom.recenterBtn) return;
-            const visible = Boolean(show && this.activeLineIndex >= 0 && this.doc?.lines?.length > 0 && this.viewMode === 'karaoke');
+            const visible = Boolean(show && this.activeLineIndex >= 0 && this.doc?.lines?.length > 0 && this.viewMode !== 'full');
             this.dom.recenterBtn.classList.toggle('visible', visible);
         }
 
@@ -104,25 +129,44 @@
         }
 
         setViewMode(mode) {
-            this.viewMode = mode === 'full' ? 'full' : 'karaoke';
+            this.viewMode = ['full', 'floating', 'karaoke'].includes(mode) ? mode : 'floating';
             if (this.dom.body) {
                 this.dom.body.classList.toggle('full-view', this.viewMode === 'full');
+                this.dom.body.classList.toggle('floating-view', this.viewMode === 'floating');
             }
             if (this.dom.modeToggle) {
                 const isFull = this.viewMode === 'full';
                 this.dom.modeToggle.classList.toggle('active', isFull);
-                this.dom.modeToggle.title = isFull
-                    ? 'Chế độ hiện tại: Toàn bài (Nhấp để đổi sang Karaoke cuộn)'
-                    : 'Chế độ hiện tại: Karaoke (Nhấp để đổi sang Đọc toàn bài)';
-                this.dom.modeToggle.innerHTML = isFull
-                    ? '<i class="fas fa-microphone" aria-hidden="true"></i> <span>Karaoke</span>'
-                    : '<i class="fas fa-align-left" aria-hidden="true"></i> <span>Toàn bài</span>';
+                const labels = { floating: 'Floating', karaoke: 'Karaoke', full: 'Toàn bài' };
+                this.dom.modeToggle.textContent = labels[this.viewMode];
+                this.dom.modeToggle.title = 'Kiểu xem: Floating → Karaoke → Toàn bài';
             }
-            if (this.viewMode === 'karaoke' && this.activeLineIndex >= 0) {
+            if (this.viewMode !== 'full' && this.activeLineIndex >= 0) {
                 this.isUserScrolling = false;
                 this._scrollLineToCenter(this.activeLineIndex, true);
             }
             this._syncRecenterVisibility(false);
+        }
+
+        setDisplayLayers(value) {
+            const layers = String(value).split(',').filter(l => ['jp', 'romaji', 'vi'].includes(l));
+            this.displayLayers = layers.length ? layers : ['jp', 'romaji', 'vi'];
+            for (const container of [this.dom.modal, this.dom.zenAmbientBox]) {
+                if (!container) continue;
+                for (const layer of ['jp', 'romaji', 'vi']) container.dataset[`show${layer[0].toUpperCase()}${layer.slice(1)}`] = String(this.displayLayers.includes(layer));
+            }
+            this.lastZenLineIndex = -3;
+            this.zenPending = null;
+            this._updateMissingLayers();
+            this.lastScrolledIndex = -1;
+        }
+
+        _updateMissingLayers() {
+            this.lineRefs.forEach(ref => {
+                const values = { jp: ref.line.jp, romaji: ref.line.romaji, vi: ref.line.translation };
+                const empty = !this.displayLayers.some(layer => values[layer]);
+                ref.el.classList.toggle('missing-selected-layer', empty);
+            });
         }
 
         setTapSyncMode(active) {
@@ -136,6 +180,15 @@
         }
 
         renderLoading(track) {
+            this.zenPending = null;
+            this.zenRenderedIndex = -1;
+            if (this.scrollSpring) this.scrollSpring.snap(this.dom.body?.scrollTop || 0);
+            this.zenMotion?.snap(1);
+            if (this.dom.zenAmbientBox) {
+                this.dom.zenAmbientBox.classList.remove('has-lyric');
+                this.dom.zenAmbientBox.setAttribute('aria-hidden', 'true');
+            }
+            for (const el of [this.dom.zenJp, this.dom.zenRomaji, this.dom.zenVi]) if (el) el.textContent = '';
             this.track = track;
             this.doc = null;
             this.lineRefs = [];
@@ -162,6 +215,8 @@
         }
 
         mountDocument(track, doc, diagnostics) {
+            this.zenPending = null;
+            this.zenRenderedIndex = -1;
             this.track = track;
             this.doc = doc;
             this.diagnostics = diagnostics;
@@ -181,7 +236,7 @@
             const syncLevel = doc?.syncLevel || 'unavailable';
             const badgeMeta = SYNC_LABELS[syncLevel] || SYNC_LABELS.unavailable;
             if (this.dom.syncBadge) {
-                this.dom.syncBadge.textContent = doc?.isCustomImported ? `${badgeMeta.text} · CUSTOM` : badgeMeta.text;
+                this.dom.syncBadge.textContent = `${badgeMeta.text}${doc?.isCustomImported ? ' · CUSTOM' : doc?.status === 'draft' ? ' · DRAFT' : ''}`;
                 this.dom.syncBadge.dataset.syncLevel = syncLevel;
                 this.dom.syncBadge.title = `${badgeMeta.title} · Nguồn: ${doc?.source || 'unknown'}`;
             }
@@ -279,8 +334,9 @@
                 contentDiv.className = 'lyric-content';
 
                 const primaryEl = document.createElement('span');
-                primaryEl.className = 'lyric-romaji';
-                if (line.isJapanese) {
+                const tokenIsJapanese = ns.Normalizer.containsJapanese(line.tokens?.map(t => t.text).join('') || line.text);
+                primaryEl.className = tokenIsJapanese ? 'lyric-jp' : 'lyric-romaji';
+                if (tokenIsJapanese) {
                     primaryEl.setAttribute('lang', 'ja');
                 }
 
@@ -310,13 +366,27 @@
                         });
                     });
                 } else {
-                    primaryEl.textContent = line.romaji || line.text || '';
+                    primaryEl.textContent = tokenIsJapanese ? line.jp : (line.romaji || line.text || '');
                 }
-                contentDiv.appendChild(primaryEl);
+                if (tokenIsJapanese) {
+                    if (line.jp) contentDiv.appendChild(primaryEl);
+                    if (line.romaji) {
+                        const romanEl = document.createElement('span');
+                        romanEl.className = 'lyric-romaji'; romanEl.lang = 'ja-Latn';
+                        romanEl.textContent = line.romaji; contentDiv.appendChild(romanEl);
+                    }
+                } else {
+                    if (line.jp) {
+                        const jpEl = document.createElement('span'); jpEl.className = 'lyric-jp'; jpEl.lang = 'ja';
+                        jpEl.textContent = line.jp; contentDiv.appendChild(jpEl);
+                    }
+                    if (primaryEl.textContent) contentDiv.appendChild(primaryEl);
+                }
 
                 if (line.translation) {
                     const viEl = document.createElement('span');
                     viEl.className = 'lyric-vi';
+                    viEl.lang = 'vi';
                     viEl.textContent = line.translation;
                     contentDiv.appendChild(viEl);
                 }
@@ -374,6 +444,7 @@
             });
 
             this.dom.body.appendChild(frag);
+            this._updateMissingLayers();
         }
 
         _renderStateCard(iconClass, tag, title, desc, showEditorBtn) {
@@ -397,6 +468,15 @@
                 0,
                 ref.el.offsetTop - (body.clientHeight / 2) + (ref.el.offsetHeight / 2)
             );
+            if (this.scrollSpring) {
+                if (instant) {
+                    this.scrollSpring.snap(targetTop);
+                } else {
+                    if (!this.scrollSpring.running) this.scrollSpring.snap(body.scrollTop);
+                    this.scrollSpring.setTarget(targetTop);
+                }
+                return;
+            }
             try {
                 body.scrollTo({
                     top: targetTop,
@@ -504,7 +584,7 @@
             // Scroll target ONLY changes when active line actually changes!
             if (activeIdx !== this.activeLineIndex || snapshot.wasSeek) {
                 this.activeLineIndex = activeIdx;
-                if (activeIdx >= 0 && this.viewMode === 'karaoke' && !this.isUserScrolling && (activeIdx !== this.lastScrolledIndex || snapshot.wasSeek)) {
+                if (activeIdx >= 0 && this.viewMode !== 'full' && !this.isUserScrolling && (activeIdx !== this.lastScrolledIndex || snapshot.wasSeek)) {
                     this.lastScrolledIndex = activeIdx;
                     this._scrollLineToCenter(activeIdx, Boolean(snapshot.wasSeek));
                 }
@@ -514,25 +594,30 @@
 
         _updateZenLyric(snapshot, zenOpen) {
             const box = this.dom.zenAmbientBox;
-            const mainEl = this.dom.zenRomaji;
+            const jpEl = this.dom.zenJp;
+            const romanEl = this.dom.zenRomaji;
+            const mainEl = romanEl;
             const viEl = this.dom.zenVi;
             if (!box || !mainEl || !viEl) return;
 
             const syncLevel = this.doc?.syncLevel || 'unavailable';
             const hasTimedLines = Boolean(this.doc?.lines?.length);
             const showFallback = zenOpen && this.doc &&
-                (!hasTimedLines || syncLevel === 'unavailable' || syncLevel === 'restricted' || syncLevel === 'instrumental');
+                (!hasTimedLines || syncLevel === 'plain' || syncLevel === 'unavailable' || syncLevel === 'restricted' || syncLevel === 'instrumental');
 
             if (showFallback) {
+                this.zenPending = null;
                 // Never leave Zen as an unexplained empty wallpaper when the
                 // current track has no timed lyric lines.
                 const title = this.doc.title || this.track?.name || '';
-                const note = syncLevel === 'instrumental' ? 'Bản không lời' : 'Chưa có lời cho bài này';
+                const note = syncLevel === 'instrumental' ? 'Bản không lời' : syncLevel === 'plain' ? 'Lời chưa có thời gian · xem toàn bài trong Lyrics' : 'Chưa có lời cho bài này';
                 if (this.lastZenLineIndex !== -2 || mainEl.textContent !== title || viEl.textContent !== note) {
                     this.lastZenLineIndex = -2;
                     this.zenTokenRefs = [];
                     mainEl.textContent = title;
                     viEl.textContent = note;
+                    if (jpEl) jpEl.textContent = '';
+                    box.classList.add('is-fallback');
                 }
                 if (!box.classList.contains('has-lyric')) {
                     box.classList.add('has-lyric');
@@ -542,6 +627,8 @@
             }
 
             if (!zenOpen || !this.doc || snapshot.activeLineIndex < 0) {
+                this.zenPending = null;
+                this.zenRenderedIndex = -1;
                 if (this.lastZenLineIndex !== -1) {
                     box.classList.remove('has-lyric');
                     box.setAttribute('aria-hidden', 'true');
@@ -559,33 +646,58 @@
             }
 
             const isWordMode = (this.doc.syncLevel === 'word' || this.doc.syncLevel === 'syllable') && Array.isArray(line.tokens);
+            const tokenIsJapanese = ns.Normalizer.containsJapanese(line.tokens?.map(t => t.text).join('') || line.text);
+            const tokenEl = tokenIsJapanese && jpEl ? jpEl : romanEl;
 
-            if (idx !== this.lastZenLineIndex) {
+            if (idx !== this.lastZenLineIndex || (snapshot.wasSeek && this.zenPending)) {
+                box.classList.remove('is-fallback');
                 this.lastZenLineIndex = idx;
-                this.zenTokenRefs = [];
-                mainEl.innerHTML = '';
+                const currentDocument = this.doc;
+                const commit = () => {
+                    if (this.doc !== currentDocument || this.lastZenLineIndex !== idx) return;
+                    this.zenRenderedIndex = idx;
+                    this.zenTokenRefs = [];
+                    romanEl.textContent = line.romaji || '';
+                    if (jpEl) jpEl.textContent = line.jp || '';
 
-                if (isWordMode) {
-                    line.tokens.forEach((tok, tokIdx) => {
-                        if (tok.isWhitespace) {
-                            mainEl.appendChild(document.createTextNode(tok.text));
-                            return;
-                        }
-                        const sp = document.createElement('span');
-                        sp.className = 'lyric-word zen-word is-upcoming-word';
-                        sp.textContent = tok.text;
-                        sp.style.setProperty('--word-progress', '0');
-                        sp.style.setProperty('--word-pct', '0%');
-                        mainEl.appendChild(sp);
-                        this.zenTokenRefs.push({ tokenIndex: tokIdx, el: sp, lastPct: '0%' });
-                    });
+                    if (isWordMode) {
+                        tokenEl.textContent = '';
+                        line.tokens.forEach((tok, tokIdx) => {
+                            if (tok.isWhitespace) {
+                                tokenEl.appendChild(document.createTextNode(tok.text));
+                                return;
+                            }
+                            const sp = document.createElement('span');
+                            sp.className = 'lyric-word zen-word is-upcoming-word';
+                            sp.textContent = tok.text;
+                            sp.style.setProperty('--word-progress', '0');
+                            sp.style.setProperty('--word-pct', '0%');
+                            tokenEl.appendChild(sp);
+                            this.zenTokenRefs.push({ tokenIndex: tokIdx, el: sp, lastPct: '0%' });
+                        });
+                    }
+                    viEl.textContent = line.translation || '';
+                    const values = { jp: line.jp, romaji: line.romaji, vi: line.translation };
+                    if (!this.displayLayers.some(layer => values[layer])) {
+                        box.classList.add('is-fallback');
+                        romanEl.textContent = 'Tầng lời đã chọn chưa có nội dung';
+                        viEl.textContent = '';
+                    }
+                };
+                if (this.zenMotion && this.zenRenderedIndex >= 0 && !snapshot.wasSeek) {
+                    this.zenPending = commit;
+                    this.zenMotion.setTarget(0);
                 } else {
-                    mainEl.textContent = line.romaji || line.text || '';
+                    this.zenPending = null;
+                    commit();
+                    if (this.zenMotion) {
+                        this.zenMotion.snap(snapshot.wasSeek ? 1 : 0);
+                        this.zenMotion.setTarget(1);
+                    }
                 }
-                viEl.textContent = line.translation || '';
             }
 
-            if (isWordMode && this.zenTokenRefs.length > 0) {
+            if (isWordMode && this.zenRenderedIndex === idx && this.zenTokenRefs.length > 0) {
                 const progresses = snapshot.tokenProgressByLine.get(idx);
                 for (let k = 0; k < this.zenTokenRefs.length; k++) {
                     const zRef = this.zenTokenRefs[k];

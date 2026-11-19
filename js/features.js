@@ -167,6 +167,7 @@
         const mainCard = document.getElementById('main-card');
         const header = document.querySelector('.site-brand-header');
         const dock = document.getElementById('zen-mini-dock');
+        const zenLyricsBtn = document.getElementById('zen-lyrics-toggle');
         const zenSurfaces = [mainCard, header, dock].filter(Boolean);
         const spring = window.MinkoiSpring;
         const renderZen = value => {
@@ -250,6 +251,50 @@
             window.addEventListener(evt, wakeZenDock, { passive: true });
         });
 
+        // --- Zen lyrics visibility: persisted preference, never exits Zen ---
+        const ZEN_LYRICS_KEY = 'minkoi_zen_lyrics_visible';
+        let zenLyricsVisible = true;
+        try {
+            zenLyricsVisible = window.localStorage?.getItem(ZEN_LYRICS_KEY) !== '0';
+        } catch (_) {}
+
+        function applyZenLyricsVisibility(syncToAudio) {
+            document.body.classList.toggle('zen-lyrics-hidden', !zenLyricsVisible);
+            if (zenLyricsBtn) {
+                zenLyricsBtn.setAttribute('aria-pressed', String(zenLyricsVisible));
+                const label = zenLyricsVisible ? 'Ẩn lời bài hát trong Zen' : 'Hiện lời bài hát trong Zen';
+                zenLyricsBtn.setAttribute('aria-label', label);
+                zenLyricsBtn.title = label;
+                const icon = zenLyricsBtn.querySelector('i');
+                if (icon) icon.className = zenLyricsVisible ? 'fas fa-closed-captioning' : 'fas fa-comment-slash';
+            }
+            // Revealing while paused must mount the current line immediately,
+            // without replaying an old transition or restarting the engine.
+            if (syncToAudio && zenLyricsVisible && document.body.classList.contains('zen-mode')) {
+                try {
+                    window.MinkoiLyrics?.controller?.syncEngine?.forceSync(true);
+                } catch (_) {}
+            }
+        }
+
+        function setZenLyricsVisible(visible) {
+            zenLyricsVisible = Boolean(visible);
+            try {
+                window.localStorage?.setItem(ZEN_LYRICS_KEY, zenLyricsVisible ? '1' : '0');
+            } catch (_) {}
+            applyZenLyricsVisibility(true);
+        }
+
+        if (zenLyricsBtn) {
+            zenLyricsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setZenLyricsVisible(!zenLyricsVisible);
+                wakeZenDock();
+            });
+        }
+        applyZenLyricsVisibility(false);
+
         function toggleZenMode(enable) {
             const isZen = typeof enable === 'boolean' ? enable : !document.body.classList.contains('zen-mode');
             if (isZen === document.body.classList.contains('zen-mode')) return;
@@ -324,6 +369,7 @@
             bannerStage.addEventListener('click', (e) => {
                 if (!document.body.classList.contains('zen-mode')) return;
                 if (e.target && e.target.closest && e.target.closest('#zen-mini-dock')) return;
+                if (e.target && e.target.closest && e.target.closest('#zen-ambient-lyric')) return;
                 toggleZenMode(false);
             });
         }

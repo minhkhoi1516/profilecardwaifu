@@ -243,7 +243,7 @@ const CONFIG = {
     },
 
     // ------------------------------------------------------------------
-    // AUDIO LIBRARY — 31 track, gắn trực tiếp với persona (key).
+    // AUDIO LIBRARY — counts are derived from the playlist, never duplicated in UI.
     // Spotify links/IDs are reference metadata for identification & matching only.
     // Thêm nhạc mới: copy file vào music/ rồi thêm 1 object vào playlist.
     // ------------------------------------------------------------------
@@ -256,7 +256,7 @@ const CONFIG = {
             { id: 3, persona: "alya", name: "ワールドイズマイン (World is Mine)", artist: "Alya Kujou", version: "cover", spotifyTrackId: "3iCXXsLMo4ssBOC2Sw5KUO", spotifyUrl: "https://open.spotify.com/intl-vi/track/3iCXXsLMo4ssBOC2Sw5KUO", file: "music/alya_03_World_is_Mine.mp3", duration: "4:12", durationMs: 252600 },
             { id: 4, persona: "alya", name: "CHE.R.RY", artist: "Alya Kujou", version: "cover", spotifyTrackId: "1zNDgdjkZojamiEZQOhI96", spotifyUrl: "https://open.spotify.com/intl-vi/track/1zNDgdjkZojamiEZQOhI96", file: "music/CHE.R.RY.mp3", duration: "3:29", durationMs: 209800 },
 
-            // --- SHIINA MAHIRU (7) ---
+            // --- SHIINA MAHIRU (10): existing IDs and instrumental files stay stable ---
             { id: 5, persona: "mahiru", name: "小さな恋のうた (Chiisana Koi no Uta)", artist: "椎名真昼 (CV.石見舞菜香)", version: "cover", spotifyTrackId: "66apUbHsEuKh7IqkKK7OKa", spotifyUrl: "https://open.spotify.com/intl-vi/track/66apUbHsEuKh7IqkKK7OKa", file: "music/angel_01_Chiisana_Koi_no_Uta.mp3", duration: "5:00", durationMs: 300800 },
             { id: 6, persona: "mahiru", name: "うれしい! たのしい! 大好き!", artist: "椎名真昼 (CV.石見舞菜香)", version: "cover", spotifyTrackId: "6endW8r32Uli0oS4ze3BZM", spotifyUrl: "https://open.spotify.com/intl-vi/track/6endW8r32Uli0oS4ze3BZM", file: "music/angel_02_Ai_Uta.mp3", duration: "3:35", durationMs: 215100 },
             { id: 7, persona: "mahiru", name: "小さな恋のうた (Inst.)", artist: "椎名真昼 (CV.石見舞菜香)", version: "instrumental", spotifyTrackId: "3sySfIp6t41oxCmTnPsAvB", spotifyUrl: "https://open.spotify.com/intl-vi/track/3sySfIp6t41oxCmTnPsAvB", file: "music/angel_03_Chiisana_Koi_no_Uta_Inst.mp3", duration: "4:24", durationMs: 264800 },
@@ -295,7 +295,11 @@ const CONFIG = {
             { id: 28, persona: "nakanomiku", name: "Lovely Music ～三週間前までは白かった～", artist: "中野三玖 (CV: 伊藤美来)", album: "\"Gotoubun no Hanayome\" Character Song Mini Album", version: "original", spotifyTrackId: "4qfOkZAA93DYXVtoX3HvQq", spotifyUrl: "https://open.spotify.com/intl-vi/track/4qfOkZAA93DYXVtoX3HvQq", file: "music/Lovely music～三週間前までは白かった～_.mp3", duration: "4:02", durationMs: 242700 },
             { id: 29, persona: "nakanomiku", name: "Memories", artist: "中野家の五つ子", album: "Quintuplets' smiles EP", version: "original", spotifyTrackId: "06rAZ8mIHj3zZw1AHnY5PA", spotifyUrl: "https://open.spotify.com/intl-vi/track/06rAZ8mIHj3zZw1AHnY5PA", file: "music/Memories.mp3", duration: "4:01", durationMs: 241000 },
             { id: 30, persona: "nakanomiku", name: "たからもの (Takaramono)", artist: "中野家の五つ子 (Nakanoke no Itsutsugo)", version: "original", spotifyTrackId: "2bBLhWh9r1weUROfi5ccfZ", spotifyUrl: "https://open.spotify.com/intl-vi/track/2bBLhWh9r1weUROfi5ccfZ", file: "music/たからもの.mp3", duration: "3:27", durationMs: 207300 },
-            { id: 31, persona: "nakanomiku", name: "五等分の未来 (Gotoubun no Mirai)", artist: "中野家の五つ子 (Nakanoke no Itsutsugo)", version: "original", spotifyTrackId: "12h3LPkwdUHCyx68fHVG1t", spotifyUrl: "https://open.spotify.com/intl-vi/track/12h3LPkwdUHCyx68fHVG1t", file: "music/五等分の未来.mp3", duration: "3:39", durationMs: 219700 }
+            { id: 31, persona: "nakanomiku", name: "五等分の未来 (Gotoubun no Mirai)", artist: "中野家の五つ子 (Nakanoke no Itsutsugo)", version: "original", spotifyTrackId: "12h3LPkwdUHCyx68fHVG1t", spotifyUrl: "https://open.spotify.com/intl-vi/track/12h3LPkwdUHCyx68fHVG1t", file: "music/五等分の未来.mp3", duration: "3:39", durationMs: 219700 },
+            // Append new IDs: old saved playlist indices and favorites stay valid.
+            { id: 32, persona: "mahiru", name: "ギフト (Gift)", artist: "椎名真昼(CV.石見舞菜香)", version: "cover", versionLabel: "Vocal Cover", file: "music/ギフト 椎名真昼(CV.石見舞菜香).mp3", duration: "5:33", durationMs: 333793 },
+            { id: 33, persona: "mahiru", name: "バレンタイン・キッス (Valentine Kiss)", artist: "椎名真昼(CV.石見舞菜香)", version: "cover", versionLabel: "Vocal Cover", file: "music/バレンタイン・キッス 椎名真昼(CV.石見舞菜香).mp3", duration: "3:35", durationMs: 215184 },
+            { id: 34, persona: "mahiru", name: "君に届け (Kimi ni Todoke)", artist: "椎名真昼(CV.石見舞菜香)", version: "cover", versionLabel: "Vocal Cover", file: "music/君に届け 椎名真昼(CV.石見舞菜香).mp3", duration: "5:10", durationMs: 310883 }
         ]
     },
 

@@ -1,0 +1,61 @@
+/* V4 Refined · one content unit, three language layers. No per-line blur. */
+.lyric-content { min-width: 0; gap: 0.35rem; flex: 1; overflow-wrap: anywhere; }
+.lyric-jp { display: block; font-family: var(--font-body), "Yu Gothic", "Meiryo", sans-serif; font-size: 1.13rem; font-weight: 700; line-height: 1.65; color: var(--color-text); }
+.lyric-romaji { display: block; font-size: 0.86rem; line-height: 1.55; font-weight: 500; color: var(--color-text-secondary); }
+.lyric-vi { display: block; font-size: 0.87rem; line-height: 1.55; color: var(--color-text-secondary); }
+.lyric-line { flex-shrink: 0; border-left: 3px solid transparent; opacity: 0.65; transition: opacity 220ms ease, background 220ms ease, border-color 220ms ease; transform: none; }
+.lyric-line.active, .lyrics-body.full-view .lyric-line.active { transform: none; border-left-color: var(--color-accent); }
+.lyric-line.active .lyric-jp { color: var(--color-text); }
+.lyric-line.active .lyric-romaji { color: var(--color-text-secondary); text-shadow: none; font-weight: 500; }
+.lyric-line.is-japanese .lyric-romaji { font-family: var(--font-body); line-height: 1.55; }
+.lyrics-body { position: relative; overscroll-behavior: contain; min-height: 0; scroll-behavior: auto; }
+.lyrics-body.floating-view .lyric-line:not(.active):not(.is-near) { opacity: 0.65; }
+.lyrics-body.floating-view .lyric-line.active { background: var(--surface-hover); }
+.lyrics-body.full-view .lyric-line { opacity: 0.95; }
+.lyric-line.missing-selected-layer .lyric-content::after { content: 'Tầng lời đã chọn chưa có nội dung · bổ sung trong Editor'; color: var(--color-text-secondary); font-size: 0.8rem; }
+[data-show-jp="false"] .lyric-jp, [data-show-romaji="false"] .lyric-romaji, [data-show-vi="false"] .lyric-vi,
+[data-show-jp="false"] .zen-lyric-jp, [data-show-romaji="false"] .zen-lyric-romaji, [data-show-vi="false"] .zen-lyric-vi { display: none; }
+.lyrics-display-wrap { position: relative; }
+.lyrics-display-menu { position: absolute; right: 0; top: calc(100% + 8px); width: min(238px, calc(100vw - 48px)); padding: 6px; border-radius: 16px; border: 1px solid var(--color-border); background: var(--surface-popup); box-shadow: 0 12px 30px rgba(0,0,0,.22); z-index: 10; transform-origin: top right; }
+.lyrics-display-menu[hidden] { display: none; }
+.lyrics-display-menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 10px; color: var(--color-text); padding: 0.7rem; font: 600 0.8rem var(--font-body); cursor: pointer; }
+.lyrics-display-menu button[aria-pressed="true"], .lyrics-display-menu button:hover { background: var(--surface-hover); }
+.lyrics-display-menu button[aria-pressed="true"]::after { content: ' ✓'; color: var(--color-accent); }
+.lyrics-badge-row { flex-wrap: wrap; }
+.lyrics-drawer-modal { width: min(600px, calc(100vw - 24px)); max-width: 600px; height: min(720px, 86dvh); }
+.lyrics-editor-scroll { overscroll-behavior: contain; }
+.editor-textarea { font-family: var(--font-mono), "Yu Gothic", monospace; line-height: 1.6; scroll-margin-bottom: 30vh; }
+/* Upgrade the existing Zen overlay, never add a second one. */
+.zen-ambient-lyric { width: min(680px, calc(100vw - 32px)); max-width: none; box-sizing: border-box; max-height: min(32dvh, 280px); overflow: hidden; background: rgba(18,22,29,.66); border-color: rgba(255,255,255,.19); backdrop-filter: blur(16px) saturate(120%); -webkit-backdrop-filter: blur(16px) saturate(120%); }
+.zen-ambient-lyric > p { margin: 0; overflow-wrap: anywhere; transform: translateY(var(--lyric-enter-y, 0px)); opacity: var(--lyric-enter-opacity, 1); text-shadow: none; }
+.zen-ambient-lyric > p + p { margin-top: .32rem; }
+.zen-ambient-lyric > p:empty { display: none; }
+body.zen-mode .zen-ambient-lyric.has-lyric { pointer-events: auto; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; scrollbar-width: thin; }
+body.zen-lyrics-hidden.zen-mode .zen-ambient-lyric.has-lyric {
+    opacity: 0;
+    transform: translateX(-50%) translateY(14px) scale(0.985);
+    pointer-events: none;
+}
+.zen-lyric-jp { font-size: clamp(1.05rem, 1.7vw, 1.5rem); line-height: 1.6; font-weight: 700; color: #fafbff; }
+.zen-ambient-lyric .zen-lyric-romaji { font-size: .95rem; line-height: 1.5; font-weight: 500; color: #e2e7ef; }
+.zen-ambient-lyric .zen-lyric-vi { font-size: .92rem; line-height: 1.5; color: #e2e7ef; }
+.zen-ambient-lyric.is-fallback .zen-lyric-romaji, .zen-ambient-lyric.is-fallback .zen-lyric-vi { display: block; }
+@media (max-width: 600px) {
+    .lyrics-drawer-modal { width: 100%; max-width: none; max-height: 90dvh; }
+    .lyrics-drawer-header { gap: .6rem; padding: .85rem; flex-wrap: wrap; }
+    .lyrics-meta { min-width: 0; flex: 1 1 180px; }
+    .lyrics-header-actions { margin-left: auto; }
+    .lyrics-display-menu { left: 0; right: auto; transform-origin: top left; }
+    .lyrics-body { padding: .8rem .55rem; }
+    .lyric-line { padding: .65rem .5rem; gap: .5rem; }
+    .lyric-jp { font-size: 1.05rem; }
+    .lyric-romaji, .lyric-vi { font-size: .85rem; }
+    .zen-ambient-lyric { padding: .65rem .85rem; bottom: calc(142px + env(safe-area-inset-bottom, 0px)); }
+    .zen-ambient-lyric .zen-lyric-romaji, .zen-ambient-lyric .zen-lyric-vi { font-size: .83rem; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+    .zen-ambient-lyric { bottom: calc(132px + env(safe-area-inset-bottom, 0px)); max-height: 40dvh; width: min(700px, calc(100vw - 160px)); }
+    .zen-lyric-jp { font-size: 1rem; }
+    .zen-ambient-lyric .zen-lyric-romaji, .zen-ambient-lyric .zen-lyric-vi { font-size: .8rem; }
+}
+@media (prefers-reduced-motion: reduce) { .lyric-line, .zen-ambient-lyric { transition: none; } }
