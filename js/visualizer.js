@@ -47,6 +47,7 @@
     const haloRanges = [[5, 27], [16, 37], [5, 24], [20, 43]];
     const barsUI = Array.from(doc.querySelectorAll('.live-visualizer-bars .viz-bar'));
     const barValues = new Float32Array(barsUI.length).fill(-1);
+    let barsVisible = false;
     const vinyl = doc.getElementById('vinyl-disc');
     const pedestal = stage.querySelector('.avatar-backdrop-disc');
     const vinylGlow = vinyl?.querySelector('.audio-reactive-glow');
@@ -156,7 +157,17 @@
         const dx = Math.cos(angle), dy = Math.sin(angle);
         return { dx, dy, angle, band, delay, reach: rayRoom(dx, dy, g.cx, g.cy, g.w, g.h) - 3 };
     }
+    function refreshBarsVisibility() {
+        // The compact bar strip is display:none on narrow layouts. Writing its
+        // transforms every frame still invalidates style for each hidden node,
+        // so resolve visibility during layout measurement instead.
+        const next = barsUI.length > 0 && barsUI[0].getClientRects().length > 0;
+        if (next === barsVisible) return;
+        barsVisible = next;
+        if (next) barValues.fill(-1);
+    }
     function measure() {
+        refreshBarsVisibility();
         const w = stage.offsetWidth, h = stage.offsetHeight;
         const dpr = Math.min(global.devicePixelRatio || 1, 2);
         const key = [w, h, avatar.offsetWidth, avatar.offsetHeight, dpr].join('/');
@@ -529,6 +540,7 @@
         if (pedestal && d !== domCache.discScale) { pedestal.style.transform = `translate(-50%, -50%) scale(${d})`; domCache.discScale = d; }
         if (vinylGlow && glow !== domCache.vinylGlow) { vinylGlow.style.opacity = glow; domCache.vinylGlow = glow; }
         if (pedestalGlow && glow !== domCache.discGlow) { pedestalGlow.style.opacity = glow; domCache.discGlow = glow; }
+        if (!barsVisible) return;
         for (let i = 0; i < barsUI.length; i++) {
             const value = Math.max(0.18, Math.min(1, positions[Math.round(i / Math.max(1, barsUI.length - 1) * 47)]));
             if (Math.abs(value - barValues[i]) < 0.015) continue;
@@ -573,7 +585,7 @@
         changeState(next);
         const playing = next === 'playing';
         if (playing) {
-            engine.sample(global.__minkoiAnalyser, dt, reactivity);
+            engine.sample(global.__minkoiAnalyser, dt, reactivity, now);
             settlingSince = 0;
         } else {
             engine.decay(dt);

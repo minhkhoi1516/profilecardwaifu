@@ -52,6 +52,28 @@
 
     const fullPlaylist = (CONFIG.music && CONFIG.music.playlist) || [];
 
+    // Presentation/queue order is independent of the persisted global index.
+    // Group Mahiru once, preserving every other persona's relative order.
+    function orderPlaylistForDisplay(tracks) {
+        const mahiru = tracks.filter(song => song.persona === 'mahiru');
+        const orderedMahiru = [
+            ...mahiru.filter(song => song.version !== 'instrumental'),
+            ...mahiru.filter(song => song.version === 'instrumental')
+        ];
+        const ordered = [];
+        let insertedMahiru = false;
+        tracks.forEach(song => {
+            if (song.persona !== 'mahiru') {
+                ordered.push(song);
+            } else if (!insertedMahiru) {
+                ordered.push(...orderedMahiru);
+                insertedMahiru = true;
+            }
+        });
+        return ordered;
+    }
+    const displayPlaylist = orderPlaylistForDisplay(fullPlaylist);
+
     // Helper: safe local storage
     function safeGet(key, def) {
         try { return localStorage.getItem(key) ?? def; } catch (_) { return def; }
@@ -86,8 +108,21 @@
             }
         }
         safeSet('minkoi_fav_tracks', JSON.stringify(favTrackIds));
-        renderCategoryTabs();
-        updatePlaylistItems();
+        // Outside Favorites, membership/order doesn't change. Keep the live
+        // button so keyboard focus and press feedback survive the toggle.
+        if (categoryNav) renderCategoryTabs(trackId);
+        else updatePlaylistItems();
+    }
+
+    function syncFavoriteRow(trackId) {
+        const button = playlistMenu?.querySelector(`[data-favid="${trackId}"]`);
+        if (!button) return;
+        const favorite = isFavorite(trackId);
+        button.classList.toggle('active', favorite);
+        button.setAttribute('aria-pressed', String(favorite));
+        button.title = favorite ? 'Bỏ yêu thích' : 'Yêu thích';
+        const icon = button.querySelector('i');
+        if (icon) icon.className = favorite ? 'fas fa-heart' : 'far fa-heart';
     }
 
     // Persona filter: 'all', 'favorites', or persona key
@@ -102,11 +137,11 @@
     }
 
     function getFilteredPlaylist() {
-        if (currentFilter === 'all') return fullPlaylist;
+        if (currentFilter === 'all') return displayPlaylist;
         if (currentFilter === 'favorites') {
-            return fullPlaylist.filter(song => isFavorite(song.id));
+            return displayPlaylist.filter(song => isFavorite(song.id));
         }
-        return fullPlaylist.filter(song => song.persona === currentFilter);
+        return displayPlaylist.filter(song => song.persona === currentFilter);
     }
 
     function personaOf(track) {
@@ -116,6 +151,10 @@
     let currentTrackIndex = 0;
     let isShuffle = safeGet('minkoi_player_shuffle', 'false') === 'true';
     let repeatMode = safeGet('minkoi_player_repeat', 'all'); // 'all', 'one', 'none'
+    let repeatSeekCleanup = null;
+    function cancelRepeatSeek() {
+        if (repeatSeekCleanup) repeatSeekCleanup();
+    }
     let currentAudioFx = safeGet('mahikari_audio_fx', 'hifi');
     let isMuted = false;
     let lastVolume = CONFIG.music?.defaultVolume || 45;
@@ -403,6 +442,7 @@
         hasRetriedCurrentTrack = false;
 
         // Clean reload to free previous decode buffer completely
+        cancelRepeatSeek();
         audio.pause();
         audio.removeAttribute('src');
         audio.load();
@@ -490,17 +530,12 @@
         return dot;
     }
 
-    function setSeekProgressUI(pos, thumbScale) {
+    function setSeekProgressUI(pos) {
         const clamped = Math.max(0, Math.min(1, pos || 0));
         if (seekFill) seekFill.style.setProperty('--seek-progress', clamped.toFixed(4));
         if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${clamped.toFixed(5)})`;
         const dot = ensureSeekThumbDot();
-        if (dot) {
-            dot.style.left = `${(clamped * 100).toFixed(2)}%`;
-            if (typeof thumbScale === 'number') {
-                dot.style.setProperty('--seek-thumb-scale', thumbScale.toFixed(3));
-            }
-        }
+        if (dot) dot.style.left = `${(clamped * 100).toFixed(2)}%`;
     }
 
     let crossfadeTimer = 0;
@@ -602,6 +637,7 @@
     }
 
     function pauseAudio() {
+        cancelRepeatSeek();
         audio.pause();
         if ('mediaSession' in navigator) {
             try { navigator.mediaSession.playbackState = 'paused'; } catch (_) {}
@@ -628,12 +664,12 @@
         const track = fullPlaylist[currentTrackIndex];
         if (currentFilter === 'favorites') {
             const favs = getFilteredPlaylist();
-            return favs.length > 0 ? favs : fullPlaylist;
+            return favs.length > 0 ? favs : displayPlaylist;
         }
         if (currentFilter !== 'all' && track && track.persona === currentFilter) {
             return getFilteredPlaylist();
         }
-        return fullPlaylist;
+        return displayPlaylist;
     }
 
     function playTrackAt(index, autoPlay) {
@@ -729,6 +765,7 @@
                 const active = tab.dataset.cat === key;
                 tab.classList.toggle('active', active);
                 tab.setAttribute('aria-selected', active ? 'true' : 'false');
+                tab.tabIndex = active ? 0 : -1;
             });
             const activeTab = categoryNav.querySelector('.cat-tab.active');
             if (activeTab && !(options && options.fromLiquidDrag)) {
@@ -744,9 +781,14 @@
                         ? tabLeft - margin
                         : tabRight - categoryNav.clientWidth + margin;
                     const maxLeft = Math.max(0, categoryNav.scrollWidth - categoryNav.clientWidth);
+                    // CSS scroll-behavior cannot override a JS 'smooth' request.
+                    // Under OS Reduced Motion the strip must land immediately,
+                    // otherwise its animation can still be running (and fight
+                    // the user's next swipe) after the capsule has settled.
+                    const reduced = window.MinkoiSpring?.isAccessibilityReducedMotion?.();
                     categoryNav.scrollTo({
                         left: Math.max(0, Math.min(maxLeft, targetLeft)),
-                        behavior: 'smooth'
+                        behavior: reduced ? 'auto' : 'smooth'
                     });
                 }
             }
@@ -766,45 +808,88 @@
             }
         }
         updateCategoryTag();
-        updatePlaylistItems();
+        if (Number.isInteger(options?.favoriteOnly)) syncFavoriteRow(options.favoriteOnly);
+        else updatePlaylistItems();
     }
 
-    function renderCategoryTabs() {
+    // The strip is reconciled in place instead of being re-created.
+    // Replacing `innerHTML` destroyed the very buttons a gesture was holding:
+    // an in-flight press lost its element, its cached geometry and (on WebKit)
+    // its implicit pointer target, which is what made the strip feel unswipeable
+    // on real devices. Live nodes are reused, updated only when their label
+    // actually changed, and re-appended in the intended order.
+    function renderCategoryTabs(favoriteChange) {
         if (!categoryNav) return;
+        const favoriteOnly = Number.isInteger(favoriteChange) && currentFilter !== 'favorites';
         const counts = {};
         fullPlaylist.forEach(song => {
             counts[song.persona] = (counts[song.persona] || 0) + 1;
         });
 
-        const favCount = favTrackIds.length;
-        const tabs = [
-            `<button class="cat-tab" data-cat="all" role="tab" type="button"><i class="fas fa-layer-group" aria-hidden="true"></i> All (${fullPlaylist.length})</button>`
-        ];
+        const desired = [{
+            cat: 'all',
+            title: '',
+            html: `<i class="fas fa-layer-group" aria-hidden="true"></i> All (${fullPlaylist.length})`
+        }];
 
+        const favCount = favTrackIds.length;
         if (favCount > 0) {
-            tabs.push(
-                `<button class="cat-tab ${currentFilter === 'favorites' ? 'active' : ''}" data-cat="favorites" role="tab" type="button" title="Bài hát yêu thích">` +
-                `<i class="fas fa-heart" style="color: #f43f5e;" aria-hidden="true"></i> Yêu thích` +
-                `<span class="cat-count">${favCount}</span></button>`
-            );
+            desired.push({
+                cat: 'favorites',
+                title: 'Bài hát yêu thích',
+                html: `<i class="fas fa-heart" style="color: #f43f5e;" aria-hidden="true"></i> Yêu thích` +
+                    `<span class="cat-count">${favCount}</span>`
+            });
         }
 
         CONFIG.personas
             .filter(p => p.available && counts[p.key])
             .forEach(p => {
-                tabs.push(
-                    `<button class="cat-tab" data-cat="${p.key}" role="tab" type="button" title="${p.name}">` +
-                    `<i class="fas fa-music" aria-hidden="true"></i> ${p.name}` +
-                    `<span class="cat-count">${counts[p.key]}</span></button>`
-                );
+                desired.push({
+                    cat: p.key,
+                    title: p.name,
+                    html: `<i class="fas fa-music" aria-hidden="true"></i> ${p.name}` +
+                        `<span class="cat-count">${counts[p.key]}</span>`
+                });
             });
 
-        const existingIndicator = categoryNav.querySelector('.liquid-glass-indicator, .tab-sliding-pill');
-        categoryNav.innerHTML = tabs.join('');
-        if (existingIndicator) {
-            categoryNav.insertBefore(existingIndicator, categoryNav.firstChild);
+        const wanted = new Set(desired.map(spec => spec.cat));
+        const existing = new Map();
+        categoryNav.querySelectorAll('.cat-tab').forEach(tab => {
+            if (wanted.has(tab.dataset.cat)) existing.set(tab.dataset.cat, tab);
+            else tab.remove();
+        });
+
+        let nextTab = categoryNav.querySelector('.cat-tab');
+        desired.forEach(spec => {
+            let tab = existing.get(spec.cat);
+            if (!tab) {
+                tab = document.createElement('button');
+                tab.className = 'cat-tab';
+                tab.dataset.cat = spec.cat;
+                tab.setAttribute('role', 'tab');
+                tab.type = 'button';
+            }
+            if (tab.dataset.tabLabel !== spec.html) {
+                tab.innerHTML = spec.html;
+                tab.dataset.tabLabel = spec.html;
+            }
+            if (spec.title) tab.title = spec.title;
+            // Leave already-ordered nodes attached: moving every button through
+            // appendChild can lose focus/implicit pointer capture during updates.
+            if (tab !== nextTab) categoryNav.insertBefore(tab, nextTab);
+            nextTab = tab.nextElementSibling;
+            while (nextTab && !nextTab.matches('.cat-tab')) nextTab = nextTab.nextElementSibling;
+        });
+
+        // Un-favouriting the last track while the Yêu thích filter is active
+        // would otherwise leave a filter whose tab no longer exists.
+        if (currentFilter === 'favorites' && favCount === 0) {
+            currentFilter = 'all';
+            safeSet('minkoi_player_filter', 'all');
         }
-        setFilter(currentFilter);
+
+        setFilter(currentFilter, favoriteOnly ? { favoriteOnly: favoriteChange } : undefined);
     }
 
     if (categoryNav) {
@@ -812,6 +897,19 @@
             const tab = e.target.closest('.cat-tab');
             if (!tab) return;
             setFilter(tab.dataset.cat);
+        });
+        categoryNav.addEventListener('keydown', (e) => {
+            const tab = e.target.closest('.cat-tab');
+            if (!tab || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+            const tabs = Array.from(categoryNav.querySelectorAll('.cat-tab'));
+            const index = tabs.indexOf(tab);
+            const nextIndex = e.key === 'Home' ? 0 : (e.key === 'End' ? tabs.length - 1
+                : (index + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length);
+            e.preventDefault();
+            e.stopPropagation();
+            tabs[nextIndex].focus({ preventScroll: true });
+            setFilter(tabs[nextIndex].dataset.cat);
+            window.MinkoiFeedback?.selection();
         });
     }
 
@@ -834,7 +932,9 @@
     // Persona changed by avatar.js
     window.addEventListener('minkoi:persona', (e) => {
         const key = e.detail && e.detail.key;
-        if (!key) return;
+        // Artwork preload finishes asynchronously on boot. It must not replace
+        // the user's restored playlist filter; explicit persona changes still do.
+        if (!key || e.detail.initial) return;
         setFilter(key);
     });
 
@@ -880,7 +980,7 @@
         if (commitAudio) {
             audio.currentTime = pos * audio.duration;
         }
-        setSeekProgressUI(pos, isScrubbing ? 1.127 : 0.85);
+        setSeekProgressUI(pos);
         updateTimeDisplay(pos * audio.duration, audio.duration);
         seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
     }
@@ -890,7 +990,7 @@
 
         const pos = audio.currentTime / audio.duration;
         const pct = pos * 100;
-        setSeekProgressUI(pos, 0.85);
+        setSeekProgressUI(pos);
         updateTimeDisplay(audio.currentTime, audio.duration);
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', Math.round(pct).toString());
 
@@ -917,10 +1017,28 @@
             return;
         }
 
+        const list = navigationList();
         if (repeatMode === 'one') {
+            cancelRepeatSeek();
+            const source = audio.currentSrc || audio.src;
+            const resume = () => {
+                cancelRepeatSeek();
+                if (repeatMode === 'one' && (audio.currentSrc || audio.src) === source &&
+                    audio.currentTime < 0.1) playAudio();
+            };
+            // Windows WebKit can resolve play() at the old EOS and pause again
+            // before this rewind completes. Restart after the media seek, not
+            // after an arbitrary delay. User pause/track/mode changes cancel it.
+            repeatSeekCleanup = () => {
+                audio.removeEventListener('seeked', resume);
+                repeatSeekCleanup = null;
+            };
+            audio.addEventListener('seeked', resume, { once: true });
             audio.currentTime = 0;
-            playAudio();
-        } else if (repeatMode === 'none' && currentTrackIndex === fullPlaylist.length - 1) {
+            if (!audio.seeking) resume();
+        } else if (repeatMode === 'none' && list[list.length - 1] === fullPlaylist[currentTrackIndex]) {
+            // End the active queue, not the global catalogue. Mahiru's final
+            // vocal (ID 34) is followed by instrumentals; ID 11 ends her queue.
             pauseAudio();
         } else {
             nextTrack();
@@ -980,7 +1098,38 @@
         if (audioAlert) audioAlert.classList.add('hidden');
     });
 
+    // Feedback is separate from the actual media position. Only the small
+    // thumb springs; the hit area, slider dock and audio value do not deform.
+    function bindSliderThumb(surface, property, rest, held) {
+        const motion = window.MinkoiSpring;
+        if (!motion) return;
+        const spring = motion.createSpring({
+            initial: rest, preset: motion.PRESETS.SLIDER_SETTLE, precision: .002,
+            onUpdate: value => {
+                if (value === rest) surface.style.removeProperty(property);
+                else surface.style.setProperty(property, value.toFixed(3));
+            }
+        });
+        let pointer = null;
+        surface.addEventListener('pointerdown', e => {
+            if (pointer !== null || e.button !== 0 || !e.isPrimary || motion.isAccessibilityReducedMotion()) return;
+            pointer = e.pointerId;
+            spring.setTarget(held, motion.PRESETS.SLIDER_DRAG);
+        }, { passive: true });
+        const release = e => {
+            if (pointer === null || (e.pointerId !== undefined && pointer !== e.pointerId)) return;
+            pointer = null;
+            spring.setTarget(rest, motion.PRESETS.SLIDER_SETTLE);
+        };
+        for (const event of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) {
+            surface.addEventListener(event, release, { passive: true });
+        }
+        window.addEventListener('pointerup', release, { passive: true });
+        window.addEventListener('blur', release);
+    }
+
     if (seekContainer) {
+        bindSliderThumb(seekContainer, '--seek-thumb-scale', .85, 1.12);
         function updateSeekTooltip(clientX, pos) {
             if (!seekTip || !seekContainer) return;
             const trackRect = seekContainer.getBoundingClientRect();
@@ -1022,7 +1171,7 @@
             }
         });
 
-        seekContainer.addEventListener('pointercancel', () => {
+        const cancelSeek = () => {
             if (isScrubbing) {
                 isScrubbing = false;
                 seekContainer.classList.remove('is-scrubbing');
@@ -1033,12 +1182,14 @@
                 pendingScrubPos = null;
                 if (audio.duration) {
                     const pos = audio.currentTime / audio.duration;
-                    setSeekProgressUI(pos, 0.85);
+                    setSeekProgressUI(pos);
                     if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
                     seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
                 }
             }
-        });
+        };
+        seekContainer.addEventListener('pointercancel', cancelSeek);
+        seekContainer.addEventListener('lostpointercapture', cancelSeek);
 
         seekContainer.addEventListener('mouseleave', () => {
             if (!isScrubbing && seekTip) {
@@ -1120,11 +1271,7 @@
 
     if (volumeCtrl) {
         const volumeDock = volumeCtrl.closest('.volume-slider-dock');
-        const volumeFeel = window.MinkoiSpring?.createSpring({
-            initial: 1, target: 1, allowEcoMotion: true,
-            preset: window.MinkoiSpring.PRESETS.SLIDER_SETTLE,
-            onUpdate: value => { if (volumeDock) volumeDock.style.scale = `1 ${value.toFixed(4)}`; }
-        });
+        bindSliderThumb(volumeCtrl, '--volume-thumb-scale', 1, 1.16);
         volumeCtrl.addEventListener('input', (e) => {
             setVolume(parseInt(e.target.value, 10));
         });
@@ -1132,12 +1279,10 @@
             try { volumeCtrl.setPointerCapture(event.pointerId); } catch (_) {}
             volumeCtrl.classList.add('is-scrubbing');
             if (volumeDock) volumeDock.classList.add('is-scrubbing');
-            volumeFeel?.setTarget(1.035);
         });
         const stopVolScrub = () => {
             volumeCtrl.classList.remove('is-scrubbing');
             if (volumeDock) volumeDock.classList.remove('is-scrubbing');
-            volumeFeel?.setTarget(1);
         };
         volumeCtrl.addEventListener('pointerup', stopVolScrub);
         volumeCtrl.addEventListener('pointercancel', stopVolScrub);
@@ -1177,6 +1322,7 @@
         updateRepeatUI();
 
         repeatBtn.addEventListener('click', () => {
+            cancelRepeatSeek();
             if (repeatMode === 'all') repeatMode = 'one';
             else if (repeatMode === 'one') repeatMode = 'none';
             else repeatMode = 'all';
@@ -1748,19 +1894,21 @@
             return;
         }
 
+        const focusedFavorite = scrollBox.contains(document.activeElement)
+            ? document.activeElement.closest('.row-fav-btn')?.dataset.favid : null;
         scrollBox.innerHTML = filtered.map(song => {
             const globalIdx = fullPlaylist.indexOf(song);
             const isPlaying = globalIdx === currentTrackIndex;
             const isFav = isFavorite(song.id);
             const persona = personaOf(song);
             return `
-                <div class="playlist-row ${isPlaying ? 'active' : ''}" data-idx="${globalIdx}" role="button" tabindex="0">
+                <div class="playlist-row ${isPlaying ? 'active' : ''}" data-idx="${globalIdx}" role="button" tabindex="0"${isPlaying ? ' aria-current="true"' : ''}>
                     <span class="row-num">${isPlaying ? '<i class="fas fa-volume-high"></i>' : visible.indexOf(song) + 1}</span>
                     <span class="row-info">
                         <span class="row-title">${song.name}</span>
                         <span class="row-artist">${song.artist}${song.versionLabel ? ` · ${song.versionLabel}` : ''}${persona && currentFilter === 'all' ? ` · ${persona.name}` : ''}</span>
                     </span>
-                    <button class="row-fav-btn ${isFav ? 'active' : ''}" data-favid="${song.id}" type="button" title="${isFav ? 'Bỏ yêu thích' : 'Yêu thích'}">
+                    <button class="row-fav-btn ${isFav ? 'active' : ''}" data-favid="${song.id}" type="button" aria-label="Yêu thích" aria-pressed="${isFav}" title="${isFav ? 'Bỏ yêu thích' : 'Yêu thích'}">
                         <i class="${isFav ? 'fas' : 'far'} fa-heart"></i>
                     </button>
                     <span class="row-duration">${song.duration}</span>
@@ -1777,6 +1925,8 @@
             };
             row.addEventListener('click', activateRow);
             row.addEventListener('keydown', (e) => {
+                // A nested favorite has its own native keyboard activation.
+                if (e.target !== row) return;
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
                     activateRow(e);
@@ -1796,6 +1946,10 @@
         const activeRow = scrollBox.querySelector('.playlist-row.active');
         if (activeRow) {
             scrollBox.scrollTop = activeRow.offsetTop - (scrollBox.clientHeight / 2) + (activeRow.clientHeight / 2);
+        }
+        if (focusedFavorite) {
+            (scrollBox.querySelector(`[data-favid="${focusedFavorite}"]`)
+                || scrollBox.querySelector('.row-fav-btn'))?.focus({ preventScroll: true });
         }
     }
 
@@ -1886,9 +2040,14 @@
             }
         }
 
-        if (inInput) return;
+        // Native tab-button Space/Enter and tablist arrows must not also
+        // toggle playback or seek the audio through global shortcuts.
+        if (inInput || e.defaultPrevented || e.target.closest?.('#audio-category-nav')) return;
 
         if (e.code === 'Space') {
+            // Space activates the focused action inside a floating panel,
+            // not the unrelated player beneath it.
+            if (e.target.closest?.('.row-fav-btn, .top-more-dropdown, .viz-menu, .lyrics-display-menu')) return;
             e.preventDefault();
             // Blur any focused button to avoid double triggering (e.g. Next button + Space)
             if (document.activeElement && document.activeElement.tagName === 'BUTTON') {

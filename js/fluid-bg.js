@@ -178,11 +178,20 @@
         }
     });
 
+    // The atmosphere is a soft, low-frequency field: its value-noise features
+    // span tens of CSS pixels and it composites at 42% opacity, so sampling it
+    // per device pixel adds fill cost without adding visible detail. Render at
+    // 0.75 samples per CSS pixel and let the compositor scale the buffer.
+    // Three fixed-time dark-theme comparisons against the old 1.5x cap had
+    // <=2/255 channel differences; this is not a universal device guarantee.
+    // Fragment work at DPR 3 drops by ~4x. No feature is disabled and the
+    // animation still runs at the display refresh rate.
+    const RENDER_SCALE = 0.75;
+
     // One bounded render resolution; no device tiers or frame-rate cap.
     function resizeCanvas() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        const w = Math.round(window.innerWidth * dpr);
-        const h = Math.round(window.innerHeight * dpr);
+        const w = Math.round(window.innerWidth * RENDER_SCALE);
+        const h = Math.round(window.innerHeight * RENDER_SCALE);
         if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w;
             canvas.height = h;
@@ -224,14 +233,22 @@
         const analyser = window.__minkoiAnalyser;
         if (analyser) {
             try {
-                analyser.getByteFrequencyData(freqData);
+                // Reuse the soundstage's per-frame spectrum when available;
+                // otherwise read directly. This avoids a second spectrum read.
+                const features = window.MinkoiAudioFeatures;
+                let bins = features && typeof features.getSpectrum === 'function'
+                    ? features.getSpectrum(analyser, now) : null;
+                if (!bins) {
+                    analyser.getByteFrequencyData(freqData);
+                    bins = freqData;
+                }
                 let sum = 0;
                 const hzPerBin = analyser.context.sampleRate / analyser.fftSize;
                 const first = Math.max(1, Math.floor(35 / hzPerBin));
-                const last = Math.min(freqData.length, Math.ceil(180 / hzPerBin));
+                const last = Math.min(bins.length, Math.ceil(180 / hzPerBin));
                 const binCount = Math.max(1, last - first);
                 for (let i = first; i < last; i++) {
-                    sum += freqData[i];
+                    sum += bins[i];
                 }
                 const avg = sum / binCount;
                 targetBass = Math.max(0.0, (avg - 25) / 230); // Noise floor subtraction

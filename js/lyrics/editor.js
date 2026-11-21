@@ -252,9 +252,9 @@
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `${(track?.name || 'lyrics').replace(/[\\/:*?"<>|]/g, '_')}.${doc?.syncLevel === 'word' || doc?.syncLevel === 'syllable' ? 'elrc' : 'lrc'}`;
-                document.body.appendChild(a);
+                // Click detached: appending to <body> made the synthetic click
+                // bubble as an "outside click" and closed the Lyrics panel.
                 a.click();
-                a.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
             });
 

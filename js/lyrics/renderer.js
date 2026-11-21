@@ -67,8 +67,9 @@
                 onUpdate: value => {
                     const box = this.dom.zenAmbientBox;
                     if (!box) return;
-                    box.style.setProperty('--lyric-enter-y', `${((1 - value) * 7).toFixed(2)}px`);
-                    box.style.setProperty('--lyric-enter-opacity', String(Math.max(0, Math.min(1, 0.2 + value * 0.8))));
+                    const phase = Math.max(0, Math.min(1, value));
+                    box.style.setProperty('--lyric-enter-y', `${((1 - phase) * 4).toFixed(2)}px`);
+                    box.style.setProperty('--lyric-enter-opacity', String(0.82 + phase * 0.18));
                     // Swap content only after the outgoing phrase has softened.
                     // Retarget this same spring; no second timeline/RAF exists.
                     if (value < 0.5 && this.zenPending) {
@@ -684,7 +685,8 @@
                         viEl.textContent = '';
                     }
                 };
-                if (this.zenMotion && this.zenRenderedIndex >= 0 && !snapshot.wasSeek) {
+                if (this.zenMotion && !global.MinkoiSpring.isAccessibilityReducedMotion?.()
+                    && this.zenRenderedIndex >= 0 && !snapshot.wasSeek) {
                     this.zenPending = commit;
                     this.zenMotion.setTarget(0);
                 } else {

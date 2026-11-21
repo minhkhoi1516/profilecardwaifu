@@ -16,9 +16,9 @@
 
 .card-container {
     width: 100%;
-    background: var(--surface-1);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    background: var(--surface-base);
+    backdrop-filter: var(--v3-blur-base, blur(20px) saturate(125%));
+    -webkit-backdrop-filter: var(--v3-blur-base, blur(20px) saturate(125%));
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     box-shadow: 
@@ -70,8 +70,8 @@ body.light-mode .card-container::before {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--surface-1);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
+    -webkit-backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
     box-shadow: 
         inset 0 1px 1px 0 rgba(255, 255, 255, 0.12),
         var(--shadow-soft);
@@ -215,18 +215,13 @@ body.light-mode .top-action-btn:hover {
     justify-content: center;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 
 .top-action-btn:hover {
     color: var(--color-text);
     border-color: var(--color-border-active);
     background: var(--surface-hover);
-    transform: translateY(-1px);
-}
-
-.top-action-btn:active {
-    transform: translateY(0);
 }
 
 /* More Options (3-dots) Dropdown Menu */
@@ -690,8 +685,12 @@ body.zen-mode .site-brand-header {
     position: fixed;
     bottom: calc(28px + env(safe-area-inset-bottom, 0px));
     left: 50%;
-    transform: translateX(-50%) translateY(140px);
+    transform: translateX(-50%) translateY(24px);
     opacity: 0;
+    /* The shorter Fusion entrance no longer puts the sleeping dock outside
+       the viewport. Exclude its backdrop and spinning art from closed-state
+       painting. The Zen spring sets inline visibility during both handoffs. */
+    visibility: hidden;
     pointer-events: none;
     z-index: 100;
     display: flex;
@@ -700,22 +699,27 @@ body.zen-mode .site-brand-header {
     padding: 0.65rem 1.45rem;
     border-radius: var(--radius-full);
     background: var(--surface-1);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
+    -webkit-backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
     border: 1px solid var(--color-border-active);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 28px var(--color-accent-glow);
-    transition: opacity 0.35s cubic-bezier(0.2, 0.8, 0.25, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
     overflow: hidden;
+}
+.zen-mini-dock:not([data-zen-motion]) {
+    transition: opacity .25s ease, transform .3s var(--v3-spring-ease);
+}
+@media (prefers-reduced-motion: reduce) {
+    .zen-mini-dock:not([data-zen-motion]) { transition: none; }
 }
 
 body.zen-mode .zen-mini-dock {
     opacity: 1;
+    visibility: visible;
     transform: translateX(-50%) translateY(0);
     pointer-events: auto;
 }
 @media (max-width: 860px) {
-    body.zen-mode .zen-mini-dock,
-    body.zen-mode .zen-ambient-lyric {
+    body.zen-mode .zen-mini-dock {
         backdrop-filter: blur(10px) saturate(115%);
         -webkit-backdrop-filter: blur(10px) saturate(115%);
     }
@@ -844,63 +848,14 @@ body.zen-mode .zen-hint-toast {
     display: none;
 }
 
-/* Mini dock dims and retreats with spring physics when idle in zen mode */
-.zen-mini-dock {
-    transition: opacity 0.4s cubic-bezier(0.2, 0.8, 0.25, 1), transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1), filter 0.4s ease;
-}
-
-body.zen-idle .zen-mini-dock {
-    /* The dock is the only playback/exit control in Zen. Never fade it out or
-       remove hit-testing after idle, otherwise clicks fall through to the
-       banner and exit the mode instead of pressing the control. */
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-    filter: none;
-    pointer-events: auto;
-}
-
-body.zen-mode:not(.zen-idle) .zen-mini-dock {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-    filter: blur(0px);
-    pointer-events: auto;
-}
-
-@media (max-width: 520px) {
-    .zen-mini-dock {
-        padding: 0.5rem 0.85rem;
-        gap: 0.65rem;
-        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-        max-width: calc(100vw - 20px);
-    }
-    .zen-dock-info {
-        min-width: 80px;
-        max-width: 130px;
-    }
-    .zen-ctrl-btn {
-        width: 30px;
-        height: 30px;
-        font-size: 0.72rem;
-    }
-}
-
 /* ========================================================
    ZEN AMBIENT FLOATING LYRIC (Screensaver Anime MV Style)
 ======================================================== */
 .zen-ambient-lyric {
     position: fixed;
-    bottom: calc(128px + env(safe-area-inset-bottom, 0px));
     left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    max-width: min(700px, 92vw);
+    transform: translateX(-50%) translateY(6px);
     text-align: center;
-    padding: 0.8rem 1.5rem;
-    background: rgba(17, 20, 27, 0.34);
-    backdrop-filter: blur(18px) saturate(120%);
-    -webkit-backdrop-filter: blur(18px) saturate(120%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 12px 30px -18px rgba(0, 0, 0, 0.38);
     z-index: 95;
     opacity: 0;
     pointer-events: none;
@@ -910,50 +865,6 @@ body.zen-mode:not(.zen-idle) .zen-mini-dock {
 body.zen-mode .zen-ambient-lyric.has-lyric {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
-}
-
-.zen-lyric-romaji {
-    font-size: 1.12rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin: 0 0 0.25rem 0;
-    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.52), 0 0 18px rgba(0, 0, 0, 0.22);
-    line-height: 1.35;
-}
-
-.zen-lyric-vi {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-    margin: 0;
-    line-height: 1.35;
-}
-
-@media (max-width: 860px) {
-    .zen-ambient-lyric {
-        bottom: calc(138px + env(safe-area-inset-bottom, 0px));
-        padding: 0.55rem 1rem;
-        max-width: min(560px, calc(100vw - 28px));
-    }
-    .zen-lyric-romaji {
-        font-size: 0.95rem;
-    }
-    .zen-lyric-vi {
-        font-size: 0.75rem;
-    }
-}
-
-@media (max-width: 520px) {
-    .zen-ambient-lyric {
-        bottom: calc(150px + env(safe-area-inset-bottom, 0px));
-        padding: 0.5rem 0.85rem;
-        max-width: calc(100vw - 24px);
-    }
-    .zen-lyric-romaji {
-        font-size: 0.88rem;
-    }
-    .zen-lyric-vi {
-        font-size: 0.72rem;
-    }
 }
 
 /* ========================================================
@@ -1527,8 +1438,7 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     transition: opacity 0.16s ease;
 }
 
-.lyric-line.active .lyric-word.is-upcoming-word,
-.zen-ambient-lyric .lyric-word.is-upcoming-word {
+.lyric-line.active .lyric-word.is-upcoming-word {
     color: var(--sing-upcoming);
     -webkit-text-fill-color: var(--sing-upcoming);
 }
@@ -1549,8 +1459,7 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     will-change: background-position;
 }
 
-.lyric-line.active .lyric-word.is-active-word,
-.zen-ambient-lyric .lyric-word.is-active-word {
+.lyric-line.active .lyric-word.is-active-word {
     --sing-upcoming: color-mix(in srgb, var(--color-text) 46%, transparent);
 }
 
@@ -1560,8 +1469,7 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     -webkit-text-fill-color: var(--sing-sung);
 }
 
-.lyric-line.active .lyric-word.is-sung,
-.zen-ambient-lyric .lyric-word.is-sung {
+.lyric-line.active .lyric-word.is-sung {
     text-shadow: 0 0 12px var(--sing-glow);
 }
 

@@ -187,7 +187,11 @@
             '.persona-chip',
             '.social-link-pill',
             '.fx-preset-btn',
+            '.playlist-row',
+            '.row-fav-btn',
             '.top-more-item',
+            '.nav-material-switch button',
+            '.lyrics-display-menu button',
             '.viz-menu-btn',
             '.viz-menu-item',
             '.viz-menu-close',
@@ -318,6 +322,14 @@
             return sp;
         }
 
+        const hero = el => el.matches('.play-hero-btn');
+        function press(el) {
+            if (spLib.isAccessibilityReducedMotion()) return;
+            const quiet = el.matches('.cat-tab, .social-link-pill, .playlist-row, .row-fav-btn, .top-more-item, .nav-material-switch button, .lyrics-display-menu button, .viz-menu-item');
+            getScaleSpring(el, hero(el) ? 1 : quiet ? 3 : 2)
+                .setTarget(hero(el) ? .95 : quiet && !el.matches('.cat-tab, .social-link-pill') ? .985 : .97);
+        }
+
         let activeEl = null;
         let activePointerId = null;
         let tapX = 0;
@@ -330,10 +342,12 @@
         const elasticSprings = new WeakMap();
 
         function elastic(el, x = 0, y = 0, tilt = 0) {
-            // Keep form/slider hit targets and navigation geometry stationary.
-            if (el.closest('form, .category-nav') || el.matches('.cat-tab, .persona-chip')) return;
+            // Reserve expressive tilt for the primary playback action; list
+            // and settings hit targets must stay put during a swipe.
+            if (!hero(el) || spLib.isAccessibilityReducedMotion()) return;
             let group = elasticSprings.get(el);
             if (!group) {
+                if (x === 0 && y === 0 && tilt === 0) return;
                 group = spLib.createSpringGroup({
                     x: { initial: 0, preset: spLib.PRESETS.TILT },
                     y: { initial: 0, preset: spLib.PRESETS.TILT },
@@ -362,18 +376,7 @@
             pressedAt = global.performance.now();
             cancelledClick = null;
 
-            // Tier 1: Expressive (Play/Pause hero)
-            if (target.id === 'play-pause' || target.classList.contains('play-hero-btn')) {
-                getScaleSpring(target, 1).setTarget(0.95);
-            }
-            // Tier 3: Minimal feedback (category tabs, pills, chips)
-            else if (target.classList.contains('cat-tab') || target.classList.contains('social-link-pill')) {
-                getScaleSpring(target, 3).setTarget(0.97);
-            }
-            // Tier 2: Functional (control buttons, top buttons, persona chips)
-            else {
-                getScaleSpring(target, 2).setTarget(0.97);
-            }
+            press(target);
         }, { passive: true });
 
         doc.addEventListener('pointermove', (e) => {
@@ -381,8 +384,8 @@
             const dx = e.clientX - tapX;
             const dy = e.clientY - tapY;
             if (Math.hypot(dx, dy) > 11) {
+                if (!moved) springs.get(activeEl)?.setTarget(1);
                 moved = true;
-                getScaleSpring(activeEl, 2).setTarget(1);
                 elastic(activeEl, Math.tanh(dx / 50) * 2, Math.tanh(dy / 50) * 2, Math.tanh(dx / 50) * 1.2);
             }
         }, { passive: true });
@@ -398,8 +401,7 @@
             activeEl = null;
             activePointerId = null;
             moved = false;
-            const tier = (el.id === 'play-pause' || el.classList.contains('play-hero-btn')) ? 1 : 2;
-            getScaleSpring(el, tier).setTarget(1);
+            springs.get(el)?.setTarget(1);
             elastic(el);
             if (isTap) lastTap = { el, pointerType: e.pointerType, time: global.performance.now() };
             else cancelledClick = { el, time: global.performance.now() };
@@ -586,7 +588,7 @@
 
         function closeMenu(opts) {
             const options = opts || {};
-            if (popupState === 'closing' || popupState === 'closed') return;
+            if (popupState === 'closed' || (popupState === 'closing' && !options.instant)) return;
             const myGen = ++transitionGen;
             if (fractionSpring) {
                 fractionSpring.onComplete = null;
@@ -1403,6 +1405,132 @@
     const liquidNavInstances = new WeakMap();
     const NAV_CLICK_SUPPRESS_MS = 260;
 
+    // Set C material only. Model the card over both artwork extremes rather
+    // than re-decoding banners: this also covers crossfades and animated Glass.
+    function createWaifuCapsuleMaterial(nav, spring, clamp) {
+        const light = doc.createElement('span');
+        light.className = 'capsule-light';
+        let left = 0, width = 64, base = 64, direction = 0, time = 0;
+        let contact = null, queued = false, disposed = false, liquid = false;
+        let cardTheme, cardColor;
+        let transform = '', opacity = '';
+        const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+        const rgb = a => a.map(Math.round).join(',');
+        const lum = a => a.reduce((sum, v, i) => {
+            v /= 255;
+            return sum + (v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4) * [.2126, .7152, .0722][i];
+        }, 0);
+        function queue() {
+            if (queued) return;
+            queued = true;
+            Promise.resolve().then(() => {
+                queued = false;
+                if (disposed) return;
+                const p = clamp(press?.value || 0, 0, 1);
+                const dir = spring?.isAccessibilityReducedMotion?.() ? 0 : direction;
+                const local = contact === null ? width * (.45 + dir * .13) : contact - left;
+                const x = clamp(local - 48 + dir * 6, -42, Math.max(-42, width - 54));
+                const strain = clamp(width / base - 1, -.15, .6);
+                const next = `translate(${x.toFixed(2)}px,${(-p * .7).toFixed(2)}px) scaleX(${(1 + strain * .18).toFixed(3)}) skewX(${(-dir * (2 + p * 4)).toFixed(2)}deg)`;
+                const alpha = ((liquid ? .09 : .035) + p * (liquid ? .42 : .23)).toFixed(3);
+                if (next !== transform) { light.style.transform = next; transform = next; }
+                if (alpha !== opacity) { light.style.opacity = alpha; opacity = alpha; }
+            });
+        }
+        const press = spring?.createSpring({
+            initial: 0, preset: spring.PRESETS.TACTILE_PRESS, precision: .002, onUpdate: queue
+        });
+        function updatePalette() {
+            const day = doc.body.classList.contains('light-mode');
+            liquid = doc.body.dataset.navMaterial === 'liquid';
+            const hex = global.getCurrentPersona?.()?.accent;
+            const accent = /^#[0-9a-f]{6}$/i.test(hex || '')
+                ? [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)) : [56, 189, 248];
+            const neutral = day ? [250, 249, 245] : [14, 18, 25];
+            const energy = lum(accent);
+            // Bright accents need less pigment at night; dark accents need
+            // less on light glass. Use the same amounts in CSS and the model.
+            const strength = day ? .7 + energy * .3 : 1 - energy * .35;
+            const veilTint = Math.round(7 * strength);
+            const lensTint = Math.round((liquid ? 15 : 10) * strength);
+            const ground = mix(neutral, accent, veilTint / 100);
+            const extreme = day ? [0, 0, 0] : [255, 255, 255];
+            // The stationary card tint depends on theme, not the persona;
+            // don't force a style read during the artwork/palette transaction.
+            if (day !== cardTheme) {
+                cardTheme = day;
+                cardColor = getComputedStyle(nav.closest('.card-container') || doc.body)
+                    .backgroundColor.match(/[\d.]+/g)?.map(Number);
+            }
+            const backing = cardColor?.length >= 3 ? mix(extreme, cardColor, cardColor[3] ?? 1) : extreme;
+            const baseInk = mix(day ? [38, 43, 51] : [241, 242, 245], accent, .025);
+            let best = { ratio: 0 };
+            for (const adjustment of [0, .08, .16, .24]) {
+                const ink = mix(baseInk, day ? [0, 0, 0] : [255, 255, 255], adjustment).map(Math.round);
+                const inkLum = lum(ink);
+                for (let step = 32; step <= 64; step++) {
+                    const under = mix(backing, ground, step / 100);
+                    const tint = mix(under, accent, lensTint / 100);
+                    // Include a conservative text-band contribution from the
+                    // capsule and the production strip's top gradient.
+                    const lens = mix(tint, day ? [0, 0, 0] : [255, 255, 255], day ? .08 : .21);
+                    const bg = lum(day ? lens : mix(lens, [255, 255, 255], .045));
+                    const ratio = day ? (bg + .05) / (inkLum + .05) : (inkLum + .05) / (bg + .05);
+                    if (ratio > best.ratio) best = { ratio, ink, step };
+                    if (ratio >= 5.35) break;
+                }
+                if (best.ratio >= 5.35) break;
+            }
+            nav.style.setProperty('--nav-ink', `rgb(${rgb(best.ink)})`);
+            nav.style.setProperty('--nav-ground', `rgba(${rgb(neutral)},${best.step / 100})`);
+            nav.style.setProperty('--nav-veil-opacity', `${best.step}%`);
+            nav.style.setProperty('--nav-persona', `rgb(${rgb(accent)})`);
+            nav.style.setProperty('--nav-veil-tint', `${veilTint}%`);
+            nav.style.setProperty('--nav-lens-tint', `${lensTint}%`);
+            queue();
+        }
+        function release() {
+            if (contact === null) return;
+            contact = null;
+            press?.setTarget(0);
+            queue();
+        }
+        const events = ['minkoi:persona', 'minkoi:themechange', 'minkoi:nav-material'];
+        events.forEach(event => global.addEventListener(event, updatePalette));
+        global.addEventListener('blur', release);
+        updatePalette();
+        return {
+            light,
+            geometry(x, w, standard, idle) {
+                if (x === left && w === width && standard === base && (!idle || !direction)) return;
+                const now = performance.now();
+                direction = idle || !time ? 0 : clamp((x + w / 2 - left - width / 2) / Math.max(8, now - time) / 1.1, -1, 1);
+                left = x; width = w; base = standard; time = now;
+                queue();
+            },
+            move(x) { if (contact !== null) contact = x; },
+            pressure(event) {
+                if (contact === null) return;
+                const target = event.pointerType !== 'mouse' && event.pressure > 0
+                    ? clamp(.35 + event.pressure * .65, .35, 1) : .68;
+                if (press && press.target !== target) press.setTarget(target);
+                queue();
+            },
+            start(x, event) {
+                contact = x;
+                this.pressure(event);
+            },
+            release,
+            destroy() {
+                disposed = true;
+                press?.destroy();
+                light.remove();
+                events.forEach(event => global.removeEventListener(event, updatePalette));
+                global.removeEventListener('blur', release);
+            }
+        };
+    }
+
     function initLiquidGlassNav(navEl, onSelect) {
         if (!navEl) return null;
         let instance = liquidNavInstances.get(navEl);
@@ -1413,6 +1541,8 @@
 
         const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
         let indicator = null;
+        const spLib = Spring();
+        const material = navEl.id === 'audio-category-nav' ? createWaifuCapsuleMaterial(navEl, spLib, clamp) : null;
 
         function ensureIndicator() {
             if (!indicator || !indicator.isConnected) {
@@ -1425,8 +1555,12 @@
                 } else if (!indicator.isConnected) {
                     navEl.insertBefore(indicator, navEl.firstChild);
                 }
+                if (material) indicator.appendChild(material.light);
             }
-            navEl.classList.add('has-liquid-nav');
+            // DOMTokenList.add writes the class attribute even when unchanged.
+            // This path runs for every capsule render; avoid redundant
+            // attribute mutations and observer notifications on a stable nav.
+            if (!navEl.classList.contains('has-liquid-nav')) navEl.classList.add('has-liquid-nav');
             if (instance) instance.indicator = indicator;
             return indicator;
         }
@@ -1434,7 +1568,6 @@
         ensureIndicator();
         navEl.classList.add('has-liquid-nav');
 
-        const spLib = Spring();
         const velocityTracker = spLib && typeof spLib.createVelocityTracker === 'function'
             ? spLib.createVelocityTracker()
             : null;
@@ -1552,6 +1685,7 @@
                 ind.style.borderRadius = radius;
                 lastRenderedRadius = radius;
             }
+            material?.geometry(safeLeft, lastRenderedWidth, standardW, state === 'idle');
         }
 
         function queueLensRender() {
@@ -1688,8 +1822,11 @@
                 : tabRight - navEl.clientWidth + margin;
             const maxLeft = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
             const left = Math.max(0, Math.min(maxLeft, targetLeft));
+            // A JS 'smooth' request ignores the CSS Reduced Motion override and
+            // would animate the strip after the capsule already snapped.
+            const animate = smooth && !global.MinkoiSpring?.isAccessibilityReducedMotion?.();
             try {
-                navEl.scrollTo({ left, behavior: smooth ? 'smooth' : 'auto' });
+                navEl.scrollTo({ left, behavior: animate ? 'smooth' : 'auto' });
             } catch (_) {
                 navEl.scrollLeft = left;
             }
@@ -1749,8 +1886,13 @@
             });
         }
 
-        function stepLens(clientX, dt) {
-            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+        function stepLens(clientX, dt, scrollOffset) {
+            // The caller passes the offset it already knows: reading scrollLeft
+            // here, immediately after the autoscroll wrote it, forced a
+            // synchronous layout on every drag frame.
+            const offset = Number.isFinite(scrollOffset) ? scrollOffset : navEl.scrollLeft;
+            const fingerContentX = clientX - cachedNavRectLeft + offset;
+            material?.move(fingerContentX);
             const rawX = fingerContentX - grabOffset;
             const vel = velocityTracker ? velocityTracker.getVelocity().vx : 0;
             const speed = Math.abs(vel);
@@ -1828,16 +1970,22 @@
             const dt = dragFrameTime ? Math.min(48, Math.max(0, now - dragFrameTime)) : 16.67;
             dragFrameTime = now;
 
+            // Read the scroll offset once, before this frame writes to it, so a
+            // drag frame never interleaves a read with its own scroll write.
+            let offset = navEl.scrollLeft;
             const speed = edgeScrollSpeed();
             if (speed) {
-                const before = navEl.scrollLeft;
-                navEl.scrollLeft = clamp(before + speed * dt * 0.45, 0, maxScrollRange);
-                if (navEl.scrollLeft !== before) hasPendingX = true;
+                const next = clamp(offset + speed * dt * 0.45, 0, maxScrollRange);
+                if (next !== offset) {
+                    navEl.scrollLeft = next;
+                    offset = next;
+                    hasPendingX = true;
+                }
             }
 
             if (hasPendingX) {
                 hasPendingX = false;
-                stepLens(pendingX, dt);
+                stepLens(pendingX, dt, offset);
             }
             dragRaf = global.requestAnimationFrame(runDragLoop);
         }
@@ -1860,7 +2008,9 @@
                 ? cachedTabs[cachedTabs.length - 1].left + cachedTabs[cachedTabs.length - 1].width
                 : navEl.scrollWidth;
 
-            const fingerContentX = clientX - cachedNavRectLeft + navEl.scrollLeft;
+            // Preserve travel accumulated before the horizontal intent threshold.
+            // pendingX below is still the current pointer, not the press origin.
+            const fingerContentX = startX - cachedNavRectLeft + navEl.scrollLeft;
             grabOffset = fingerContentX - currentLeft;
             anchorLeft = currentLeft;
 
@@ -1887,6 +2037,7 @@
             if (pointerId === null) return;
             state = 'scrub';
             scrollStart = navEl.scrollLeft;
+            maxScrollRange = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
             scrollVelocity = 0;
             navEl.classList.add('is-liquid-dragging');
             setWillChange(false);
@@ -1950,6 +2101,7 @@
         }
 
         function endGestureVisuals() {
+            material?.release();
             navEl.classList.remove('is-liquid-dragging');
             if (indicator) {
                 indicator.classList.remove('is-dragging');
@@ -1973,6 +2125,32 @@
             if (!navEl.contains(e.target)) return;
             if (!getActiveTab()) return;
 
+            // A fresh primary press is a new interaction, not the compatibility
+            // click from the previous drag. Keep suppressing that old click,
+            // but do not swallow a deliberate tap during spring settling.
+            const navRect = navEl.getBoundingClientRect();
+            const lensRect = indicator ? indicator.getBoundingClientRect() : null;
+            // Only the visible capsule is a lens grab. Use viewport geometry,
+            // so a capsule sitting mid-flight still owns its own pixels.
+            const onCapsule = Boolean(lensRect
+                && e.clientX >= lensRect.left && e.clientX <= lensRect.right
+                && e.clientY >= lensRect.top && e.clientY <= lensRect.bottom);
+            const isTouch = e.pointerType !== 'mouse';
+
+            // A fresh primary press is a deliberate new interaction, so the
+            // previous drag's compatibility click is no longer relevant and a
+            // quick follow-up tap must not be swallowed.
+            suppressClickUntil = 0;
+
+            // Ownership is declared BEFORE contact by touch-action on the hit
+            // tab: active=pan-y (horizontal lens), others=native pan-x/pan-y.
+            // Never claim the moving lens's pixels over an inactive tab: that
+            // target already permits native pan-x and the browser would cancel us.
+            const ownsTouchLens = e.target.closest?.('.cat-tab') === getActiveTab();
+            if (isTouch && !ownsTouchLens) {
+                return;
+            }
+
             cancelScrollFling();
             // Freeze any in-flight smooth scroll so this gesture owns the offset.
             const frozenScroll = navEl.scrollLeft;
@@ -1986,12 +2164,13 @@
             hasPendingX = false;
             horizontalBlocked = false;
             dragFrameTime = 0;
+            // Chromium may fat-finger-retarget a spacing touch onto the active
+            // button. Its pan-y contract then prevents native horizontal pan;
+            // scrub that narrow gap instead of dragging a lens not actually hit.
+            pressRegion = onCapsule ? 'lens' : 'strip';
 
-            const navRect = navEl.getBoundingClientRect();
             cachedNavRectLeft = navRect.left;
             maxScrollRange = Math.max(0, navEl.scrollWidth - navEl.clientWidth);
-            const contentX = e.clientX - navRect.left + navEl.scrollLeft;
-            pressRegion = (contentX >= currentLeft - 6 && contentX <= currentRight + 6) ? 'lens' : 'strip';
 
             if (velocityTracker) {
                 velocityTracker.reset();
@@ -2000,6 +2179,7 @@
 
             state = 'pressed';
             if (indicator) indicator.classList.toggle('is-pressed', pressRegion === 'lens');
+            if (pressRegion === 'lens') material?.start(e.clientX - cachedNavRectLeft + frozenScroll, e);
         }
 
         function onPointerMove(e) {
@@ -2020,6 +2200,8 @@
                     if (pressRegion === 'lens') {
                         beginLens(e.clientX);
                     } else if (maxScrollRange > 0) {
+                        // Mouse scrub, or an active-tab touch retargeted from
+                        // spacing. Inactive/native pan-x touches returned above.
                         beginScrub();
                     } else {
                         // Nothing to scroll and the lens was not grabbed: keep the tap alive.
@@ -2031,6 +2213,7 @@
             if (state === 'lens') {
                 e.preventDefault();
                 hasPendingX = true;
+                if (e.pointerType !== 'mouse' && e.pressure > 0) material?.pressure(e);
             } else if (state === 'scrub') {
                 e.preventDefault();
                 updateScrub(e.clientX);
@@ -2131,8 +2314,17 @@
             onPointerUp(e, true);
         }
 
+        function onLostPointerCapture(e) {
+            // Ignore a child's implicit capture being transferred to the nav.
+            // An unexpected loss of our own capture must not leave a drag RAF.
+            if (e.target === navEl && pointerId === e.pointerId
+                && !navEl.hasPointerCapture(e.pointerId)) onPointerCancel(e);
+        }
+
         const onNavClick = (e) => {
-            if (performance.now() < suppressClickUntil) {
+            // Keyboard/assistive activation has detail=0, not a drag's
+            // compatibility pointer click; never discard that activation.
+            if (e.detail > 0 && performance.now() < suppressClickUntil) {
                 e.preventDefault();
                 e.stopImmediatePropagation();
             }
@@ -2143,6 +2335,7 @@
         global.addEventListener('pointermove', onPointerMove, { passive: false });
         global.addEventListener('pointerup', onPointerUp, { passive: true });
         global.addEventListener('pointercancel', onPointerCancel, { passive: true });
+        navEl.addEventListener('lostpointercapture', onLostPointerCapture);
         navEl.addEventListener('wheel', cancelScrollFling, { passive: true });
 
         let resizeObserver = null;
@@ -2178,7 +2371,13 @@
                 scrollLeft: navEl.scrollLeft,
                 vel: velocityTracker ? velocityTracker.getVelocity().vx : -999,
                 lastRelease,
-                lastScrub
+                lastScrub,
+                edges: [leftSpring, rightSpring].map(spring => spring ? ({
+                    value: spring.value, target: spring.target,
+                    velocity: spring.velocity, running: spring.running
+                }) : null),
+                dragRafActive: Boolean(dragRaf),
+                scrollRafActive: Boolean(scrollRaf)
             }),
             destroy() {
                 destroyed = true;
@@ -2195,18 +2394,21 @@
                     dragRaf = 0;
                 }
                 cancelScrollFling();
+                releasePointerCapture();
                 pointerId = null;
                 state = 'idle';
                 endGestureVisuals();
                 navEl.removeEventListener('click', onNavClick, true);
                 navEl.removeEventListener('pointerdown', onPointerDown);
                 navEl.removeEventListener('wheel', cancelScrollFling);
+                navEl.removeEventListener('lostpointercapture', onLostPointerCapture);
                 global.removeEventListener('pointermove', onPointerMove);
                 global.removeEventListener('pointerup', onPointerUp);
                 global.removeEventListener('pointercancel', onPointerCancel);
                 if (leftSpring) leftSpring.destroy();
                 if (rightSpring) rightSpring.destroy();
                 if (scaleYSpring) scaleYSpring.destroy();
+                material?.destroy();
                 liquidNavInstances.delete(navEl);
             }
         };

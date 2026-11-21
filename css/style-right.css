@@ -87,17 +87,23 @@
     background: rgba(56, 189, 248, 0.1);
 }
 
-/* Category Navigation · Floating Liquid Capsule Surface */
+/* Category Navigation · geometry and gesture ownership.
+   Material (fill, border, blur, shadow) is owned by css/materials.css so the
+   strip has exactly one definition per property.
+
+   Gesture ownership is declared here, not decided at runtime:
+   · The strip and its inactive tabs allow native panning in both axes, so a
+     finger swipe scrolls the list with the platform's own momentum. No JS
+     scroll loop competes with it.
+   · Only the ACTIVE tab (the capsule the finger can drag) forbids native
+     horizontal panning. Vertical panning stays native, so a page scroll that
+     starts on the capsule still works, while a horizontal drag there is
+     delivered to the spring engine instead of being stolen by the scroller. */
 .audio-category-nav {
     display: flex;
     gap: 0.25rem;
     position: relative;
     border-radius: 9999px;
-    background: rgba(15, 23, 42, 0.48);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.35), inset 0 1px 1px 0 rgba(255, 255, 255, 0.14);
     padding: 4px 6px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -105,9 +111,10 @@
     -ms-overflow-style: none;
     scroll-behavior: auto;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: auto;
     min-width: 0;
     max-width: 100%;
-    touch-action: pan-y pinch-zoom;
+    touch-action: pan-x pan-y pinch-zoom;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -135,10 +142,14 @@
     white-space: nowrap;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: pan-y pinch-zoom;
+    touch-action: pan-x pan-y pinch-zoom;
     position: relative;
     z-index: 2;
 }
+
+/* A static hit target must own horizontal drag before pointerdown. Inactive
+   tabs and spacing retain native strip scrolling; both allow vertical/zoom. */
+.audio-category-nav.has-liquid-nav .cat-tab.active { touch-action: pan-y pinch-zoom; }
 
 .cat-tab:hover {
     color: var(--color-text);
@@ -150,7 +161,9 @@
     background: transparent;
     border: none;
     box-shadow: none;
-    text-shadow: 0 0 12px var(--color-accent-glow);
+    /* The selected capsule is the emphasis. A blurred text glow made the label
+       itself look out of focus on top of it, so the label stays crisp. */
+    text-shadow: none;
 }
 
 .col-right,
@@ -447,27 +460,22 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1), background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .track-actions-bar .ctrl-btn:hover {
     color: var(--color-text);
     border-color: var(--color-border-active);
     background: var(--surface-hover);
-    transform: translateY(-1px);
-}
-
-.track-actions-bar .ctrl-btn:active {
-    transform: scale(0.92);
-    transition-duration: 0.06s;
 }
 
 .track-actions-bar .ctrl-btn.active,
-.track-actions-bar .ctrl-btn.is-morph-active {
-    color: var(--color-accent);
-    border-color: var(--color-accent);
-    background: rgba(255, 255, 255, 0.06);
-    box-shadow: 0 0 14px var(--color-accent-glow);
+.track-actions-bar .ctrl-btn.is-morph-active,
+body.light-mode .track-actions-bar .ctrl-btn:is(.active, .is-morph-active) {
+    color: var(--color-text);
+    border-color: var(--glass-active-edge);
+    background: var(--glass-control-active);
+    box-shadow: var(--glass-contact-shadow);
 }
 
 @media (min-width: 861px) {
@@ -678,18 +686,13 @@
     justify-content: center;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .ctrl-btn:hover {
     color: var(--color-text);
     background: var(--surface-hover);
     border-color: var(--color-border);
-}
-
-.ctrl-btn:active {
-    transform: scale(0.91);
-    transition-duration: 0.06s;
 }
 
 .ctrl-btn.active {
@@ -717,13 +720,6 @@
     color: var(--color-text);
     background: var(--surface-hover);
     border-color: var(--color-border-active);
-    transform: translateY(-1px);
-}
-
-.controls-playback-group #prev-track:active,
-.controls-playback-group #next-track:active {
-    transform: scale(0.91);
-    transition-duration: 0.06s;
 }
 
 /* Hero Play/Pause Button - Undisputed Focal Point */
@@ -733,8 +729,7 @@
     min-width: 58px;
     min-height: 58px;
     border-radius: var(--glass-squircle-radius, 22px);
-    background: linear-gradient(135deg, var(--color-accent) 0%, #38bdf8 100%);
-    background: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 65%, #38bdf8) 100%);
+    background: var(--v3-hero-gradient);
     border: none;
     color: #0b0f19;
     display: flex;
@@ -743,10 +738,7 @@
     font-size: 1.3rem;
     cursor: pointer;
     position: relative;
-    box-shadow: 
-        0 4px 22px var(--color-accent-glow),
-        0 0 30px -4px var(--color-accent-glow);
-    transition: transform 0.26s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s ease, background 0.22s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .48), 0 5px 16px -5px var(--color-accent-glow);
     z-index: 3;
 }
 
@@ -756,24 +748,11 @@
     inset: -4px;
     border-radius: inherit;
     background: transparent;
-    border: 2px solid var(--color-accent);
+    border: 1px solid var(--glass-active-edge);
     opacity: 0;
     transform: scale(0.92);
     transition: opacity 0.3s ease, transform 0.3s ease;
     pointer-events: none;
-}
-
-.play-hero-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 
-        0 6px 28px var(--color-accent-glow),
-        0 0 38px 0px var(--color-accent-glow);
-}
-
-.play-hero-btn:active {
-    transform: scale(0.90);
-    box-shadow: 0 2px 10px var(--color-accent-glow);
-    transition-duration: 0.06s;
 }
 
 .play-hero-btn.is-playing::after {
@@ -787,7 +766,7 @@
     50% { transform: scale(1.14); opacity: 0.7; }
 }
 
-/* Material 3 Expressive Active Toggle States for Shuffle and Repeat */
+/* Selected transport toggles use the same pigment and rim as list selection. */
 .ctrl-btn.shuffle-btn,
 .ctrl-btn.repeat-btn {
     width: 40px;
@@ -799,13 +778,13 @@
 }
 
 .ctrl-btn.shuffle-btn.active,
-.ctrl-btn.repeat-btn.active {
-    color: var(--color-accent);
-    background: rgba(56, 189, 248, 0.12);
-    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
-    box-shadow: 0 0 14px var(--color-accent-glow);
+.ctrl-btn.repeat-btn.active,
+body.light-mode .ctrl-btn.shuffle-btn.active,
+body.light-mode .ctrl-btn.repeat-btn.active {
+    color: var(--color-text);
+    background: var(--glass-control-active);
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--glass-contact-shadow);
 }
 
 .repeat-one-badge {
@@ -815,7 +794,7 @@
     font-size: 0.62rem;
     font-weight: 800;
     font-family: var(--font-mono);
-    color: var(--color-accent);
+    color: var(--color-text);
     line-height: 1;
     pointer-events: none;
 }
@@ -828,9 +807,9 @@
 }
 
 .speed-toggle-btn.active {
-    color: var(--color-accent);
-    border-color: var(--color-border-active);
-    background: rgba(255, 255, 255, 0.04);
+    color: var(--color-text);
+    border-color: var(--glass-active-edge);
+    background: var(--glass-control-active);
 }
 
 /* Full-Width Volume Slider Dock (Dưới nút Play/Pause) - Tactile Volume V2 */
@@ -851,9 +830,8 @@
 .volume-slider-dock:hover,
 .volume-slider-dock:focus-within,
 .volume-slider-dock.is-scrubbing {
-    border-color: var(--color-border-active);
-    background: var(--surface-3);
-    box-shadow: 0 0 18px -4px var(--color-accent-glow);
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--glass-contact-shadow);
 }
 
 .volume-slider-dock .mute-btn {
@@ -872,20 +850,12 @@
     cursor: pointer;
     -webkit-appearance: none;
     appearance: none;
-    background: linear-gradient(to right, color-mix(in srgb, var(--color-accent) 80%, #38bdf8) 0%, var(--color-accent) var(--volume-percent, 45%), var(--track-bg, rgba(255, 255, 255, 0.1)) var(--volume-percent, 45%), var(--track-bg, rgba(255, 255, 255, 0.1)) 100%);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--color-accent) 25%, transparent);
+    background: linear-gradient(to right, var(--color-accent) var(--volume-percent, 45%), var(--track-bg) var(--volume-percent, 45%));
     outline: none;
     padding: 12px 0;
     background-clip: content-box;
     box-sizing: content-box;
     touch-action: none;
-    transition: height 0.22s cubic-bezier(0.2, 0.8, 0.25, 1), background 0.15s ease;
-}
-
-.volume-slider-dock .volume-slider:hover,
-.volume-slider-dock .volume-slider.is-scrubbing,
-.volume-slider-dock .volume-slider:active {
-    height: 8px;
 }
 
 /* WebKit Slider Thumb */
@@ -895,23 +865,10 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #ffffff;
-    box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.4),
-        0 0 10px var(--color-accent-glow),
-        0 2px 6px rgba(0, 0, 0, 0.35);
+    background: var(--glass-thumb-fill);
+    box-shadow: var(--glass-thumb-shadow);
     cursor: pointer;
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-}
-
-.volume-slider-dock .volume-slider:hover::-webkit-slider-thumb,
-.volume-slider-dock .volume-slider.is-scrubbing::-webkit-slider-thumb,
-.volume-slider-dock .volume-slider:active::-webkit-slider-thumb {
-    transform: scale(1.25);
-    box-shadow:
-        0 0 0 3.5px color-mix(in srgb, var(--color-accent) 40%, rgba(255, 255, 255, 0.7)),
-        0 0 14px var(--color-accent-glow),
-        0 3px 8px rgba(0, 0, 0, 0.45);
+    transform: scale(var(--volume-thumb-scale, 1));
 }
 
 /* Firefox Slider Thumb */
@@ -919,24 +876,11 @@
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: #ffffff;
+    background: var(--glass-thumb-fill);
     border: none;
-    box-shadow:
-        0 0 0 2px rgba(255, 255, 255, 0.4),
-        0 0 10px var(--color-accent-glow),
-        0 2px 6px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--glass-thumb-shadow);
     cursor: pointer;
-    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
-}
-
-.volume-slider-dock .volume-slider:hover::-moz-range-thumb,
-.volume-slider-dock .volume-slider.is-scrubbing::-moz-range-thumb,
-.volume-slider-dock .volume-slider:active::-moz-range-thumb {
-    transform: scale(1.25);
-    box-shadow:
-        0 0 0 3.5px color-mix(in srgb, var(--color-accent) 40%, rgba(255, 255, 255, 0.7)),
-        0 0 14px var(--color-accent-glow),
-        0 3px 8px rgba(0, 0, 0, 0.45);
+    transform: scale(var(--volume-thumb-scale, 1));
 }
 
 .volume-slider-dock .volume-slider::-moz-range-track {
@@ -1235,22 +1179,12 @@
     color: var(--color-text);
     cursor: pointer;
     text-align: left;
-    transition: all var(--transition-fast);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
 }
 
 .playlist-row:hover {
     background: var(--surface-hover);
     border-color: var(--color-border);
-}
-
-.playlist-row.active {
-    background: color-mix(in srgb, var(--color-accent) 15%, rgba(255, 255, 255, 0.05));
-    border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
-    box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.15), 0 0 12px -4px var(--color-accent-glow);
-}
-
-.playlist-row.active .row-title {
-    color: var(--color-accent);
 }
 
 .row-num {
@@ -1292,16 +1226,7 @@
     padding: 3px 6px;
     font-size: 0.75rem;
     border-radius: var(--radius-sm);
-    transition: all var(--transition-fast);
-}
-
-.row-fav-btn:hover {
-    color: #f43f5e;
-    transform: scale(1.15);
-}
-
-.row-fav-btn.active {
-    color: #f43f5e;
+    transition: color var(--transition-fast);
 }
 
 .row-duration {
@@ -1580,14 +1505,6 @@ body.light-mode .controls-playback-group #next-track {
     color: var(--color-text-secondary);
 }
 
-body.light-mode .ctrl-btn.shuffle-btn.active,
-body.light-mode .ctrl-btn.repeat-btn.active {
-    background: rgba(56, 189, 248, 0.15);
-    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-    border-color: var(--color-accent);
-    box-shadow: 0 0 12px var(--color-accent-glow);
-}
-
 body.light-mode .ctrl-btn:hover {
     color: var(--color-text);
     background: rgba(15, 23, 42, 0.06);
@@ -1622,10 +1539,6 @@ body.light-mode .playlist-search:focus {
 
 body.light-mode .playlist-row:hover {
     background: rgba(15, 23, 42, 0.04);
-}
-
-body.light-mode .playlist-row.playing {
-    background: rgba(15, 23, 42, 0.08);
 }
 
 body.light-mode .fx-preset-btn {
@@ -1736,4 +1649,3 @@ body.light-mode .fx-preset-btn.active {
     color: #ffffff;
     box-shadow: 0 0 12px var(--color-accent-glow);
 }
-

@@ -10,6 +10,29 @@
     const compress = x => Math.min(1.15, Math.log1p(Math.max(0, x) * 2) / Math.log(5));
     const COUNT = 48;
 
+    // One analyser read per animation frame, shared by every consumer. The
+    // soundstage and the fluid background run in separate RAF callbacks but
+    // describe the same instant; a second getByteFrequencyData is redundant.
+    let spectrumNode = null;
+    let spectrumBuffer = null;
+    let spectrumAt = -Infinity;
+    function getSpectrum(node, frameTime) {
+        if (!node) return null;
+        // RAF callbacks in one frame receive the same timestamp. Do not use a
+        // time window: it can merge distinct frames on high-refresh displays.
+        const fresh = Number.isFinite(frameTime) && node === spectrumNode &&
+            spectrumBuffer && spectrumBuffer.length === node.frequencyBinCount && frameTime === spectrumAt;
+        if (!fresh) {
+            if (!spectrumBuffer || spectrumBuffer.length !== node.frequencyBinCount) {
+                spectrumBuffer = new Uint8Array(node.frequencyBinCount);
+            }
+            node.getByteFrequencyData(spectrumBuffer);
+            spectrumNode = node;
+            spectrumAt = frameTime;
+        }
+        return spectrumBuffer;
+    }
+
     function create() {
         let analyser = null;
         let frequency = new Uint8Array(0);
@@ -132,11 +155,13 @@
             }
         }
 
-        function sample(node, dt, reactivity) {
+        function sample(node, dt, reactivity, frameTime) {
             if (!attach(node) || node.context.state !== 'running') return decay(dt);
             clock += dt;
             holdOnsets = Math.max(0, holdOnsets - dt);
-            node.getByteFrequencyData(frequency);
+            const bins = getSpectrum(node, frameTime);
+            if (!bins) return decay(dt);
+            frequency = bins;
             node.getFloatTimeDomainData(time);
             let sum = 0, squares = 0;
             for (let i = 0; i < time.length; i++) {
@@ -279,5 +304,5 @@
         }
     }
 
-    global.MinkoiAudioFeatures = Object.freeze({ create, springVector });
+    global.MinkoiAudioFeatures = Object.freeze({ create, springVector, getSpectrum });
 })(window);

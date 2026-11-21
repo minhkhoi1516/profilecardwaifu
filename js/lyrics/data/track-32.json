@@ -54,7 +54,7 @@
       "endMs": 37600,
       "jp": "毎日じゃちょっと大く伝えた君の前で感じるとく",
       "id": "track-32-line-003",
-      "romaji": "mainichi jachotto ooku tsutae ta kun no mae de kanji rutoku",
+      "romaji": "mainichi jachotto ooku tsutae ta kimi no mae de kanji rutoku",
       "vi": "Những ngày thường không thể truyền đạt nhiều, cảm nhận được trước mặt bạn",
       "status": "needs-review",
       "timingSource": "imported",
@@ -104,7 +104,8 @@
       "syncLevel": "line",
       "romanizationStatus": "needs-review",
       "translationSource": "draft-from-user-japanese",
-      "translationStatus": "draft",
+      "translationStatus": "needs-review",
+      "reviewReason": "VI-ERROR: bản dịch còn chú thích phần nguồn không rõ; chưa có căn cứ hoàn thiện câu Nhật hoặc phần dịch thiếu.",
       "sourceStartMs": 45600,
       "sourceEndMs": 49800,
       "correctedStartMs": null,
@@ -558,7 +559,7 @@
       "endMs": 296800,
       "jp": "本当とにかしてよさ 初めよ君のいる世界をもっと僕は知りたいさ",
       "id": "track-32-line-027",
-      "romaji": "hontou tonikashiteyosa   hajime yo kun noiru sekai womotto bokuha shiri taisa",
+      "romaji": "hontou tonikashiteyosa   hajime yo kimi noiru sekai womotto bokuha shiri taisa",
       "vi": "Thật sự hãy làm đi, lần đầu, tôi muốn biết thêm về thế giới có bạn",
       "status": "needs-review",
       "timingSource": "imported",
@@ -579,7 +580,7 @@
       "endMs": 316800,
       "jp": "初めよ君といる世界でもっと僕は笑いたい もう閉じりたい もうと笑いたい",
       "id": "track-32-line-028",
-      "romaji": "hajime yo kun toiru sekai demotto bokuha warai tai   mou toji ritai   mouto warai tai",
+      "romaji": "hajime yo kimi toiru sekai demotto bokuha warai tai   mou toji ritai   mouto warai tai",
       "vi": "Lần đầu, trong thế giới có bạn, tôi muốn cười nhiều hơn, muốn nhắm mắt, muốn cười nữa",
       "status": "needs-review",
       "timingSource": "imported",
@@ -626,7 +627,9 @@
   "reviewNotes": [
     "Nguồn: lyric.txt do người dùng cung cấp; chưa nghe đối chiếu thời gian. Phiên âm máy theo Hepburn cần kiểm tra cách đọc trong ngữ cảnh.",
     "Transcript có lỗi nhận dạng; giữ nguyên văn Nhật, không tự khôi phục các câu không có căn cứ.",
-    "Bản dịch thiếu được ghép theo timestamp trùng khớp từ lyric_vi.txt (người dùng cung cấp); chưa hiệu đính ngữ nghĩa từng câu."
+    "Bản dịch thiếu được ghép theo timestamp trùng khớp từ lyric_vi.txt (người dùng cung cấp); chưa hiệu đính ngữ nghĩa từng câu.",
+    "Cả ba tầng JP/Romaji/VI vẫn là bản nháp ASR và phiên âm máy, chưa được người hiệu đính; không đánh dấu verified.",
+    "Đã sửa cách đọc đại từ 君 từ kun thành kimi ở line-003, line-027, line-028 theo ngữ cảnh bản Nhật được cung cấp. Chỉ sửa phiên âm cục bộ; không xác nhận bản Nhật khớp audio hoặc các phần phiên âm còn lại."
   ],
   "timingStatus": "source-unverified"
 }

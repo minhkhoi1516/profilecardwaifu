@@ -66,17 +66,17 @@
         padding: 0.65rem 0.95rem;
         margin-bottom: 0.55rem;
         border-radius: 20px;
-        background: rgba(14, 18, 30, 0.82);
-        backdrop-filter: blur(20px) saturate(160%);
-        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        background: var(--surface-1);
+        backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
+        -webkit-backdrop-filter: var(--v3-blur-card, blur(12px) saturate(120%));
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .card-container {
         border-radius: 28px;
-        background: rgba(14, 18, 30, 0.88);
-        backdrop-filter: blur(28px) saturate(180%);
-        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        background: var(--surface-base);
+        backdrop-filter: var(--v3-blur-base, blur(20px) saturate(125%));
+        -webkit-backdrop-filter: var(--v3-blur-base, blur(20px) saturate(125%));
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 16px 48px -8px rgba(0, 0, 0, 0.75), inset 0 1px 1.5px rgba(255, 255, 255, 0.12);
         overflow: hidden;
@@ -117,22 +117,30 @@
     }
 
     .zen-mini-dock {
-        width: calc(100% - 32px);
-        max-width: 360px;
-        padding: 0.55rem 1rem;
+        /* Two-row dock: track info on top, five 44px controls below. Every
+           viewport down to 320px keeps the full control row inside the
+           rounded shell without clipping. */
+        width: calc(100% - 24px);
+        max-width: 380px;
+        padding: 0.6rem 0.7rem;
         bottom: max(18px, env(safe-area-inset-bottom));
-        gap: 0.5rem;
+        gap: 0.4rem;
         flex-direction: column;
         border-radius: 24px;
     }
 
     .zen-dock-info {
+        width: 100%;
         min-width: 0;
         max-width: 100%;
         text-align: center;
     }
     .zen-dock-disc { display: none; }
-    .zen-dock-actions { justify-content: center; }
+    .zen-dock-actions {
+        width: 100%;
+        justify-content: space-evenly;
+        gap: 0.35rem;
+    }
 
     .zen-hint-toast {
         width: calc(100% - 32px);
@@ -377,17 +385,19 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Miuix Liquid Glass Navigation Strip */
+    /* Miuix Liquid Glass Navigation Strip · mobile geometry only.
+       Colour, border and blur stay owned by css/materials.css. */
     .audio-category-nav {
         height: 48px;
         min-height: 48px;
         padding: 4px;
         border-radius: 9999px;
-        background: rgba(255, 255, 255, 0.035);
-        border: 1px solid rgba(255, 255, 255, 0.08);
         margin: 0.2rem 0;
         overflow-x: auto;
+        overflow-y: hidden;
         -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: auto;
+        touch-action: pan-x pan-y pinch-zoom;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -407,15 +417,16 @@
         align-items: center;
         gap: 0.4rem;
         color: var(--color-text-muted);
+        touch-action: pan-x pan-y pinch-zoom;
         position: relative;
         z-index: 2;
     }
 
     /* Now Playing Soundstage Bento Island */
     .now-playing-stage {
-        background: rgba(255, 255, 255, 0.035);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        background: var(--surface-2);
+        backdrop-filter: var(--v3-blur-stage, blur(8px) saturate(115%));
+        -webkit-backdrop-filter: var(--v3-blur-stage, blur(8px) saturate(115%));
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 24px;
         padding: 1rem 1.15rem;
@@ -605,10 +616,10 @@
 
     .controls-playback-group #shuffle-btn,
     .controls-playback-group #repeat-btn {
-        width: 42px;
-        height: 42px;
-        min-width: 42px;
-        min-height: 42px;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
         border-radius: 12px;
         background: transparent;
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -712,9 +723,9 @@
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.72);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
+        background: var(--surface-scrim);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
         z-index: 1990;
         opacity: 0;
         pointer-events: none;
@@ -936,4 +947,3 @@
         font-size: 2rem;
     }
 }
-

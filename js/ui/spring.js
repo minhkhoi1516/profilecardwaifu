@@ -159,8 +159,11 @@
             return;
         }
 
+        // The closed-form solution is stable for long frame intervals. Capping
+        // elapsed time (as an Euler solver would need) stretches real duration
+        // under missed frames, leaving input/elevation stuck in settling state.
         const dt = lastTimestamp
-            ? Math.min(0.064, Math.max(0, (now - lastTimestamp) / 1000))
+            ? Math.max(0, (now - lastTimestamp) / 1000)
             : 0;
         lastTimestamp = now;
         ticking = true;

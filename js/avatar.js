@@ -197,6 +197,7 @@
             });
             clearTimeout(bannerReleaseTimer);
             releaseInactiveBannerTextures();
+            notifyZenArtwork(src);
             return;
         }
 
@@ -213,7 +214,13 @@
             });
             clearTimeout(bannerReleaseTimer);
             bannerReleaseTimer = setTimeout(releaseInactiveBannerTextures, 1150);
+            notifyZenArtwork(src);
         });
+    }
+
+    function notifyZenArtwork(src) {
+        if (!document.body.classList.contains('zen-mode')) return;
+        window.dispatchEvent(new CustomEvent('minkoi:zen-artwork', { detail: { src } }));
     }
 
     function updateBannerLayers(persona, options) {
@@ -386,7 +393,7 @@
 
         // Tell the audio module which persona was equipped (it keeps playing the current track)
         window.dispatchEvent(new CustomEvent('minkoi:persona', {
-            detail: { index, key: persona.key, persona }
+            detail: { index, key: persona.key, persona, initial: !persist }
         }));
     }
 

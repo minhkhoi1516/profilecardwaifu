@@ -168,6 +168,7 @@
         const header = document.querySelector('.site-brand-header');
         const dock = document.getElementById('zen-mini-dock');
         const zenLyricsBtn = document.getElementById('zen-lyrics-toggle');
+        const zenLyrics = document.getElementById('zen-ambient-lyric');
         const zenSurfaces = [mainCard, header, dock].filter(Boolean);
         const spring = window.MinkoiSpring;
         const renderZen = value => {
@@ -182,7 +183,7 @@
             }
             if (dock) {
                 dock.style.opacity = f.toFixed(4);
-                dock.style.transform = `translate(-50%,${((1 - f) * 140).toFixed(2)}px)`;
+                dock.style.transform = `translate(-50%,${((1 - f) * 24).toFixed(2)}px)`;
             }
         };
         const zenSpring = spring?.createSpring({
@@ -235,22 +236,6 @@
             }
         });
 
-        // --- Tự mờ mini dock sau 5s không chạm, chạm để hiện lại ---
-        let idleTimer = null;
-        function wakeZenDock() {
-            if (!document.body.classList.contains('zen-mode')) return;
-            document.body.classList.remove('zen-idle');
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => {
-                if (document.body.classList.contains('zen-mode')) {
-                    document.body.classList.add('zen-idle');
-                }
-            }, 5000);
-        }
-        ['pointermove', 'pointerdown', 'touchstart', 'keydown'].forEach(evt => {
-            window.addEventListener(evt, wakeZenDock, { passive: true });
-        });
-
         // --- Zen lyrics visibility: persisted preference, never exits Zen ---
         const ZEN_LYRICS_KEY = 'minkoi_zen_lyrics_visible';
         let zenLyricsVisible = true;
@@ -260,6 +245,7 @@
 
         function applyZenLyricsVisibility(syncToAudio) {
             document.body.classList.toggle('zen-lyrics-hidden', !zenLyricsVisible);
+            if (zenLyrics) zenLyrics.inert = !zenLyricsVisible;
             if (zenLyricsBtn) {
                 zenLyricsBtn.setAttribute('aria-pressed', String(zenLyricsVisible));
                 const label = zenLyricsVisible ? 'Ẩn lời bài hát trong Zen' : 'Hiện lời bài hát trong Zen';
@@ -290,7 +276,6 @@
                 e.preventDefault();
                 e.stopPropagation();
                 setZenLyricsVisible(!zenLyricsVisible);
-                wakeZenDock();
             });
         }
         applyZenLyricsVisibility(false);
@@ -319,9 +304,7 @@
             if (isZen) {
                 window.MinkoiUI?.lockBodyScroll();
                 zenExitBtn?.focus({ preventScroll: true });
-                document.body.classList.remove('zen-idle');
                 requestWakeLock();
-                wakeZenDock();
                 if (typeof window.randomizeCurrentBanner === 'function') {
                     window.randomizeCurrentBanner();
                 }
@@ -335,8 +318,6 @@
                 window.MinkoiUI?.unlockBodyScroll();
                 zenBtn?.focus({ preventScroll: true });
                 releaseWakeLock();
-                clearTimeout(idleTimer);
-                document.body.classList.remove('zen-idle');
             }
         }
         document.getElementById('zen-mini-dock').inert = true;
