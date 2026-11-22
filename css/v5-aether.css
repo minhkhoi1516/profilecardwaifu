@@ -289,6 +289,19 @@ body.light-mode .avatar-zone::before {
     border-color: color-mix(in srgb, var(--color-accent) 32%, var(--glass-active-edge));
 }
 
+/* Instant frame-0 interaction highlight while cold avatar artwork prepares (zero layout shift) */
+.persona-chip.is-pending {
+    border-color: var(--glass-active-edge);
+    background: var(--surface-hover);
+    box-shadow: var(--aether-rim-top);
+}
+
+body.light-mode .persona-chip.is-pending {
+    border-color: var(--color-border-active);
+    background: var(--surface-hover);
+    box-shadow: var(--aether-rim-top);
+}
+
 .persona-avatar-preview {
     background: var(--surface-pill);
     border: 1px solid var(--glass-edge);

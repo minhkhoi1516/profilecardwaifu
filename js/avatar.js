@@ -31,9 +31,51 @@
     // Remember the last banner variant per persona so the same image never repeats twice in a row.
     const lastBannerPick = new Map();
     let currentBannerSrc = '';
+    let lastCommitAt = -Infinity;
+
+    // Smart Bounded Artwork Cache:
+    // - Avatars are already mounted in .persona-chip thumbnails (track decoded URLs with zero extra RAM)
+    // - Decoded banners use a strict LRU cap (max 8 textures, never holds all 5 Nakano Miku variants at once)
+    const MAX_DECODED_BANNERS = 5;
+    const BANNER_COALESCE_MS = 45;
+    const decodedAvatars = new Set();
+    const decodedBanners = new Map();
+    const inflightImages = new Map();
+    const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
     function isMobileViewport() {
         return window.innerWidth <= 768;
+    }
+
+    function canPreloadBanners() {
+        const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (conn?.saveData) return false;
+        if (conn?.effectiveType && /^(slow-2g|2g|3g)$/i.test(conn.effectiveType)) return false;
+        if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0 && navigator.deviceMemory <= 3) return false;
+        return true;
+    }
+
+    function rememberDecodedBanner(src, img) {
+        if (!src) return;
+        if (decodedBanners.has(src)) decodedBanners.delete(src);
+        decodedBanners.set(src, img);
+        while (decodedBanners.size > MAX_DECODED_BANNERS) {
+            let evicted = false;
+            for (const key of decodedBanners.keys()) {
+                if (key !== currentBannerSrc) {
+                    decodedBanners.delete(key);
+                    evicted = true;
+                    break;
+                }
+            }
+            if (!evicted) break;
+        }
+    }
+
+    function isImageReady(src, kind = 'banner') {
+        if (!src) return true;
+        if (kind === 'avatar') return decodedAvatars.has(src);
+        return decodedBanners.has(src);
     }
 
     function bannerPool(persona) {
@@ -57,12 +99,33 @@
         bannerReleaseTimer = null;
     }
 
-    function pickBanner(persona) {
+    function pickBanner(persona, options = {}) {
         const pool = bannerPool(persona);
         if (pool.length === 0) return '';
         if (pool.length === 1) return pool[0];
 
         const last = lastBannerPick.get(persona.key);
+
+        // During rapid persona cycling, reuse an already-decoded banner for this persona
+        // (distinct from the active banner) so large pools like Nakano Miku stay instant.
+        if (options.preferCached) {
+            const cachedFresh = pool.find(src => decodedBanners.has(src) && src !== last && src !== currentBannerSrc);
+            const cachedAny = cachedFresh || pool.find(src => decodedBanners.has(src) && src !== currentBannerSrc);
+            if (cachedAny) {
+                lastBannerPick.set(persona.key, cachedAny);
+                return cachedAny;
+            }
+        }
+
+        // On first visit to a persona, prefer any pre-warmed variant (or deterministic pool[0])
+        // so hover/pointerdown/idle warmups hit 100% instead of racing a random cold variant.
+        if (!last && !options.randomize) {
+            const prewarmed = pool.find(src => (decodedBanners.has(src) || inflightImages.has(src)) && src !== currentBannerSrc);
+            const primary = prewarmed || pool.find(src => src !== currentBannerSrc) || pool[0];
+            lastBannerPick.set(persona.key, primary);
+            return primary;
+        }
+
         const candidates = pool.filter(src => src !== last && src !== currentBannerSrc);
         const fallback = pool.filter(src => src !== currentBannerSrc);
         const usable = candidates.length > 0 ? candidates : (fallback.length > 0 ? fallback : pool);
@@ -71,28 +134,60 @@
         return chosen;
     }
 
-    // Progressive idle preload: load active persona first, others when idle
-    function preloadAssets() {
-        const active = personas[currentIndex];
-        // Wallpapers decode on demand in updateBannerLayers. Loading every
-        // variant here wastes bandwidth and decoded image memory on phones.
-        if (navigator.connection?.saveData) return;
+    let neighborWarmTimer = 0;
 
-        const idleLoad = () => {
-            personas.filter(p => p.available && p !== active).forEach(p => {
-                if (p.avatar) {
-                    const av = new Image();
-                    av.decoding = 'async';
-                    av.src = p.avatar;
+    function cancelNeighborWarmup() {
+        if (neighborWarmTimer) {
+            clearTimeout(neighborWarmTimer);
+            neighborWarmTimer = 0;
+        }
+    }
+
+    function scheduleNeighborWarmup(persona) {
+        cancelNeighborWarmup();
+        if (!canPreloadBanners() || !persona) return;
+        // Wait until the user has settled (after the 850ms banner crossfade) so speculative
+        // decoding never competes with rapid switching or active GPU texture uploads.
+        neighborWarmTimer = setTimeout(() => {
+            neighborWarmTimer = 0;
+            if (document.hidden || !canPreloadBanners()) return;
+            const avail = playablePersonas;
+            const pos = avail.indexOf(persona);
+            if (pos < 0 || avail.length <= 1) return;
+            const nextP = avail[(pos + 1) % avail.length];
+            const run = () => warmPersonaBanner(nextP);
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(run, { timeout: 2000 });
+            } else {
+                run();
+            }
+        }, 1250);
+    }
+
+    function warmPersonaBanner(persona) {
+        if (!persona || !persona.available || !canPreloadBanners()) return;
+        const pool = bannerPool(persona);
+        if (pool.length === 0) return;
+        // Never warm a second variant if this persona already has one decoded or in flight.
+        if (pool.some(src => decodedBanners.has(src) || inflightImages.has(src))) return;
+        prepareImage(pool[0], 'banner').catch(() => {});
+    }
+
+    // Progressive idle preload: register already-loaded chip avatars + at most 1 neighbor primary banner
+    function preloadAssets() {
+        if (personaContainer) {
+            personaContainer.querySelectorAll('.persona-avatar-preview img').forEach(img => {
+                const src = img.getAttribute('src');
+                if (src && img.complete && img.naturalWidth > 0) {
+                    decodedAvatars.add(src);
                 }
             });
-        };
-
-        if ('requestIdleCallback' in window) {
-            window.requestIdleCallback(idleLoad, { timeout: 3000 });
-        } else {
-            setTimeout(idleLoad, 1200);
         }
+
+        if (!canPreloadBanners()) return;
+
+        // Wait until initial paint settles so idle warmup never contends with boot or first interaction.
+        scheduleNeighborWarmup(personas[currentIndex]);
     }
 
     // Apply color tokens based on active persona
@@ -143,6 +238,22 @@
                         <span class="persona-tag">${persona.role}</span>
                     </span>
                 `;
+                const thumbImg = btn.querySelector('img');
+                if (thumbImg) {
+                    if (thumbImg.complete && thumbImg.naturalWidth > 0) {
+                        decodedAvatars.add(persona.avatar);
+                    } else {
+                        thumbImg.addEventListener('load', () => decodedAvatars.add(persona.avatar), { once: true });
+                    }
+                }
+                // Intent-driven single-variant warmup: gives 65-110ms head start on Android touch
+                // (pointerdown -> click) and desktop hover without preloading unused variants.
+                const warmIntent = () => warmPersonaBanner(persona);
+                btn.addEventListener('pointerdown', warmIntent, { passive: true });
+                btn.addEventListener('pointerenter', (e) => {
+                    if (e.pointerType === 'mouse' || e.pointerType === 'pen') warmIntent();
+                }, { passive: true });
+                btn.addEventListener('focus', warmIntent);
                 btn.addEventListener('click', () => setPersona(idx, true));
             }
             personaContainer.appendChild(btn);
@@ -233,7 +344,7 @@
         const immediate = Boolean(options && options.immediate);
         const seq = ++bannerLoadSeq;
 
-        if (options?.decoded) {
+        if (options?.decoded || isImageReady(src, 'banner')) {
             commitBannerCrossfade(src, immediate);
             return src;
         }
@@ -243,29 +354,17 @@
             return src;
         }
 
-        // Pre-decode image asynchronously before starting opacity crossfade to eliminate AI art harsh pop-in.
-        // Clear any lingering release timer so standby texture isn't wiped during async decode:
+        // Pre-decode image asynchronously via bounded cache before starting opacity crossfade.
         clearTimeout(bannerReleaseTimer);
-        const loader = new Image();
-        loader.decoding = 'async';
-        loader.src = src;
-
-        const applyWhenReady = () => {
+        prepareImage(src, 'banner').then(() => {
             if (seq !== bannerLoadSeq) return;
             commitBannerCrossfade(src, false);
-        };
-
-        if (typeof loader.decode === 'function') {
-            loader.decode().then(applyWhenReady).catch(() => {});
-        } else {
-            loader.onload = applyWhenReady;
-            loader.onerror = () => {};
-        }
+        }).catch(() => {});
         return src;
     }
 
     let avatarSeq = 0;
-    let avatarTimer = 0;
+    let avatarAnim = null;
 
     function applyAvatar(persona, animate) {
         if (!avatarImg) return;
@@ -276,33 +375,42 @@
         }
 
         const seq = ++avatarSeq;
-        if (avatarTimer) {
-            clearTimeout(avatarTimer);
-            avatarTimer = 0;
+        if (avatarAnim) {
+            try { avatarAnim.cancel(); } catch (_) {}
+            avatarAnim = null;
         }
 
-        const paint = () => {
-            if (seq !== avatarSeq) return;
-            avatarImg.src = src;
-            avatarImg.alt = `${persona.name} Portrait`;
-            avatarImg.dataset.persona = persona.key;
-            avatarImg.style.display = '';
-            avatarImg.style.opacity = '';
-            avatarImg.style.transform = '';
-            avatarZone?.classList.remove('avatar-fallback');
-        };
+        if (seq !== avatarSeq) return;
+        // Zero pre-swap 120ms wait: swap decoded portrait on frame 0 and run a pure
+        // compositor opacity reveal via WAAPI (respects prefers-reduced-motion).
+        avatarImg.src = src;
+        avatarImg.alt = `${persona.name} Portrait`;
+        avatarImg.dataset.persona = persona.key;
+        avatarImg.style.display = '';
+        avatarImg.style.opacity = '';
+        avatarImg.style.transform = '';
+        avatarZone?.classList.remove('avatar-fallback');
 
-        if (!animate) {
-            paint();
-            return;
+        const reduceMotion = Boolean(reducedMotionMQ && reducedMotionMQ.matches);
+        if (animate && !reduceMotion && typeof avatarImg.animate === 'function') {
+            try {
+                avatarAnim = avatarImg.animate(
+                    [
+                        { opacity: 0.48 },
+                        { opacity: 1 }
+                    ],
+                    {
+                        duration: 180,
+                        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                        fill: 'none'
+                    }
+                );
+                avatarAnim.onfinish = () => { avatarAnim = null; };
+                avatarAnim.oncancel = () => { avatarAnim = null; };
+            } catch (_) {
+                avatarAnim = null;
+            }
         }
-
-        avatarImg.style.opacity = '0.25';
-        avatarImg.style.transform = 'translateX(-50%) scale(0.96)';
-        avatarTimer = setTimeout(() => {
-            avatarTimer = 0;
-            paint();
-        }, 120);
     }
 
     // Quote Bubble Engine removed permanently
@@ -311,56 +419,81 @@
     let currentPersona = null;
     let personaLoadSeq = 0;
 
-    function prepareImage(src) {
-        if (!src) return Promise.resolve();
-        const image = new Image();
-        image.decoding = 'async';
-        if (typeof image.decode === 'function') {
-            image.src = src;
-            return image.decode();
-        }
-        return new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = reject;
-            image.src = src;
+    function setPendingChip(index) {
+        if (!personaContainer) return;
+        personaContainer.querySelectorAll('.persona-chip').forEach((chip, idx) => {
+            chip.classList.toggle('is-pending', idx === index);
         });
     }
 
-    async function setPersona(indexOrKey, persist) {
-        let index = typeof indexOrKey === 'string'
-            ? personas.findIndex(p => p.key === indexOrKey)
-            : Number(indexOrKey);
-        if (isNaN(index) || index < 0 || index >= personas.length) return;
-        const persona = personas[index];
-        if (!persona || !persona.available) return;
+    function clearPendingChips() {
+        if (!personaContainer) return;
+        personaContainer.querySelectorAll('.persona-chip.is-pending').forEach(chip => {
+            chip.classList.remove('is-pending');
+        });
+    }
 
-        const seq = ++personaLoadSeq;
-        ++bannerLoadSeq;
-        const mobile = isMobileViewport();
-        const banner = pickBanner(persona);
-        personaContainer?.setAttribute('aria-busy', 'true');
-        try {
-            await Promise.all([prepareImage(persona.avatar), prepareImage(banner)]);
-        } catch (_) {
-            if (seq === personaLoadSeq) {
-                personaContainer?.setAttribute('aria-busy', 'false');
-                window.showToast?.('Không thể tải artwork. Giữ nhân vật hiện tại.', 'fa-triangle-exclamation');
-            }
-            return;
+    function syncActiveChips(activeIndex) {
+        if (!personaContainer) return;
+        personaContainer.querySelectorAll('.persona-chip').forEach((chip, idx) => {
+            const active = idx === activeIndex;
+            chip.classList.remove('is-pending');
+            chip.classList.toggle('active', active);
+            chip.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+    }
+
+    function prepareImage(src, kind = 'banner') {
+        if (!src) return Promise.resolve(null);
+        if (kind === 'avatar' && decodedAvatars.has(src)) {
+            return Promise.resolve(null);
         }
-        if (seq !== personaLoadSeq) return;
-        if (mobile !== isMobileViewport()) return setPersona(index, persist);
-        personaContainer?.setAttribute('aria-busy', 'false');
+        if (kind === 'banner' && decodedBanners.has(src)) {
+            const cached = decodedBanners.get(src);
+            rememberDecodedBanner(src, cached);
+            return Promise.resolve(cached);
+        }
+        if (inflightImages.has(src)) {
+            return inflightImages.get(src);
+        }
 
-        // Commit one prepared persona transaction: artwork, palette, particles,
-        // text and player mapping all change in the same rendering opportunity.
+        const promise = new Promise((resolve, reject) => {
+            const image = new Image();
+            image.decoding = 'async';
+            const onReady = () => {
+                if (kind === 'avatar') decodedAvatars.add(src);
+                else rememberDecodedBanner(src, image);
+                resolve(image);
+            };
+            const onFail = (err) => reject(err || new Error(`Image failed: ${src}`));
+
+            if (typeof image.decode === 'function') {
+                image.src = src;
+                image.decode().then(onReady, onFail);
+            } else {
+                image.onload = onReady;
+                image.onerror = onFail;
+                image.src = src;
+            }
+        }).finally(() => {
+            inflightImages.delete(src);
+        });
+
+        inflightImages.set(src, promise);
+        return promise;
+    }
+
+    function commitPersonaTransaction(index, persona, banner, bannerReady, persist) {
         currentIndex = index;
         currentPersona = persona;
+        lastCommitAt = performance.now();
         safeStorageSet('minkoi_persona_index', index.toString());
 
         applyPersonaTokens(persona);
         updatePersonaText(persona);
-        updateBannerLayers(persona, { src: banner, decoded: true, immediate: !persist && currentBannerSrc === '' });
+        if (bannerReady) {
+            updateBannerLayers(persona, { src: banner, decoded: true, immediate: !persist && currentBannerSrc === '' });
+        }
         applyAvatar(persona, persist);
 
         // Update ambient particle mode (Sakura petals, snowflakes, stardust)
@@ -376,14 +509,8 @@
             showWaifuQuote();
         }
 
-        // Update active chip state + aria-selected
-        if (personaContainer) {
-            personaContainer.querySelectorAll('.persona-chip').forEach((chip, idx) => {
-                const active = idx === index;
-                chip.classList.toggle('active', active);
-                chip.setAttribute('aria-selected', active ? 'true' : 'false');
-            });
-        }
+        // Commit active chip state + aria-selected
+        syncActiveChips(index);
 
         // Sync player album art
         const playerArt = document.getElementById('player-album-art');
@@ -395,6 +522,99 @@
         window.dispatchEvent(new CustomEvent('minkoi:persona', {
             detail: { index, key: persona.key, persona, initial: !persist }
         }));
+
+        // Proactively warm 1 immediate neighbor only after user settles (debounced 1.25s)
+        if (persist) {
+            scheduleNeighborWarmup(persona);
+        }
+    }
+
+    async function setPersona(indexOrKey, persist) {
+        let index = typeof indexOrKey === 'string'
+            ? personas.findIndex(p => p.key === indexOrKey)
+            : Number(indexOrKey);
+        if (isNaN(index) || index < 0 || index >= personas.length) return;
+        const persona = personas[index];
+        if (!persona || !persona.available) return;
+
+        const seq = ++personaLoadSeq;
+        const myBannerSeq = ++bannerLoadSeq;
+        cancelNeighborWarmup();
+        const mobile = isMobileViewport();
+        const isRapidRepeat = Boolean(persist && (performance.now() - lastCommitAt) < 1800);
+        const banner = pickBanner(persona, { preferCached: isRapidRepeat });
+
+        // Check if chip thumbnail already finished decoding this avatar in DOM
+        if (persona.avatar && !decodedAvatars.has(persona.avatar) && personaContainer) {
+            const thumb = personaContainer.querySelector(`.persona-chip[data-key="${persona.key}"] img`);
+            if (thumb && thumb.complete && thumb.naturalWidth > 0) {
+                decodedAvatars.add(persona.avatar);
+            }
+        }
+
+        const avatarReadyNow = isImageReady(persona.avatar, 'avatar');
+        const bannerReadyNow = !banner || isImageReady(banner, 'banner');
+
+        // Fast path: BOTH avatar & banner are already decoded -> instant synchronous atomic commit (0ms wait)!
+        if (avatarReadyNow && bannerReadyNow) {
+            personaContainer?.setAttribute('aria-busy', 'false');
+            commitPersonaTransaction(index, persona, banner, true, persist);
+            return;
+        }
+
+        // Stage A — Instant frame-0 interaction feedback (never blocked by network or decode)
+        if (persist) {
+            setPendingChip(index);
+        }
+        personaContainer?.setAttribute('aria-busy', 'true');
+
+        // Start avatar & banner decode in parallel
+        const avatarPromise = avatarReadyNow ? Promise.resolve(null) : prepareImage(persona.avatar, 'avatar');
+        let bannerResolved = bannerReadyNow;
+        let bannerFailed = false;
+        const bannerPromise = bannerReadyNow
+            ? Promise.resolve(decodedBanners.get(banner) || null)
+            : prepareImage(banner, 'banner').then(
+                img => { bannerResolved = true; return img; },
+                () => { bannerFailed = true; return null; }
+            );
+
+        // Avatar MUST be ready before identity commit so character name/palette never mismatch portrait
+        try {
+            await avatarPromise;
+        } catch (_) {
+            if (seq === personaLoadSeq) {
+                clearPendingChips();
+                personaContainer?.setAttribute('aria-busy', 'false');
+                window.showToast?.('Không thể tải artwork. Giữ nhân vật hiện tại.', 'fa-triangle-exclamation');
+            }
+            return;
+        }
+        if (seq !== personaLoadSeq) return;
+        if (mobile !== isMobileViewport()) return setPersona(index, persist);
+
+        // Keep Stage B atomic (banner + avatar + palette + audio mapping commit together)
+        // so cold JPEG decode never collides with the :root accent transition; only fall back
+        // to deferred banner crossfade if a slow network takes longer than 600ms.
+        if (!bannerResolved && !bannerFailed) {
+            await Promise.race([
+                bannerPromise,
+                new Promise(resolve => setTimeout(resolve, BANNER_COALESCE_MS))
+            ]);
+        }
+        if (seq !== personaLoadSeq) return;
+        if (mobile !== isMobileViewport()) return setPersona(index, persist);
+
+        personaContainer?.setAttribute('aria-busy', 'false');
+        commitPersonaTransaction(index, persona, banner, bannerResolved, persist);
+
+        if (!bannerResolved && !bannerFailed && banner) {
+            bannerPromise.then((img) => {
+                if (!img || seq !== personaLoadSeq || myBannerSeq !== bannerLoadSeq) return;
+                if (mobile !== isMobileViewport()) return;
+                commitBannerCrossfade(banner, false);
+            });
+        }
     }
 
     // Global hooks for other modules
@@ -405,7 +625,8 @@
     window.randomizeCurrentBanner = () => {
         const persona = personas[currentIndex];
         if (!persona) return '';
-        return updateBannerLayers(persona, { immediate: false });
+        const nextSrc = pickBanner(persona, { randomize: true });
+        return updateBannerLayers(persona, { src: nextSrc, immediate: false });
     };
 
     // Graceful fallback when an avatar file is missing
