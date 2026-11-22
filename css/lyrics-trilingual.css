@@ -10,6 +10,7 @@
 .lyric-line.is-japanese .lyric-romaji { font-family: var(--font-body); line-height: 1.55; }
 .lyrics-body { position: relative; overscroll-behavior: contain; min-height: 0; scroll-behavior: auto; }
 .lyrics-body.floating-view .lyric-line:not(.active):not(.is-near) { opacity: 0.65; }
+body.light-mode .lyrics-body.floating-view .lyric-line:not(.active) { opacity: .85; }
 .lyrics-body.floating-view .lyric-line.active { background: var(--surface-hover); }
 .lyrics-body.full-view .lyric-line { opacity: 0.95; }
 .lyric-line.missing-selected-layer .lyric-content::after { content: 'Tầng lời đã chọn chưa có nội dung · bổ sung trong Editor'; color: var(--color-text-secondary); font-size: 0.8rem; }
@@ -21,10 +22,56 @@
 .lyrics-display-menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 10px; color: var(--color-text); padding: 0.7rem; font: 600 0.8rem var(--font-body); cursor: pointer; }
 .lyrics-display-menu button[aria-pressed="true"], .lyrics-display-menu button:hover { background: var(--surface-hover); }
 .lyrics-display-menu button[aria-pressed="true"]::after { content: ' ✓'; color: var(--color-accent); }
+.lyrics-display-menu button { border-radius: var(--ui-radius-inset); }
+.lyrics-display-menu button:focus-visible { outline-offset: -2px; }
 .lyrics-badge-row { flex-wrap: wrap; }
+.lyrics-badge { color: var(--color-text-secondary); }
+.lyrics-mode-btn {
+    padding-inline: var(--ui-gap);
+    color: var(--color-text-secondary);
+    transition-property: color, background-color, border-color;
+}
+.lyrics-mode-btn:is(:hover, .active) {
+    color: var(--color-text);
+    border-color: var(--glass-active-edge);
+    background: var(--glass-control-active);
+}
+.lyrics-close-btn { border-radius: var(--ui-radius-inset); transition-property: color, background-color, border-color; }
+.lyrics-close-btn:hover { color: var(--color-text); border-color: var(--glass-active-edge); }
+.offset-val-badge, .offset-nudge-btn { font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+.offset-nudge-btn { transition-property: color, background-color; }
+.offset-nudge-btn:hover { color: var(--color-text); background: var(--surface-hover); }
+.lyrics-sync-badge[data-sync-level] { color: var(--color-text-secondary); }
+.lyrics-sync-badge:is([data-sync-level="syllable"], [data-sync-level="word"]) { color: var(--ui-positive-ink); }
+.lyrics-sync-badge[data-sync-level="plain"] { color: var(--ui-caution-ink); }
 .lyrics-drawer-modal { width: min(600px, calc(100vw - 24px)); max-width: 600px; height: min(720px, 86dvh); }
+.lyrics-editor-panel { background: var(--surface-3); }
+.editor-title-wrap h4, .editor-meta-grid .meta-chip strong { color: var(--color-text); }
+.editor-kicker, .editor-meta-grid .meta-chip span { color: var(--color-text-secondary); }
+.editor-meta-grid .meta-chip { color: var(--color-text); background: var(--surface-pill); border-color: var(--glass-edge); border-radius: var(--ui-radius-inset); }
+.editor-back-btn { color: var(--color-text); background: var(--surface-pill); }
+.editor-back-btn:hover { color: var(--color-text); background: var(--surface-hover); }
+.editor-diag-ok { color: var(--ui-positive-ink); }
+.editor-diag-list li { color: var(--ui-caution-ink); }
+.editor-diag-list li.is-error, .editor-btn.danger { color: var(--glass-favorite); }
 .lyrics-editor-scroll { overscroll-behavior: contain; }
-.editor-textarea { font-family: var(--font-mono), "Yu Gothic", monospace; line-height: 1.6; scroll-margin-bottom: 30vh; }
+.editor-textarea {
+    font-family: var(--font-mono), "Yu Gothic", monospace;
+    font-size: .8rem;
+    line-height: 1.6;
+    scroll-margin-bottom: 30vh;
+    background: var(--surface-2);
+    color: var(--color-text);
+    border-color: var(--glass-edge);
+    border-radius: var(--ui-radius-inset);
+}
+.editor-textarea:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: -2px; }
+.editor-btn:not(.primary, .danger), .editor-upload-btn { color: var(--color-text); background: var(--surface-pill); border-color: var(--glass-edge); }
+.editor-btn:not(.primary, .danger):hover, .editor-upload-btn:hover { background: var(--surface-hover); border-color: var(--glass-active-edge); }
+.editor-btn { transition-property: color, background-color, border-color; }
+.editor-label-row label { color: var(--color-text-secondary); }
+.preview-ok { color: var(--ui-positive-ink); }
+.preview-err { color: var(--glass-favorite); }
 /* The dock owns glass; lyrics own only glyphs and their immediate edges. */
 .zen-ambient-lyric {
     --zen-dock-inset: calc(28px + env(safe-area-inset-bottom, 0px));
@@ -88,6 +135,11 @@ body.zen-lyrics-hidden.zen-mode .zen-ambient-lyric.has-lyric {
     .lyric-line { padding: .65rem .5rem; gap: .5rem; }
     .lyric-jp { font-size: 1.05rem; }
     .lyric-romaji, .lyric-vi { font-size: .85rem; }
+}
+@media (max-width: 430px) {
+    .lyrics-drawer-header .lyrics-meta { flex-basis: 100%; }
+    .lyrics-track-title { max-width: none; }
+    .lyrics-header-actions { margin-left: 0; flex: 1; justify-content: space-between; min-width: 0; }
 }
 @media (orientation: landscape) and (max-height: 560px) {
     .zen-ambient-lyric { width: min(40rem, calc(100vw - 2 * max(44px, env(safe-area-inset-left), env(safe-area-inset-right)))); }
