@@ -6,12 +6,13 @@
     const menu = doc.getElementById('viz-menu');
     const trigger = doc.getElementById('viz-menu-btn');
     const closeButton = doc.getElementById('viz-menu-close');
+    const handle = menu?.querySelector('.viz-drag-handle');
     const scrim = doc.getElementById('viz-scrim');
     const stage = doc.getElementById('avatar-zone-wrap');
     const identity = doc.querySelector('.identity-header');
     const visualizer = global.MinkoiVisualizer;
     const springAPI = global.MinkoiSpring;
-    if (!menu || !trigger || !scrim || !visualizer || !springAPI) return;
+    if (!menu || !handle || !trigger || !scrim || !visualizer || !springAPI) return;
     const items = Array.from(menu.querySelectorAll('[data-viz-style]'));
     const inputs = Array.from(menu.querySelectorAll('[data-viz-control]'));
     const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
@@ -122,11 +123,17 @@
         ownsScrollLock = false;
         global.MinkoiUI?.unlockBodyScroll();
     }
+    function stopDrag() {
+        const id = pointer;
+        dragging = false;
+        pointer = null;
+        if (id !== null && handle.hasPointerCapture(id)) handle.releasePointerCapture(id);
+    }
     function open() {
         if (state === 'open' || state === 'opening') return;
         const interrupted = state === 'closing';
         const gen = ++generation;
-        dragging = false;
+        stopDrag();
         spring.onComplete = null;
         global.MinkoiUI?.closeAllOverlays('viz-menu', { restoreFocus: false });
         setState('opening');
@@ -154,7 +161,7 @@
         if (state === 'closed' || state === 'closing') return;
         const opts = options || {};
         const gen = ++generation;
-        dragging = false;
+        stopDrag();
         releaseFocus(opts.restoreFocus !== false);
         setState('closing');
         menu.style.pointerEvents = 'none';
@@ -229,10 +236,10 @@
         if (!menu.contains(event.target) && !trigger.contains(event.target) && event.target !== scrim) close({ restoreFocus: false });
     });
 
-    const handle = menu.querySelector('.viz-drag-handle');
     handle.addEventListener('pointerdown', event => {
-        if (!sheet || (state !== 'open' && state !== 'opening') || !event.isPrimary) return;
+        if (!sheet || dragging || (state !== 'open' && state !== 'opening') || !event.isPrimary) return;
         if (event.pointerType === 'mouse' && event.button !== 0) return;
+        try { handle.setPointerCapture(event.pointerId); } catch (_) { return; }
         generation++;
         spring.onComplete = null;
         dragging = true; pointer = event.pointerId;
@@ -240,7 +247,6 @@
         dragBase = spring.value;
         velocity = 0; lastTime = performance.now();
         spring.snap(spring.value);
-        handle.setPointerCapture(pointer);
         event.preventDefault();
     });
     handle.addEventListener('pointermove', event => {
@@ -251,25 +257,45 @@
         const dy = event.clientY - dragStart;
         spring.snap(clamp(dragBase - (dy >= 0 ? dy : dy * 0.2) / (height + 16), -0.1, 1.04));
     });
-    function releaseDrag(event) {
-        if (!dragging || event.pointerId !== pointer) return;
-        dragging = false; pointer = null;
-        if (event.type !== 'pointercancel' && (spring.value < 0.75 || (velocity > 550 && event.clientY - dragStart > 20))) {
-            spring.impulse(-Math.min(1600, velocity) / (height + 16));
+    function finishDrag(cancelled) {
+        stopDrag();
+        const recentVelocity = cancelled || performance.now() - lastTime >= 100 ? 0 : velocity;
+        if (!cancelled && lastY - dragStart > 20 && (spring.value < 0.75 || recentVelocity > 550)) {
+            spring.impulse(-Math.max(0, Math.min(1600, recentVelocity)) / (height + 16));
             close();
         } else {
             const gen = ++generation;
             setState('opening');
+            if ((spring.value - 1) * recentVelocity > 0) {
+                spring.impulse(-clamp(recentVelocity, -650, 650) / (height + 16));
+            }
             spring.setTarget(1, { ...springAPI.PRESETS.BOTTOM_SHEET_SETTLE,
                 onComplete: () => { if (gen === generation) setState('open'); } });
         }
     }
+    function releaseDrag(event) {
+        if (!dragging || event.pointerId !== pointer) return;
+        finishDrag(event.type !== 'pointerup');
+    }
     handle.addEventListener('pointerup', releaseDrag);
     handle.addEventListener('pointercancel', releaseDrag);
+    handle.addEventListener('lostpointercapture', releaseDrag);
     global.addEventListener('minkoi:vizstyle', sync);
     global.addEventListener('minkoi:zenchange', () => { if (doc.body.classList.contains('zen-mode')) close({ instant: true, restoreFocus: false }); });
-    global.addEventListener('resize', () => { if (state !== 'closed') position(); }, { passive: true });
-    global.visualViewport?.addEventListener('resize', () => { if (state !== 'closed') position(); }, { passive: true });
+    function reposition() {
+        if (state === 'closed') return;
+        const wasSheet = sheet;
+        position();
+        if (dragging && wasSheet !== sheet) finishDrag(true);
+        if (!sheet) unlock();
+        else if (!ownsScrollLock && state !== 'closing') {
+            global.MinkoiUI?.lockBodyScroll();
+            ownsScrollLock = true;
+            position();
+        }
+    }
+    global.addEventListener('resize', reposition, { passive: true });
+    global.visualViewport?.addEventListener('resize', reposition, { passive: true });
     doc.addEventListener('scroll', event => {
         if (!sheet && state !== 'closed' && !menu.contains(event.target)) close({ restoreFocus: false });
     }, { passive: true, capture: true });

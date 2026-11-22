@@ -303,6 +303,12 @@ body.light-mode .top-more-item:hover {
 }
 
 /* Live soundstage selector: no full-screen blur; the chibi stays in view. */
+.viz-scrim,
+.viz-menu {
+    /* Keep the global reduced-motion duration override from creating CSS
+       transitions on properties that the Visualizer spring owns. */
+    transition-property: none;
+}
 .viz-scrim {
     position: fixed;
     inset: 0;

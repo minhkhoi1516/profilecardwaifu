@@ -1658,11 +1658,6 @@
                 });
             }
         }
-
-        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
-            delete audioFxMenu.dataset.swipeBound;
-            window.MinkoiUI.bindBottomSheetSwipe(audioFxMenu, () => closeAllFlyouts());
-        }
     }
 
     if (audioFxBtn && audioFxMenu) {
@@ -1795,11 +1790,6 @@
                 closeAllFlyouts();
             });
         });
-
-        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
-            delete sleepTimerMenu.dataset.swipeBound;
-            window.MinkoiUI.bindBottomSheetSwipe(sleepTimerMenu, () => closeAllFlyouts());
-        }
     }
 
     if (sleepTimerBtn && sleepTimerMenu) {
@@ -1852,11 +1842,6 @@
                 searchQuery = e.target.value;
                 updatePlaylistItems();
             });
-        }
-
-        if (window.MinkoiUI && typeof window.MinkoiUI.bindBottomSheetSwipe === 'function') {
-            delete playlistMenu.dataset.swipeBound;
-            window.MinkoiUI.bindBottomSheetSwipe(playlistMenu, () => closeAllFlyouts());
         }
     }
 

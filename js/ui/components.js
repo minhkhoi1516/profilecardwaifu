@@ -375,6 +375,7 @@
             moved = false;
             pressedAt = global.performance.now();
             cancelledClick = null;
+            lastTap = null;
 
             press(target);
         }, { passive: true });
@@ -394,17 +395,19 @@
             if (!activeEl) return;
             if (e?.isPrimary !== false && e?.pointerId !== undefined && e.pointerId !== activePointerId) return;
             const el = activeEl;
-            const isTap = e?.type === 'pointerup' && !moved &&
+            const isActivation = e?.type === 'pointerup' && !moved &&
                 e.pointerId === activePointerId &&
-                global.performance.now() - pressedAt < 550 &&
                 (e.target === el || el.contains(e.target));
+            const now = global.performance.now();
             activeEl = null;
             activePointerId = null;
             moved = false;
             springs.get(el)?.setTarget(1);
             elastic(el);
-            if (isTap) lastTap = { el, pointerType: e.pointerType, time: global.performance.now() };
-            else cancelledClick = { el, time: global.performance.now() };
+            // Time limits tactile feedback, not native button activation. A
+            // stationary release still clicks after a long hold or a busy frame.
+            if (!isActivation) cancelledClick = { el, time: now };
+            else if (now - pressedAt < 550) lastTap = { el, pointerType: e.pointerType, time: now };
         };
 
         doc.addEventListener('click', e => {
@@ -712,6 +715,7 @@
         let originY = '0%';
         let currentFraction = 0;
         let ownsScrollLock = false;
+        let openingSwipeTravel = 0;
 
         let mobileBackdrop = doc.getElementById('mobile-flyout-backdrop');
         if (!mobileBackdrop) {
@@ -736,6 +740,10 @@
         setPanelState('closed');
 
         const spLib = Spring();
+        const applySheetOpacity = (f) => {
+            panelEl.style.opacity = Math.min(1, f * 1.5).toFixed(3);
+            mobileBackdrop.style.opacity = Math.min(1, f * 0.95).toFixed(3);
+        };
         const applyFraction = (f) => {
             currentFraction = f;
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
@@ -748,10 +756,7 @@
                 // to translateY(100%) for closed sheets, so an empty transform
                 // makes the OPEN sheet vanish beneath its still-visible backdrop.
                 panelEl.style.transform = `translateY(${slidePercent.toFixed(2)}%)`;
-                panelEl.style.opacity = Math.min(1, clamped * 1.5).toFixed(3);
-                if (mobileBackdrop) {
-                    mobileBackdrop.style.opacity = Math.min(1, clamped * 0.95).toFixed(3);
-                }
+                applySheetOpacity(clamped);
             } else if (isCenterModal) {
                 const scaleVal = 0.88 + 0.12 * clamped;
                 const alpha = Math.max(0, Math.min(1, clamped * 1.35));
@@ -908,6 +913,8 @@
             if (typeof config.onBeforeOpen === 'function') {
                 try { config.onBeforeOpen(); } catch (_) {}
             }
+            // Some media menus rebuild their markup before opening.
+            bindBottomSheetSwipe(panelEl, controller);
 
             setPanelState('opening');
             computeAnchor();
@@ -960,11 +967,13 @@
                 try { config.onBeforeClose(); } catch (_) {}
             }
 
+            const swipeOffset = panelEl.classList.contains('sheet-swiping') ? bottomSheetStates.get(panelEl)?.currentY : null;
+            const isMobile = global.matchMedia('(max-width: 860px)').matches;
+            const travel = isMobile && Number.isFinite(swipeOffset) ? Math.max(1, panelEl.offsetHeight) : 0;
             setPanelState('closing');
+            openingSwipeTravel = 0;
             resetBottomSheetSwipe(panelEl);
             panelEl.style.pointerEvents = 'none';
-
-            const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
 
             releaseCurrentTrap(options.restoreFocus !== false);
 
@@ -1002,6 +1011,10 @@
                 closeDone();
             } else {
                 const preset = isMobile ? spLib.PRESETS.BOTTOM_SHEET_SETTLE : (isCenterModal ? spLib.PRESETS.DIALOG_SCALE : spLib.PRESETS.LIST_POPUP);
+                if (travel) {
+                    fractionSpring.snap(Math.max(0, 1 - swipeOffset / travel));
+                    fractionSpring.impulse(-Math.min(900, options.swipeVelocity || 0) / travel);
+                }
                 fractionSpring.setTarget(0, { ...preset, onComplete: closeDone });
             }
         }
@@ -1024,11 +1037,23 @@
             isOpen: () => panelState === 'opening' || panelState === 'open',
             getState: () => panelState,
             prepareSwipe: () => {
-                if (panelState !== 'opening' && panelState !== 'open') return false;
-                if (fractionSpring) fractionSpring.snap(1);
+                if (panelState !== 'opening' && panelState !== 'open') return null;
+                if (panelState === 'open') return 0;
+                openingSwipeTravel = Math.max(1, panelEl.offsetHeight);
+                const offset = Math.max(0, 1 - currentFraction) * openingSwipeTravel;
+                fractionSpring?.snap(currentFraction);
                 setPanelState('open');
-                applyFraction(1);
-                return true;
+                return offset;
+            },
+            renderSwipeOpacity: (offset) => {
+                // Only the interrupted entrance has alpha still in flight.
+                // A normal drag does not touch backdrop opacity on every move.
+                if (openingSwipeTravel) applySheetOpacity(Math.max(0, Math.min(1, 1 - offset / openingSwipeTravel)));
+            },
+            finishSwipe: () => {
+                openingSwipeTravel = 0;
+                if (fractionSpring) fractionSpring.snap(1);
+                else applyFraction(1);
             },
             recomputeAnchor: computeAnchor
         };
@@ -1067,7 +1092,10 @@
             if (panelState === 'opening' || panelState === 'open') {
                 computeAnchor();
                 const mobile = global.innerWidth <= 860;
-                if (!mobile) resetBottomSheetSwipe(panelEl);
+                if (!mobile && panelEl.classList.contains('sheet-swiping')) {
+                    resetBottomSheetSwipe(panelEl);
+                    controller.finishSwipe();
+                }
                 if (mobile && !ownsScrollLock) { lockBodyScroll(); ownsScrollLock = true; }
                 if (!mobile && ownsScrollLock) { unlockBodyScroll(); ownsScrollLock = false; }
                 mobileBackdrop.classList.toggle('active', mobile || isCenterModal);
@@ -1077,10 +1105,12 @@
         global.addEventListener('resize', onViewportChange, { passive: true });
         global.visualViewport?.addEventListener('resize', onViewportChange, { passive: true });
 
-        bindBottomSheetSwipe(panelEl, () => close({ instant: true, restoreFocus: false }));
+        bindBottomSheetSwipe(panelEl, controller);
 
         registerOverlay(id, {
-            isOpen: controller.isOpen,
+            // A closing panel still owns its backdrop until it settles.
+            // An instant overlay handoff must retire it before the next owner.
+            isOpen: () => panelState !== 'closed',
             close: controller.close
         });
 
@@ -1100,9 +1130,6 @@
         const pointer = state.activePointerId;
         state.gestureGen += 1;
         state.dragging = false;
-        state.exiting = false;
-        state.activeFinalize = null;
-        state.exitTarget = 0;
         state.activePointerId = null;
         state.activeHandle = null;
         state.currentY = 0;
@@ -1116,7 +1143,7 @@
         } catch (_) {}
     }
 
-    function bindBottomSheetSwipe(sheetEl, onDismiss) {
+    function bindBottomSheetSwipe(sheetEl, controller) {
         if (!sheetEl) return;
 
         const handles = Array.from(sheetEl.querySelectorAll('.sheet-drag-handle, .menu-header, .playlist-header-top, .lyrics-drawer-header'));
@@ -1129,15 +1156,14 @@
             state = {
                 currentY: 0,
                 startY: 0,
+                baseY: 0,
                 lastY: 0,
                 lastTime: 0,
                 velocityY: 0,
                 dragging: false,
-                exiting: false,
                 activePointerId: null,
                 activeHandle: null,
                 gestureGen: 0,
-                onDismiss: typeof onDismiss === 'function' ? onDismiss : null,
                 spring: null
             };
             state.spring = spLib
@@ -1152,15 +1178,11 @@
                         state.currentY = y;
                         if (!sheetEl.classList.contains('sheet-swiping')) return;
                         sheetEl.style.transform = `translateY(${Math.abs(y) < 0.2 ? 0 : y.toFixed(1)}px)`;
-                        if (state.exiting && Number.isFinite(state.exitTarget) && y >= state.exitTarget - 8 && typeof state.activeFinalize === 'function') {
-                            state.activeFinalize();
-                        }
+                        controller.renderSwipeOpacity(y);
                     }
                 })
                 : null;
             bottomSheetStates.set(sheetEl, state);
-        } else {
-            state.onDismiss = typeof onDismiss === 'function' ? onDismiss : null;
         }
 
         const hasScrolledContent = (target) => {
@@ -1176,77 +1198,31 @@
             state.activePointerId = null;
             state.activeHandle = null;
 
-            const shouldDismiss = !cancelled && (
-                state.currentY > 110 ||
-                (performance.now() - state.lastTime < 100 && state.velocityY > 650 && state.currentY > 20)
-            );
+            const velocity = cancelled || performance.now() - state.lastTime >= 100 ? 0 : state.velocityY;
+            const pull = state.lastY - state.startY;
+            const shouldDismiss = !cancelled && pull > 20 && (state.currentY > 110 || velocity > 650);
 
             if (shouldDismiss) {
-                const exitGen = ++state.gestureGen;
-                state.exiting = true;
-                sheetEl.classList.add('sheet-swiping');
-                const exitTarget = Math.max((sheetEl.offsetHeight || 320) + 48, 360);
-                state.exitTarget = exitTarget;
-
-                const finalizeDismiss = () => {
-                    if (exitGen !== state.gestureGen || !state.exiting) return;
-                    state.exiting = false;
-                    state.activeFinalize = null;
-                    state.exitTarget = 0;
-                    if (state.spring) {
-                        state.spring.onComplete = null;
-                        state.spring.snap(exitTarget);
-                    }
-                    const controller = getPanelController(sheetEl.id);
-                    if (controller) {
-                        controller.close({ instant: true, restoreFocus: true });
-                        return;
-                    }
-                    if (typeof state.onDismiss === 'function') state.onDismiss();
-                    global.requestAnimationFrame(() => {
-                        if (exitGen !== state.gestureGen || state.dragging || state.exiting) return;
-                        sheetEl.classList.remove('sheet-swiping');
-                        sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
-                        state.currentY = 0;
-                        if (state.spring) state.spring.snap(0);
-                    });
-                };
-                state.activeFinalize = finalizeDismiss;
-
-                if (state.spring && !(spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
-                    state.spring.snap(state.currentY);
-                    if (state.velocityY > 0) {
-                        state.spring.impulse(Math.min(900, state.velocityY));
-                    }
-                    state.spring.setTarget(exitTarget, {
-                        dampingRatio: 0.92,
-                        stiffness: 460,
-                        onComplete: finalizeDismiss
-                    });
-                } else {
-                    finalizeDismiss();
-                }
+                controller.close({ swipeVelocity: Math.max(0, velocity), restoreFocus: true });
                 return;
             }
 
             const settleGen = ++state.gestureGen;
-            state.exiting = false;
+            const finishSettle = () => {
+                if (settleGen !== state.gestureGen || state.dragging) return;
+                state.currentY = 0;
+                sheetEl.classList.remove('sheet-swiping');
+                controller.finishSwipe();
+            };
             if (state.spring) {
-                sheetEl.classList.add('sheet-swiping');
                 state.spring.snap(state.currentY);
+                if (state.currentY * velocity < 0) state.spring.impulse(Math.max(-600, Math.min(600, velocity)));
                 state.spring.setTarget(0, {
-                    dampingRatio: spLib.PRESETS.BOTTOM_SHEET_SETTLE.dampingRatio,
-                    stiffness: spLib.PRESETS.BOTTOM_SHEET_SETTLE.stiffness,
-                    onComplete: () => {
-                        if (settleGen !== state.gestureGen || state.dragging || state.exiting) return;
-                        sheetEl.classList.remove('sheet-swiping');
-                        sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
-                    }
+                    ...spLib.PRESETS.BOTTOM_SHEET_SETTLE,
+                    onComplete: finishSettle
                 });
             } else {
-                sheetEl.classList.remove('sheet-swiping');
-                sheetEl.style.transform = sheetEl.classList.contains('open') ? 'translateY(0px)' : '';
-                state.currentY = 0;
+                finishSettle();
             }
         };
 
@@ -1263,18 +1239,19 @@
                 if (!grip && e.pointerType !== 'mouse') return;
                 if (e.target.closest('button, input, a, select, textarea') && !e.target.closest('.sheet-drag-handle')) return;
                 if (hasScrolledContent(e.target)) return;
-                const controller = getPanelController(sheetEl.id);
-                if (controller && !controller.prepareSwipe()) return;
+                if (!controller.isOpen()) return;
+                try { handle.setPointerCapture(e.pointerId); } catch (_) { return; }
+                const regrab = sheetEl.classList.contains('sheet-swiping');
+                const openingOffset = controller.prepareSwipe();
 
-                // Interrupt any active settle or exit animation smoothly from currentY
+                // Interrupt either the entrance or a running settle at its visible offset.
                 state.gestureGen += 1;
-                state.exiting = false;
-                state.activeFinalize = null;
-                state.exitTarget = 0;
                 state.dragging = true;
                 state.activePointerId = e.pointerId;
                 state.activeHandle = handle;
-                state.startY = e.clientY - state.currentY;
+                state.currentY = regrab ? state.currentY : openingOffset;
+                state.baseY = state.currentY;
+                state.startY = e.clientY;
                 state.lastY = e.clientY;
                 state.lastTime = performance.now();
                 state.velocityY = 0;
@@ -1284,21 +1261,25 @@
                     state.spring.onComplete = null;
                     state.spring.snap(state.currentY);
                 }
-                try { handle.setPointerCapture(e.pointerId); } catch (_) {}
             });
 
             handle.addEventListener('pointermove', (e) => {
                 if (!state.dragging || e.pointerId !== state.activePointerId) return;
                 const now = performance.now();
                 const dt = Math.max(4, now - state.lastTime) / 1000;
-                state.velocityY = (e.clientY - state.lastY) / dt;
+                state.velocityY = 0.35 * state.velocityY + 0.65 * (e.clientY - state.lastY) / dt;
                 state.lastY = e.clientY;
                 state.lastTime = now;
 
-                const rawDy = e.clientY - state.startY;
-                // Miuix rubberband resistance when dragging upward past 0
-                state.currentY = rawDy < 0 && spLib ? spLib.obtainDampingDistance(rawDy, 48) : rawDy;
-                sheetEl.style.transform = Math.abs(state.currentY) < 0.2 ? '' : `translateY(${state.currentY.toFixed(1)}px)`;
+                const dy = e.clientY - state.startY;
+                const y = state.baseY + dy;
+                const edge = Math.min(0, state.baseY);
+                const range = 48 + 3 * edge;
+                state.currentY = y < edge && spLib
+                    ? edge + (range > 1 ? spLib.obtainDampingDistance(y - edge, range) : 0)
+                    : y;
+                sheetEl.style.transform = `translateY(${state.currentY.toFixed(1)}px)`;
+                controller.renderSwipeOpacity(state.currentY);
             });
 
             handle.addEventListener('pointerup', (e) => {
@@ -2512,7 +2493,6 @@
         getActiveTrapCount: () => activeTraps.length,
         registerOverlay: registerOverlay,
         closeAllOverlays: closeAllOverlays,
-        bindBottomSheetSwipe: bindBottomSheetSwipe,
         bindMiuixSwitch: bindMiuixSwitch,
         syncTabIndicator: syncTabIndicator,
         syncLiquidGlassNav: syncTabIndicator,
