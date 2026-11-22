@@ -186,18 +186,25 @@
     // <=2/255 channel differences; this is not a universal device guarantee.
     // Fragment work at DPR 3 drops by ~4x. No feature is disabled and the
     // animation still runs at the display refresh rate.
-    const RENDER_SCALE = 0.75;
+    let renderScale = 0.75;
 
-    // One bounded render resolution; no device tiers or frame-rate cap.
+    // Adaptive bounded render resolution (always stays live at display refresh rate).
     function resizeCanvas() {
-        const w = Math.round(window.innerWidth * RENDER_SCALE);
-        const h = Math.round(window.innerHeight * RENDER_SCALE);
+        const w = Math.max(1, Math.round(window.innerWidth * renderScale));
+        const h = Math.max(1, Math.round(window.innerHeight * renderScale));
         if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w;
             canvas.height = h;
             gl.viewport(0, 0, w, h);
         }
     }
+
+    window.__setFluidRenderScale = function(nextScale) {
+        const clamped = Math.max(0.5, Math.min(0.75, Number(nextScale) || 0.75));
+        if (Math.abs(clamped - renderScale) < 0.04) return;
+        renderScale = clamped;
+        resizeCanvas();
+    };
 
     window.addEventListener('resize', () => {
         resizeCanvas();
@@ -287,13 +294,24 @@
         }
     }
 
-    // Tab visibility and accessibility lifecycle.
+    // Tab visibility, bfcache lifecycle, and accessibility lifecycle.
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             stopLoop();
+            lastBackgroundPaint = 0;
         } else {
+            lastBackgroundPaint = 0;
             startLoop();
         }
+    });
+
+    window.addEventListener('pagehide', () => {
+        stopLoop();
+        lastBackgroundPaint = 0;
+    });
+    window.addEventListener('pageshow', () => {
+        lastBackgroundPaint = 0;
+        startLoop();
     });
 
     window.addEventListener('minkoi:zenchange', () => {

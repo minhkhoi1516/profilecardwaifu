@@ -929,13 +929,24 @@
         });
     }
 
-    // Persona changed by avatar.js
+    // Persona changed by avatar.js — schedule filter/capsule layout read in the
+    // upcoming animation frame so :root token mutation never forces synchronous layout.
+    let pendingPersonaFilterRaf = 0;
+    let pendingPersonaFilterKey = null;
     window.addEventListener('minkoi:persona', (e) => {
         const key = e.detail && e.detail.key;
         // Artwork preload finishes asynchronously on boot. It must not replace
         // the user's restored playlist filter; explicit persona changes still do.
         if (!key || e.detail.initial) return;
-        setFilter(key);
+        pendingPersonaFilterKey = key;
+        if (!pendingPersonaFilterRaf) {
+            pendingPersonaFilterRaf = requestAnimationFrame(() => {
+                pendingPersonaFilterRaf = 0;
+                const nextKey = pendingPersonaFilterKey;
+                pendingPersonaFilterKey = null;
+                if (nextKey) setFilter(nextKey);
+            });
+        }
     });
 
     // Audio Progress & Seek Bar with Pointer Dragging (Scrubbing)

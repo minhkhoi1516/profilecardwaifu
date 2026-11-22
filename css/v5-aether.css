@@ -190,7 +190,9 @@ body.light-mode .card-container {
     position: relative;
 }
 
-/* Soft ambient light bloom behind the unclipped artwork on its own GPU layer */
+/* Soft studio spotlight bloom behind the unclipped artwork (neutral so
+   --color-accent transitions never re-rasterize a 300px radial gradient;
+   the avatar pedestal & halos already carry the persona accent aura). */
 .avatar-zone::before {
     content: '';
     position: absolute;
@@ -198,13 +200,20 @@ body.light-mode .card-container {
     border-radius: 50%;
     background: radial-gradient(
         circle at 50% 48%,
-        var(--color-accent-glow) 0%,
-        transparent 68%
+        rgba(255, 255, 255, 0.13) 0%,
+        transparent 66%
     );
-    opacity: 0.62;
     transform: translateZ(0);
     pointer-events: none;
     z-index: 0;
+}
+
+body.light-mode .avatar-zone::before {
+    background: radial-gradient(
+        circle at 50% 48%,
+        rgba(255, 255, 255, 0.65) 0%,
+        transparent 66%
+    );
 }
 
 .soundstage-caption {
@@ -428,17 +437,17 @@ body.light-mode .now-playing-stage {
         0 6px 16px -2px rgba(0, 0, 0, 0.4);
 }
 
-/* Subtle GPU-only breathing halo when audio is actively playing */
+/* Subtle compositor-only breathing rim when audio is actively playing
+   (pure opacity animation, zero box-shadow or accent re-rasterization). */
 .play-hero-btn::after {
     content: '';
     position: absolute;
-    inset: -5px;
-    border-radius: 24px;
-    border: 1.5px solid color-mix(in srgb, var(--color-accent) 55%, rgba(255, 255, 255, 0.35));
-    box-shadow: 0 0 22px -2px var(--color-accent-glow);
+    inset: -4px;
+    border-radius: 23px;
+    border: 1.5px solid rgba(255, 255, 255, 0.42);
     opacity: 0;
     pointer-events: none;
-    transform: translateZ(0);
+    will-change: opacity;
 }
 
 .play-hero-btn.is-playing::after {
@@ -446,8 +455,8 @@ body.light-mode .now-playing-stage {
 }
 
 @keyframes aetherPlayPulse {
-    0%, 100% { opacity: 0.22; transform: scale(0.99) translateZ(0); }
-    50% { opacity: 0.68; transform: scale(1.03) translateZ(0); }
+    0%, 100% { opacity: 0.16; }
+    50% { opacity: 0.62; }
 }
 
 /* Playlist V5 search clear action */

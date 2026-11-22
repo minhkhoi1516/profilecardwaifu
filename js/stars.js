@@ -70,15 +70,25 @@
         }
     }
 
-    function resize() {
+    let dprCap = 2;
+    let pendingParticleReinit = 0;
+
+    function resize(reinit = true) {
         width = window.innerWidth;
         height = window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
         canvas.width = Math.floor(width * dpr);
         canvas.height = Math.floor(height * dpr);
-        ctx.scale(dpr, dpr);
-        initParticles();
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (reinit) initParticles();
     }
+
+    window.__setParticleDprCap = function(nextCap) {
+        const clamped = Math.max(1, Math.min(2, Number(nextCap) || 2));
+        if (Math.abs(clamped - dprCap) < 0.05) return;
+        dprCap = clamped;
+        resize(false);
+    };
 
     function createParticle(mode, randomizeY = false) {
         const depth = Math.random();
@@ -213,8 +223,10 @@
     let cachedAccentColor = '#38bdf8';
     const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
-    function refreshCachedAccent() {
-        const val = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+    function refreshCachedAccent(accentOverride) {
+        const val = (typeof accentOverride === 'string' && accentOverride.trim())
+            ? accentOverride.trim()
+            : getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
         if (val && val !== cachedAccentColor) {
             cachedAccentColor = val;
             particleSprites.clear();
@@ -318,13 +330,19 @@
         if (!animationId) render();
     }
 
-    // Dynamic Persona Hook: instantly adapt particle mode
-    function setAmbientParticleMode(personaIndex) {
-        refreshCachedAccent();
+    // Dynamic Persona Hook: adapt particle mode without forcing synchronous style recalc
+    function setAmbientParticleMode(personaIndex, accentOverride) {
+        const persona = (typeof CONFIG !== 'undefined' && CONFIG.personas) ? CONFIG.personas[personaIndex] : null;
+        refreshCachedAccent(accentOverride || persona?.accent);
         const newMode = getThemeForPersona(personaIndex);
         if (newMode !== currentThemeMode) {
             currentThemeMode = newMode;
-            initParticles();
+            if (!pendingParticleReinit) {
+                pendingParticleReinit = requestAnimationFrame(() => {
+                    pendingParticleReinit = 0;
+                    initParticles();
+                });
+            }
         }
         startParticlesIfAllowed();
     }
@@ -334,20 +352,45 @@
     window.addEventListener('resize', () => {
         if (resizeTimer) clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-            resize();
+            resize(true);
             startParticlesIfAllowed();
         }, 150);
     }, { passive: true });
 
     document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) startParticlesIfAllowed();
+        if (document.hidden) {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            lastParticlePaint = 0;
+        } else {
+            lastParticlePaint = 0;
+            startParticlesIfAllowed();
+        }
+    });
+
+    window.addEventListener('pagehide', () => {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+        lastParticlePaint = 0;
+    });
+    window.addEventListener('pageshow', () => {
+        lastParticlePaint = 0;
+        startParticlesIfAllowed();
     });
 
     window.addEventListener('minkoi:themechange', () => refreshCachedAccent());
-    window.addEventListener('minkoi:persona', () => refreshCachedAccent());
+    window.addEventListener('minkoi:persona', (e) => {
+        const accent = e?.detail?.persona?.accent;
+        if (accent) refreshCachedAccent(accent);
+    });
     window.addEventListener('minkoi:zenchange', () => {
         zenActive = document.body.classList.contains('zen-mode');
-        refreshCachedAccent();
+        const currentPersona = typeof window.getCurrentPersona === 'function' ? window.getCurrentPersona() : null;
+        refreshCachedAccent(currentPersona?.accent);
         startParticlesIfAllowed();
     });
 

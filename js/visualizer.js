@@ -115,15 +115,19 @@
         // character accent vivid rather than blending it into the backdrop.
         return darken ? mixColor(value, 0.3, [11, 16, 32]) : value;
     }
+    let dprCap = 2;
+
     function refreshPalette(event) {
-        const cs = global.getComputedStyle(doc.documentElement);
         const light = doc.body.classList.contains('light-mode');
         // Registered color properties can still be transitioning when the
-        // persona event fires. Cache the committed theme target, not its old
-        // interpolated computed RGB value.
+        // persona event fires. Prefer the committed persona target so persona
+        // switches never force a synchronous :root style recalculation.
         const persona = event?.detail?.persona || global.getCurrentPersona?.();
-        palette = [themeColor(persona?.accent || cs.getPropertyValue('--color-accent').trim() || '#38bdf8', light),
-            themeColor(persona?.accentSecondary || cs.getPropertyValue('--color-accent-secondary').trim() || '#818cf8', light)];
+        let cs = null;
+        const readVar = name => (cs ||= global.getComputedStyle(doc.documentElement)).getPropertyValue(name).trim();
+        const primaryRaw = persona?.accent || readVar('--color-accent') || '#38bdf8';
+        const secondaryRaw = persona?.accentSecondary || readVar('--color-accent-secondary') || '#818cf8';
+        palette = [themeColor(primaryRaw, light), themeColor(secondaryRaw, light)];
         highlight = mixColor(palette[0], light ? 0.32 : 0.46);
         buildGradient(gradientClock);
     }
@@ -169,7 +173,7 @@
     function measure() {
         refreshBarsVisibility();
         const w = stage.offsetWidth, h = stage.offsetHeight;
-        const dpr = Math.min(global.devicePixelRatio || 1, 2);
+        const dpr = Math.min(global.devicePixelRatio || 1, dprCap);
         const key = [w, h, avatar.offsetWidth, avatar.offsetHeight, dpr].join('/');
         if (key === geometryKey) return;
         geometryKey = key;
@@ -673,6 +677,8 @@
     audio.addEventListener('seeked', () => { seeking = false; engine.reset(false); start(); });
     audio.addEventListener('emptied', () => { engine.reset(true); start(); });
     doc.addEventListener('visibilitychange', () => { if (doc.hidden) stop(); else if (!audio.paused) { engine.reset(false); start(); } });
+    global.addEventListener('pagehide', () => { stop(); });
+    global.addEventListener('pageshow', () => { if (!doc.hidden && !audio.paused) { engine.reset(false); start(); } });
     reduced.addEventListener('change', () => { if (reduced.matches) stop(); else if (!audio.paused) start(); });
     global.addEventListener('minkoi:zenchange', () => { if (doc.body.classList.contains('zen-mode')) stop(); else if (!audio.paused) start(); });
     global.addEventListener('minkoi:persona', event => { refreshPalette(event); scheduleMeasure(); });
@@ -684,8 +690,15 @@
         [stage, art, avatar].forEach(el => observer.observe(el));
     }
     doc.fonts?.ready.then(scheduleMeasure);
+    function setDprCap(nextCap) {
+        const clamped = clamp(Number(nextCap) || 2, 1.15, 2);
+        if (Math.abs(clamped - dprCap) < 0.05) return;
+        dprCap = clamped;
+        scheduleMeasure();
+    }
+    global.__setVisualizerDprCap = setDprCap;
     global.MinkoiVisualizer = Object.freeze({
-        start, stop, setStyle, setControl, getStyle: () => style,
+        start, stop, setStyle, setControl, setDprCap, getStyle: () => style,
         getControls: () => ({ intensity, reactivity }),
         getMetrics: () => {
             const f = engine.features;

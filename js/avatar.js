@@ -365,7 +365,7 @@
 
         // Update ambient particle mode (Sakura petals, snowflakes, stardust)
         if (typeof window.setAmbientParticleMode === 'function') {
-            window.setAmbientParticleMode(index);
+            window.setAmbientParticleMode(index, persona.accent);
         }
 
         // Play gentle magic chime SFX & show quote when switched
