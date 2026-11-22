@@ -464,7 +464,8 @@
         _scrollLineToCenter(lineIdx, instant) {
             const body = this.dom.body;
             const ref = this.lineRefs[lineIdx];
-            if (!body || !ref || !ref.el) return;
+            if (!body || !ref || !ref.el) return false;
+            if (body.clientHeight <= 0 || ref.el.offsetHeight <= 0) return false;
             const targetTop = Math.max(
                 0,
                 ref.el.offsetTop - (body.clientHeight / 2) + (ref.el.offsetHeight / 2)
@@ -476,7 +477,7 @@
                     if (!this.scrollSpring.running) this.scrollSpring.snap(body.scrollTop);
                     this.scrollSpring.setTarget(targetTop);
                 }
-                return;
+                return true;
             }
             try {
                 body.scrollTo({
@@ -486,6 +487,18 @@
             } catch (_) {
                 body.scrollTop = targetTop;
             }
+            return true;
+        }
+
+        /**
+         * Reset drawer sync tracking when reopening the modal so the very first
+         * visible frame always highlights and centers the active lyric line.
+         */
+        resetDrawerSync() {
+            this.activeLineIndex = -1;
+            this.lastScrolledIndex = -1;
+            this.isUserScrolling = false;
+            this._syncRecenterVisibility(false);
         }
 
         /**
@@ -502,9 +515,9 @@
             // 1. Update Zen Mode floating lyric when active
             this._updateZenLyric(snapshot, zenOpen);
 
-            // 2. Skip drawer DOM updates when closed cleanly
+            // 2. Skip drawer DOM updates when closed cleanly WITHOUT mutating
+            //    this.activeLineIndex, so reopening mid-line still commits highlight & scroll.
             if (!drawerOpen || this.lineRefs.length === 0) {
-                this.activeLineIndex = activeIdx;
                 return;
             }
 
@@ -583,11 +596,20 @@
             });
 
             // Scroll target ONLY changes when active line actually changes!
-            if (activeIdx !== this.activeLineIndex || snapshot.wasSeek) {
+            if (activeIdx !== this.activeLineIndex || snapshot.wasSeek || (activeIdx >= 0 && this.lastScrolledIndex !== activeIdx)) {
                 this.activeLineIndex = activeIdx;
                 if (activeIdx >= 0 && this.viewMode !== 'full' && !this.isUserScrolling && (activeIdx !== this.lastScrolledIndex || snapshot.wasSeek)) {
-                    this.lastScrolledIndex = activeIdx;
-                    this._scrollLineToCenter(activeIdx, Boolean(snapshot.wasSeek));
+                    if (this._scrollLineToCenter(activeIdx, Boolean(snapshot.wasSeek))) {
+                        this.lastScrolledIndex = activeIdx;
+                    }
+                } else if (activeIdx < 0 && this.viewMode !== 'full' && !this.isUserScrolling && this.dom.body &&
+                           this.doc.lines[0] && Number.isFinite(this.doc.lines[0].startMs) && snapshot.timeMs < this.doc.lines[0].startMs) {
+                    this.lastScrolledIndex = -1;
+                    try {
+                        this.dom.body.scrollTo({ top: 0, behavior: snapshot.wasSeek ? 'auto' : 'smooth' });
+                    } catch (_) {
+                        this.dom.body.scrollTop = 0;
+                    }
                 }
                 this._syncRecenterVisibility(this.isUserScrolling);
             }

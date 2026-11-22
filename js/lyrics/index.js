@@ -52,14 +52,20 @@
         let displayLayers = safeGet('minkoi_lyrics_layers', 'jp,romaji,vi');
         if (!displayPresets.includes(displayLayers)) displayLayers = displayPresets[0];
 
+        function isDrawerActive() {
+            if (!lyricsModal) return false;
+            const state = lyricsModal.dataset.panelState;
+            return lyricsModal.classList.contains('open') || state === 'open' || state === 'opening';
+        }
+
         const syncEngine = new ns.SyncEngine(audio, {
             shouldAnimate: () => {
-                const drawerOpen = Boolean(lyricsModal && lyricsModal.classList.contains('open'));
+                const drawerOpen = isDrawerActive();
                 const zenOpen = document.body.classList.contains('zen-mode');
                 return drawerOpen || zenOpen;
             },
             onFrame: (snapshot) => {
-                const drawerOpen = Boolean(lyricsModal && lyricsModal.classList.contains('open'));
+                const drawerOpen = isDrawerActive();
                 const zenOpen = document.body.classList.contains('zen-mode');
                 renderer.updateFrame(snapshot, { drawerOpen, zenOpen });
             }
@@ -302,14 +308,35 @@
                 isCenterModal: true,
                 onBeforeOpen: () => {
                     const track = getActiveTrackFromPlayer();
-                    if (track && (!currentTrack || currentTrack.id !== track.id || currentTrack.file !== track.file)) {
-                        loadLyricsForTrack(track);
+                    const needsReload = track && (
+                        !currentTrack ||
+                        currentTrack.id !== track.id ||
+                        currentTrack.file !== track.file ||
+                        Boolean(currentDoc && currentDoc._isTransientFallback)
+                    );
+                    if (needsReload) {
+                        loadLyricsForTrack(track, { bypassCache: Boolean(currentDoc && currentDoc._isTransientFallback) });
                     }
-                    syncEngine.forceSync(true);
-                    if (!audio.paused) syncEngine.startLoop();
+                    if (typeof renderer.resetDrawerSync === 'function') {
+                        renderer.resetDrawerSync();
+                    }
+                    // Panel enters 'opening' state synchronously right after onBeforeOpen;
+                    // sync on the first visible frame so the active line is highlighted immediately.
+                    if (typeof global.requestAnimationFrame === 'function') {
+                        global.requestAnimationFrame(() => {
+                            if (!isDrawerActive()) return;
+                            syncEngine.forceSync(true);
+                            if (!audio.paused) syncEngine.startLoop();
+                        });
+                    }
                     if (typeof global.playChimeSFX === 'function') {
                         global.playChimeSFX(track?.persona || 'alya');
                     }
+                },
+                onAfterOpen: () => {
+                    if (!isDrawerActive()) return;
+                    syncEngine.forceSync(true);
+                    if (!audio.paused) syncEngine.startLoop();
                 },
                 onBeforeClose: () => {
                     toggleDisplayMenu(false);

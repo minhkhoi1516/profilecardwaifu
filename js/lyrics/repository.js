@@ -645,16 +645,17 @@
         const legacy = getCandidateForTrack(track);
         if (!track || !SOURCE_TRACKS.has(track.id) || ns.Matcher.detectVersion(track) === 'instrumental') return legacy;
         if (sourceDocuments.has(track.id)) return sourceDocuments.get(track.id);
+        const transientFallback = legacy ? { ...legacy, _isTransientFallback: true } : null;
         try {
             const response = await global.fetch(`js/lyrics/data/track-${track.id}.json?v=trilingual-1`, { signal });
-            if (!response.ok) return legacy;
+            if (!response.ok) return transientFallback;
             const candidate = await response.json();
-            if (!ns.Matcher.matchTrack(track, candidate).matched) return legacy;
+            if (!ns.Matcher.matchTrack(track, candidate).matched) return transientFallback;
             sourceDocuments.set(track.id, candidate);
             return candidate;
         } catch (error) {
             if (error.name === 'AbortError') throw error;
-            return legacy;
+            return transientFallback;
         }
     }
 

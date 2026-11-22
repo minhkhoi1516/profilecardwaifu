@@ -1825,7 +1825,10 @@
                 </div>
                 <div class="search-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    <input type="text" id="playlist-search-input" placeholder="Search track or artist..." value="${searchQuery}" autocomplete="off" spellcheck="false">
+                    <input type="text" id="playlist-search-input" placeholder="Search track or artist..." value="${searchQuery}" autocomplete="off" spellcheck="false" aria-label="Tìm bài hát hoặc nghệ sĩ">
+                    <button type="button" class="playlist-search-clear${searchQuery ? '' : ' is-hidden'}" id="playlist-search-clear" aria-label="Xóa từ khóa tìm kiếm" title="Xóa tìm kiếm">
+                        <i class="fas fa-xmark" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
             <div class="playlist-items-scroll" id="playlist-items-scroll"></div>
@@ -1837,9 +1840,36 @@
         });
 
         const searchInput = document.getElementById('playlist-search-input');
+        const searchClear = document.getElementById('playlist-search-clear');
+        const syncClearVisibility = () => {
+            if (searchClear) searchClear.classList.toggle('is-hidden', !searchQuery);
+        };
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 searchQuery = e.target.value;
+                syncClearVisibility();
+                updatePlaylistItems();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && searchQuery) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    searchQuery = '';
+                    searchInput.value = '';
+                    syncClearVisibility();
+                    updatePlaylistItems();
+                }
+            });
+        }
+        if (searchClear) {
+            searchClear.addEventListener('click', (e) => {
+                e.stopPropagation();
+                searchQuery = '';
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus({ preventScroll: true });
+                }
+                syncClearVisibility();
                 updatePlaylistItems();
             });
         }

@@ -192,15 +192,20 @@
             this.lastAudioTimeSec = 0;
             this.lastSamplePerfMs = 0;
             this.forceHardSnap = true;
+            this.isBuffering = false;
 
             this._boundTick = this._tick.bind(this);
             this._boundHardSync = this.forceSync.bind(this);
             this._boundPlay = this._onPlay.bind(this);
+            this._boundPlaying = this._onPlaying.bind(this);
+            this._boundWaiting = this._onWaiting.bind(this);
             this._boundPause = this._onPause.bind(this);
             this._boundSeeked = this._onSeeked.bind(this);
             this._boundTimeUpdate = this._onTimeUpdate.bind(this);
             this._boundRateChange = this._onRateChange.bind(this);
             this._boundVisibility = this._onVisibilityChange.bind(this);
+            this._boundPageHide = this._onPageHide.bind(this);
+            this._boundPageShow = this._onPageShow.bind(this);
 
             this._attachListeners();
         }
@@ -208,6 +213,11 @@
         _attachListeners() {
             if (!this.audio) return;
             this.audio.addEventListener('play', this._boundPlay);
+            this.audio.addEventListener('playing', this._boundPlaying);
+            this.audio.addEventListener('canplay', this._boundPlaying);
+            this.audio.addEventListener('loadedmetadata', this._boundSeeked);
+            this.audio.addEventListener('waiting', this._boundWaiting);
+            this.audio.addEventListener('stalled', this._boundWaiting);
             this.audio.addEventListener('pause', this._boundPause);
             this.audio.addEventListener('ended', this._boundPause);
             this.audio.addEventListener('seeked', this._boundSeeked);
@@ -216,6 +226,10 @@
             if (typeof document !== 'undefined') {
                 document.addEventListener('visibilitychange', this._boundVisibility);
             }
+            if (typeof global.addEventListener === 'function') {
+                global.addEventListener('pagehide', this._boundPageHide);
+                global.addEventListener('pageshow', this._boundPageShow);
+            }
         }
 
         destroy() {
@@ -223,6 +237,11 @@
             this.stopLoop();
             if (this.audio) {
                 this.audio.removeEventListener('play', this._boundPlay);
+                this.audio.removeEventListener('playing', this._boundPlaying);
+                this.audio.removeEventListener('canplay', this._boundPlaying);
+                this.audio.removeEventListener('loadedmetadata', this._boundSeeked);
+                this.audio.removeEventListener('waiting', this._boundWaiting);
+                this.audio.removeEventListener('stalled', this._boundWaiting);
                 this.audio.removeEventListener('pause', this._boundPause);
                 this.audio.removeEventListener('ended', this._boundPause);
                 this.audio.removeEventListener('seeked', this._boundSeeked);
@@ -231,6 +250,10 @@
             }
             if (typeof document !== 'undefined') {
                 document.removeEventListener('visibilitychange', this._boundVisibility);
+            }
+            if (typeof global.removeEventListener === 'function') {
+                global.removeEventListener('pagehide', this._boundPageHide);
+                global.removeEventListener('pageshow', this._boundPageShow);
             }
         }
 
@@ -258,9 +281,10 @@
             const docOffsetMs = this.document && Number.isFinite(this.document.offsetMs) ? this.document.offsetMs : 0;
             const totalOffsetMs = Math.round(this.userOffsetSec * 1000) + docOffsetMs;
 
-            // Whenever paused, seeking, or when audio.currentTime changed, hard-anchor directly to audio.currentTime
+            // Whenever paused, seeking, buffering, or when audio.currentTime changed, hard-anchor directly to audio.currentTime
             const audioDelta = Math.abs(rawAudioSec - this.lastAudioTimeSec);
-            if (this.forceHardSnap || this.audio.paused || this.audio.seeking || audioDelta > 0.001) {
+            const notReady = Number.isFinite(this.audio.readyState) && this.audio.readyState < 3;
+            if (this.forceHardSnap || this.audio.paused || this.audio.seeking || this.isBuffering || notReady || audioDelta > 0.001) {
                 this.lastAudioTimeSec = rawAudioSec;
                 this.lastSamplePerfMs = nowPerf;
                 this.forceHardSnap = false;
@@ -294,15 +318,48 @@
             this.startLoop();
         }
 
+        _onPlaying() {
+            this.isBuffering = false;
+            this.forceHardSnap = true;
+            this.emitSnapshot(false);
+            if (this.audio && !this.audio.paused) {
+                this.startLoop();
+            }
+        }
+
+        _onWaiting() {
+            this.isBuffering = true;
+            this.forceHardSnap = true;
+            this.emitSnapshot(false);
+        }
+
         _onPause() {
+            this.isBuffering = false;
             this.stopLoop();
             this.forceHardSnap = true;
             this.emitSnapshot(false);
         }
 
         _onSeeked() {
+            this.isBuffering = false;
             this.forceHardSnap = true;
             this.emitSnapshot(true);
+            if (this.audio && !this.audio.paused) {
+                this.startLoop();
+            }
+        }
+
+        _onPageHide() {
+            this.stopLoop();
+        }
+
+        _onPageShow() {
+            this.isBuffering = false;
+            this.forceHardSnap = true;
+            this.emitSnapshot(true);
+            if (this.audio && !this.audio.paused) {
+                this.startLoop();
+            }
         }
 
         _onTimeUpdate() {
@@ -312,6 +369,9 @@
                 this.emitSnapshot(false);
             } else if (!this.rafId) {
                 this.emitSnapshot(false);
+            }
+            if (!this.rafId && this.audio && !this.audio.paused && this.shouldAnimate()) {
+                this.startLoop();
             }
         }
 

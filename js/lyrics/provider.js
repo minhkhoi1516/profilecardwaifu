@@ -189,7 +189,11 @@
             }, track);
         }
 
-        Cache.setParsed(track, finalDoc);
+        if (candidate && candidate._isTransientFallback && finalDoc) {
+            finalDoc._isTransientFallback = true;
+        } else {
+            Cache.setParsed(track, finalDoc);
+        }
         return {
             document: finalDoc,
             diagnostics: Diagnostics.analyze(finalDoc, track, audioDurationSec, matchResult),
