@@ -1681,7 +1681,6 @@
                 align: 'left',
                 onBeforeOpen: () => {
                     renderSleepTimerMenu();
-                    positionDesktopFlyout(sleepTimerMenu, sleepTimerBtn);
                 }
             });
         }
@@ -1694,7 +1693,6 @@
                 align: 'center',
                 onBeforeOpen: () => {
                     renderFxMenu();
-                    positionDesktopFlyout(audioFxMenu, audioFxBtn);
                 }
             });
         }
@@ -1710,7 +1708,6 @@
                         buildPlaylistShell();
                     }
                     updatePlaylistItems();
-                    positionDesktopFlyout(playlistMenu, playlistToggleBtn);
                 },
                 onAfterOpen: () => {
                     const input = document.getElementById('playlist-search-input');
@@ -2098,11 +2095,22 @@
         }
     }
 
+    let lastPlaylistRenderSig = '';
+
     function updatePlaylistItems() {
         if (!playlistMenu) return;
         if (!document.getElementById('playlist-items-scroll')) {
             buildPlaylistShell();
+            lastPlaylistRenderSig = '';
         }
+
+        const scrollBox = document.getElementById('playlist-items-scroll');
+        if (!scrollBox) return;
+        const nextSig = `${currentFilter}|${currentTrackIndex}|${searchQuery}|${favTrackIds.slice().sort((a, b) => a - b).join(',')}`;
+        if (nextSig === lastPlaylistRenderSig && scrollBox.childElementCount > 0) {
+            return;
+        }
+        lastPlaylistRenderSig = nextSig;
 
         const visible = getFilteredPlaylist();
         const filterPersona = (currentFilter === 'all' || currentFilter === 'favorites') ? null : CONFIG.getPersona(currentFilter);
@@ -2123,9 +2131,6 @@
             const q = searchQuery.toLowerCase();
             return `${song.name} ${song.artist} ${song.versionLabel || song.version || ''}`.toLowerCase().includes(q);
         });
-
-        const scrollBox = document.getElementById('playlist-items-scroll');
-        if (!scrollBox) return;
 
         if (filtered.length === 0) {
             scrollBox.innerHTML = '<div class="no-tracks">Không tìm thấy bài hát phù hợp</div>';

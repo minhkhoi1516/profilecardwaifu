@@ -271,6 +271,49 @@ body.light-mode .avatar-zone::before {
     );
 }
 
+/* V5.4.1 Desktop Compositing Discipline (proven via 1366x768 multi-trial ablation):
+   1. Keep Level-1 Glass (.card-container blur(20px), .site-brand-header blur(12px),
+      popups blur(18px), Zen dock blur(12px)) 100% intact, while removing ONLY
+      redundant nested backdrop-filter passes inside .card-container.
+   2. Drop full-screen CPU SVG <feTurbulence> + soft-light blend and .banner-layer
+      software filter so original anime artwork renders crisp without CPU re-raster.
+   3. Replace animated dual drop-shadow(var(--color-accent-glow)) CPU blur transitions
+      on chibi artwork with a clean neutral contact shadow (aura stays on pedestal/halos/viz). */
+.banner-layer {
+    filter: none;
+}
+
+.banner-stage::before {
+    background-image: radial-gradient(
+        ellipse at 25% 20%,
+        var(--color-accent-glow, rgba(56, 189, 248, 0.14)) 0%,
+        transparent 60%
+    );
+    opacity: 0.56;
+    mix-blend-mode: normal;
+}
+
+.now-playing-stage,
+.audio-category-nav,
+body.light-mode .audio-category-nav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.avatar-img,
+.avatar-portrait {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.54));
+    transition: transform 0.35s var(--ease-out-quint), opacity 0.25s ease;
+}
+
+.vinyl-art {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.62));
+}
+
+.lyrics-drawer-modal {
+    will-change: auto;
+}
+
 /* V5.4 Compositor Discipline: keep rippleGlow strictly on GPU transform/opacity
    (moves static box-shadow off @keyframes so idle desktop avoids ~60/s main-thread style/paint). */
 .ripple-ground span {

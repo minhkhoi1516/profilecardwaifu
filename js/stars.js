@@ -21,12 +21,13 @@
     let zenEmphasis = zenActive ? 1 : 0;
     const particleSprites = new Map();
 
-    // Cache small glowing sprites; moving particles still render at display cadence.
-    // Shadow kernels are rasterized once per radius/color, not per particle/frame.
+    // Cache small glowing sprites keyed by family+color+radius (bounded LRU) so
+    // persona switches reuse already-rasterized sprites instead of stalling CPU shadowBlur.
+    const MAX_SPRITE_CACHE = 32;
     function drawGlow(p, radius, color, glow, bubble = false) {
         const bucket = Math.max(0.5, Math.ceil(radius * 2) / 2);
         const family = p.type === 'snow' ? (p.isCrystal ? 0 : 1) : (bubble ? 2 : 3);
-        const key = family * 64 + bucket * 2;
+        const key = `${family}:${color}:${bucket}`;
         let sprite = particleSprites.get(key);
         if (!sprite) {
             const extent = Math.ceil(bucket + glow * 2 + 2);
@@ -47,6 +48,10 @@
             }
             paint.fill();
             sprite = { image, extent };
+            if (particleSprites.size >= MAX_SPRITE_CACHE) {
+                const oldestKey = particleSprites.keys().next().value;
+                if (oldestKey !== undefined) particleSprites.delete(oldestKey);
+            }
             particleSprites.set(key, sprite);
         }
         const extent = sprite.extent * radius / bucket;
@@ -238,7 +243,6 @@
             : getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
         if (val && val !== cachedAccentColor) {
             cachedAccentColor = val;
-            particleSprites.clear();
         }
     }
 
