@@ -71,22 +71,31 @@
     }
 
     let dprCap = 2;
+    let maxDesktopPixels = 1050000;
     let pendingParticleReinit = 0;
 
     function resize(reinit = true) {
         width = window.innerWidth;
         height = window.innerHeight;
-        const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
-        canvas.width = Math.floor(width * dpr);
-        canvas.height = Math.floor(height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const baseDpr = Math.min(window.devicePixelRatio || 1, dprCap);
+        // Keep mobile untouched; bound desktop 2D canvas backing store so 1080p/4K
+        // and Windows 150%-200% DPI displays avoid multi-megabyte uploads every frame.
+        const areaScale = width >= 1024 ? Math.sqrt(maxDesktopPixels / Math.max(1, width * height)) : baseDpr;
+        const scale = Math.max(0.5, Math.min(baseDpr, areaScale));
+        canvas.width = Math.max(1, Math.floor(width * scale));
+        canvas.height = Math.max(1, Math.floor(height * scale));
+        ctx.setTransform(scale, 0, 0, scale, 0, 0);
         if (reinit) initParticles();
     }
 
-    window.__setParticleDprCap = function(nextCap) {
+    window.__setParticleDprCap = function(nextCap, nextMaxPixels) {
         const clamped = Math.max(1, Math.min(2, Number(nextCap) || 2));
-        if (Math.abs(clamped - dprCap) < 0.05) return;
+        const clampedPixels = Number.isFinite(Number(nextMaxPixels))
+            ? Math.max(520000, Math.min(1400000, Number(nextMaxPixels)))
+            : (clamped < 1.5 ? 640000 : 1050000);
+        if (Math.abs(clamped - dprCap) < 0.05 && Math.abs(clampedPixels - maxDesktopPixels) < 20000) return;
         dprCap = clamped;
+        maxDesktopPixels = clampedPixels;
         resize(false);
     };
 

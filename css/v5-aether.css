@@ -271,6 +271,17 @@ body.light-mode .avatar-zone::before {
     );
 }
 
+/* V5.4 Compositor Discipline: keep rippleGlow strictly on GPU transform/opacity
+   (moves static box-shadow off @keyframes so idle desktop avoids ~60/s main-thread style/paint). */
+.ripple-ground span {
+    box-shadow: 0 0 12px var(--color-accent);
+}
+
+@keyframes rippleGlow {
+    0% { transform: scale(0.92); opacity: 0.75; }
+    100% { transform: scale(1.38); opacity: 0; }
+}
+
 .soundstage-caption {
     bottom: 6px;
     left: 4px;

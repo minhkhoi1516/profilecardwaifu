@@ -24,15 +24,21 @@
 
     // Fragment Shader: Procedural Domain Warping Noise reactive to Bass & Persona Accent
     const fsSource = `
+        #ifdef GL_FRAGMENT_PRECISION_HIGH
+        precision highp float;
+        #else
         precision mediump float;
+        #endif
         uniform vec2 u_resolution;
         uniform float u_time;
         uniform float u_bass;
         uniform vec3 u_accent;
 
-        // Fast procedural hash
+        // Pure ALU polynomial hash (eliminates 44 transcendental sin() ops/pixel on desktop GPUs)
         float hash(vec2 p) {
-            return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+            vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+            p3 = fract(p3 + dot(p3, p3.yzx + 19.19));
+            return fract((p3.x + p3.y) * p3.z * 7.31);
         }
 
         // Value noise with cubic hermite curve
@@ -187,11 +193,19 @@
     // Fragment work at DPR 3 drops by ~4x. No feature is disabled and the
     // animation still runs at the display refresh rate.
     let renderScale = 0.75;
+    // Aspect-preserving pixel budget keeps desktop fragment work proportional
+    // to mobile (untouched 293x633 at 390x844; ~653x367 at 1080p) since low-frequency
+    // atmospheric fog carries zero high-frequency detail above ~650px wide.
+    let maxFluidPixels = 240000;
 
     // Adaptive bounded render resolution (always stays live at display refresh rate).
     function resizeCanvas() {
-        const w = Math.max(1, Math.round(window.innerWidth * renderScale));
-        const h = Math.max(1, Math.round(window.innerHeight * renderScale));
+        const vw = Math.max(1, window.innerWidth);
+        const vh = Math.max(1, window.innerHeight);
+        const areaScale = Math.sqrt(maxFluidPixels / (vw * vh));
+        const effectiveScale = Math.min(renderScale, areaScale);
+        const w = Math.max(1, Math.round(vw * effectiveScale));
+        const h = Math.max(1, Math.round(vh * effectiveScale));
         if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w;
             canvas.height = h;
@@ -199,10 +213,14 @@
         }
     }
 
-    window.__setFluidRenderScale = function(nextScale) {
-        const clamped = Math.max(0.5, Math.min(0.75, Number(nextScale) || 0.75));
-        if (Math.abs(clamped - renderScale) < 0.04) return;
-        renderScale = clamped;
+    window.__setFluidRenderScale = function(nextScale, nextMaxPixels) {
+        const clampedScale = Math.max(0.45, Math.min(0.75, Number(nextScale) || 0.75));
+        const clampedPixels = Number.isFinite(Number(nextMaxPixels))
+            ? Math.max(110000, Math.min(280000, Number(nextMaxPixels)))
+            : (clampedScale < 0.65 ? 135000 : 240000);
+        if (Math.abs(clampedScale - renderScale) < 0.04 && Math.abs(clampedPixels - maxFluidPixels) < 8000) return;
+        renderScale = clampedScale;
+        maxFluidPixels = clampedPixels;
         resizeCanvas();
     };
 

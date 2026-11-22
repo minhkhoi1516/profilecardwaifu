@@ -479,16 +479,26 @@
         if (morphArt) morphArt.src = resolvedCover;
         if (morphTitle) morphTitle.textContent = track.name;
         if (morphArtist) morphArtist.textContent = track.artist;
+        const prevCoverSrc = albumArt ? albumArt.getAttribute('src') : '';
         if (albumArt) {
             albumArt.src = resolvedCover;
             albumArt.alt = track.name ? `${track.name} Cover` : 'Album Cover';
         }
+        animateTrackContinuity(Boolean(resolvedCover && resolvedCover !== prevCoverSrc));
+        hasLoadedInitialTrack = true;
 
         if (typeof resetSeekScrubState === 'function') resetSeekScrubState();
         setSeekProgressUI(0);
 
-        if (currentTimeEl) currentTimeEl.textContent = '0:00';
-        if (totalTimeEl) totalTimeEl.textContent = track.duration || '0:00';
+        if (currentTimeEl) {
+            currentTimeEl.textContent = '0:00';
+            lastCurrentTimeText = '0:00';
+        }
+        if (totalTimeEl) {
+            const initDur = track.duration || '0:00';
+            totalTimeEl.textContent = initDur;
+            lastTotalTimeText = initDur;
+        }
         if (seekContainer) seekContainer.setAttribute('aria-valuenow', '0');
 
         // Maintain playback speed
@@ -519,6 +529,32 @@
         }
     }
 
+    let hasLoadedInitialTrack = false;
+    const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    const trackInfoCol = trackNameEl ? trackNameEl.closest('.track-metadata') : null;
+
+    function animateTrackContinuity(coverChanged) {
+        if (!hasLoadedInitialTrack || reducedMotionMQ?.matches) return;
+        const opts = { duration: 210, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' };
+        if (trackInfoCol && typeof trackInfoCol.animate === 'function') {
+            trackInfoCol.animate(
+                [
+                    { opacity: 0.58, transform: 'translate3d(0, 4px, 0)' },
+                    { opacity: 1, transform: 'translate3d(0, 0, 0)' }
+                ],
+                opts
+            );
+        }
+        if (coverChanged && albumArt && typeof albumArt.animate === 'function') {
+            albumArt.animate(
+                [
+                    { opacity: 0.68 },
+                    { opacity: 1 }
+                ],
+                opts
+            );
+        }
+    }
     let resetSeekScrubState = null;
     let volumeThumbCtrl = null;
     const volumeDockEl = volumeCtrl ? volumeCtrl.closest('.volume-slider-dock') : null;
@@ -970,17 +1006,33 @@
 
     // Dual-Sided Time Display with Remaining Time Mode
     let isRemainingTimeMode = false;
+    let lastCurrentTimeText = '';
+    let lastTotalTimeText = '';
 
     function updateTimeDisplay(current, duration) {
-        if (currentTimeEl) currentTimeEl.textContent = formatTime(current);
+        if (currentTimeEl) {
+            const curText = formatTime(current);
+            if (curText !== lastCurrentTimeText) {
+                lastCurrentTimeText = curText;
+                currentTimeEl.textContent = curText;
+            }
+        }
         if (totalTimeEl && duration && !isNaN(duration)) {
             if (isRemainingTimeMode) {
                 const remaining = Math.max(0, duration - current);
-                totalTimeEl.textContent = `-${formatTime(remaining)}`;
-                totalTimeEl.title = 'Nhấp để xem tổng thời lượng';
+                const remText = `-${formatTime(remaining)}`;
+                if (remText !== lastTotalTimeText) {
+                    lastTotalTimeText = remText;
+                    totalTimeEl.textContent = remText;
+                    totalTimeEl.title = 'Nhấp để xem tổng thời lượng';
+                }
             } else {
-                totalTimeEl.textContent = formatTime(duration);
-                totalTimeEl.title = 'Nhấp để xem thời gian còn lại';
+                const durText = formatTime(duration);
+                if (durText !== lastTotalTimeText) {
+                    lastTotalTimeText = durText;
+                    totalTimeEl.textContent = durText;
+                    totalTimeEl.title = 'Nhấp để xem thời gian còn lại';
+                }
             }
         }
     }
@@ -1196,11 +1248,22 @@
 
         let activeSeekPointerId = null;
         let scrubRect = null;
-        let cachedTipWidth = 52;
-        let tipWidthDirty = true;
+        let cachedTipWidth = 54;
         let lastTipSec = -1;
         let lastPeekBucket = -1;
         let lastPeekKey = '';
+
+        // Track tooltip width passively via ResizeObserver so scrubbing never forces synchronous reflows.
+        if (seekTip && typeof ResizeObserver === 'function') {
+            const tipRO = new ResizeObserver((entries) => {
+                const entry = entries[0];
+                if (!entry) return;
+                const box = entry.borderBoxSize && entry.borderBoxSize[0];
+                const w = box ? box.inlineSize : entry.contentRect.width;
+                if (w > 20) cachedTipWidth = w;
+            });
+            tipRO.observe(seekTip);
+        }
 
         function hideSeekTooltip() {
             if (!seekTip) return;
@@ -1209,7 +1272,7 @@
             lastTipSec = -1;
             lastPeekBucket = -1;
             lastPeekKey = '';
-            tipWidthDirty = true;
+            cachedTipWidth = 54;
         }
 
         function updateSeekTooltip(pos, rect, allowLyricPeek) {
@@ -1217,11 +1280,11 @@
             const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
             const previewSec = pos * duration;
             const secFloor = Math.floor(previewSec);
+            const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
 
             if (seekTipTime && secFloor !== lastTipSec) {
                 lastTipSec = secFloor;
                 seekTipTime.textContent = formatTime(previewSec);
-                if (!lastPeekKey) tipWidthDirty = true;
             }
 
             if (allowLyricPeek && duration > 0 && seekTipLyric) {
@@ -1231,10 +1294,16 @@
                     const peek = window.MinkoiLyrics?.controller?.peekLineAt?.(previewSec) || null;
                     const nextKey = peek ? `${peek.index}:${peek.text}` : '';
                     if (nextKey !== lastPeekKey) {
+                        const hadLyric = Boolean(lastPeekKey);
                         lastPeekKey = nextKey;
                         seekTipLyric.textContent = peek ? peek.text : '';
                         seekTip.classList.toggle('has-lyric', Boolean(peek));
-                        tipWidthDirty = true;
+                        if (!peek) {
+                            cachedTipWidth = 54;
+                        } else if (!hadLyric) {
+                            // Safe frame-0 conservative bound before ResizeObserver delivers exact width
+                            cachedTipWidth = Math.min(vw <= 430 ? 224 : 268, Math.max(120, vw - 28));
+                        }
                     }
                 }
             } else if (lastPeekKey) {
@@ -1242,22 +1311,14 @@
                 lastPeekBucket = -1;
                 if (seekTipLyric) seekTipLyric.textContent = '';
                 seekTip.classList.remove('has-lyric');
-                tipWidthDirty = true;
+                cachedTipWidth = 54;
             }
 
-            const wasVisible = seekTip.classList.contains('visible');
-            if (!wasVisible) {
+            if (!seekTip.classList.contains('visible')) {
                 seekTip.classList.add('visible');
-                tipWidthDirty = true;
-            }
-
-            if (tipWidthDirty || !cachedTipWidth) {
-                cachedTipWidth = seekTip.offsetWidth || 52;
-                tipWidthDirty = false;
             }
 
             const halfTip = cachedTipWidth / 2;
-            const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
             const edgePad = 12;
             const minFromViewport = (edgePad + halfTip) - rect.left;
             const maxFromViewport = (vw - edgePad - halfTip) - rect.left;
@@ -1349,7 +1410,6 @@
 
         window.addEventListener('resize', () => {
             scrubRect = null;
-            tipWidthDirty = true;
         }, { passive: true });
 
         // Keyboard accessibility for Seek Bar (instant visual sync even when paused)

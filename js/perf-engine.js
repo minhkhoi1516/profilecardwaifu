@@ -13,29 +13,44 @@
     const audio = doc?.getElementById?.('audio-player');
     if (!doc) return;
 
-    const QUALITY_FULL = { tier: 'full', fluidScale: 0.75, dprCap: 2.0 };
-    const QUALITY_BALANCED = { tier: 'balanced', fluidScale: 0.56, dprCap: 1.3 };
+    const QUALITY_FULL = { tier: 'full', fluidScale: 0.75, fluidMaxPixels: 240000, particleMaxPixels: 1050000, dprCap: 2.0 };
+    const QUALITY_BALANCED = { tier: 'balanced', fluidScale: 0.56, fluidMaxPixels: 135000, particleMaxPixels: 640000, dprCap: 1.25 };
 
     let currentQuality = QUALITY_FULL;
     let lifecycleHidden = Boolean(doc.hidden);
     let lastAvgFrameMs = 16.7;
+    let lastP95FrameMs = 16.7;
     let heavyStreak = 0;
     let healthyStreak = 0;
     let sampleRaf = 0;
     let cooldownTimer = 0;
     let sampleStart = 0;
     let lastTick = 0;
-    let frameSum = 0;
-    let frameCount = 0;
+    let idleProbesRemaining = 2;
+    const frameSamples = [];
+
+    function isActivePlayback() {
+        return Boolean(audio && !audio.paused);
+    }
+
+    function hasLiveAmbientGraphics() {
+        if (lifecycleHidden) return false;
+        if (global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return false;
+        return Boolean(doc.getElementById('fluid-bg-canvas') || doc.getElementById('starry-canvas'));
+    }
 
     function applyQuality(next) {
         if (!next || next.tier === currentQuality.tier) return;
         currentQuality = next;
-        try { global.__setFluidRenderScale?.(next.fluidScale); } catch (_) {}
-        try { global.__setParticleDprCap?.(next.dprCap); } catch (_) {}
+        try { global.__setFluidRenderScale?.(next.fluidScale, next.fluidMaxPixels); } catch (_) {}
+        try { global.__setParticleDprCap?.(next.dprCap, next.particleMaxPixels); } catch (_) {}
         try { global.__setVisualizerDprCap?.(next.dprCap); } catch (_) {}
         global.dispatchEvent(new CustomEvent('minkoi:perfquality', {
-            detail: { ...currentQuality, lastAvgFrameMs: Number(lastAvgFrameMs.toFixed(1)) }
+            detail: {
+                ...currentQuality,
+                lastAvgFrameMs: Number(lastAvgFrameMs.toFixed(1)),
+                lastP95FrameMs: Number(lastP95FrameMs.toFixed(1))
+            }
         }));
     }
 
@@ -50,21 +65,26 @@
         }
         sampleStart = 0;
         lastTick = 0;
-        frameSum = 0;
-        frameCount = 0;
+        frameSamples.length = 0;
     }
 
     function finishWindow() {
         sampleRaf = 0;
-        if (frameCount >= 20) {
-            lastAvgFrameMs = frameSum / frameCount;
-            if (lastAvgFrameMs > 28) {
+        const count = frameSamples.length;
+        if (count >= 18) {
+            let sum = 0;
+            for (let i = 0; i < count; i++) sum += frameSamples[i];
+            lastAvgFrameMs = sum / count;
+            frameSamples.sort((a, b) => a - b);
+            lastP95FrameMs = frameSamples[Math.min(count - 1, Math.floor(count * 0.95))];
+
+            if (lastAvgFrameMs > 26 || lastP95FrameMs > 42) {
                 heavyStreak += 1;
                 healthyStreak = 0;
                 if (heavyStreak >= 2 && currentQuality.tier === 'full') {
                     applyQuality(QUALITY_BALANCED);
                 }
-            } else if (lastAvgFrameMs < 19.5) {
+            } else if (lastAvgFrameMs < 19.2 && lastP95FrameMs < 30) {
                 healthyStreak += 1;
                 heavyStreak = 0;
                 if (healthyStreak >= 2 && currentQuality.tier !== 'full') {
@@ -75,31 +95,36 @@
                 healthyStreak = 0;
             }
         }
-        if (!lifecycleHidden && audio && !audio.paused) {
+        frameSamples.length = 0;
+
+        if (!lifecycleHidden && isActivePlayback()) {
             cooldownTimer = global.setTimeout(startSampleWindow, 7500);
+        } else if (!lifecycleHidden && hasLiveAmbientGraphics() && idleProbesRemaining > 0) {
+            // Bounded idle probes on desktop settle (never runs a permanent background RAF loop)
+            idleProbesRemaining -= 1;
+            const delay = heavyStreak > 0 ? 1800 : 4500;
+            cooldownTimer = global.setTimeout(startSampleWindow, delay);
         }
     }
 
     function sampleTick(now) {
-        if (lifecycleHidden || !audio || audio.paused) {
+        if (lifecycleHidden || (!isActivePlayback() && !hasLiveAmbientGraphics())) {
             stopSampling();
             return;
         }
         if (!sampleStart) {
             sampleStart = now;
             lastTick = now;
-            frameSum = 0;
-            frameCount = 0;
+            frameSamples.length = 0;
         } else {
             const dt = now - lastTick;
             lastTick = now;
             // Ignore outlier pause/background gaps > 140ms so tab switches never skew tiering
             if (dt > 2 && dt < 140) {
-                frameSum += dt;
-                frameCount += 1;
+                frameSamples.push(dt);
             }
         }
-        if (now - sampleStart >= 1800) {
+        if (now - sampleStart >= 1600) {
             finishWindow();
             return;
         }
@@ -107,7 +132,8 @@
     }
 
     function startSampleWindow() {
-        if (sampleRaf || lifecycleHidden || !audio || audio.paused) return;
+        if (sampleRaf || lifecycleHidden) return;
+        if (!isActivePlayback() && !hasLiveAmbientGraphics()) return;
         if (global.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
         if (cooldownTimer) {
             global.clearTimeout(cooldownTimer);
@@ -121,8 +147,11 @@
         lifecycleHidden = Boolean(hidden);
         if (lifecycleHidden) {
             stopSampling();
-        } else if (audio && !audio.paused) {
+        } else if (isActivePlayback()) {
             cooldownTimer = global.setTimeout(startSampleWindow, 1200);
+        } else if (hasLiveAmbientGraphics() && currentQuality.tier === 'full') {
+            idleProbesRemaining = 1;
+            cooldownTimer = global.setTimeout(startSampleWindow, 2200);
         }
         global.dispatchEvent(new CustomEvent('minkoi:lifecycle', {
             detail: { hidden: lifecycleHidden, reason }
@@ -146,17 +175,25 @@
         audio.addEventListener('ended', stopSampling);
     }
 
+    // Bounded initial desktop/ambient probe after boot settles so paused desktop GPUs still benefit
+    if (!lifecycleHidden && hasLiveAmbientGraphics()) {
+        cooldownTimer = global.setTimeout(startSampleWindow, 2000);
+    }
+
     global.MinkoiPerf = Object.freeze({
         getState: () => ({
             tier: currentQuality.tier,
             fluidScale: currentQuality.fluidScale,
+            fluidMaxPixels: currentQuality.fluidMaxPixels,
             dprCap: currentQuality.dprCap,
             lastAvgFrameMs: Number(lastAvgFrameMs.toFixed(1)),
+            lastP95FrameMs: Number(lastP95FrameMs.toFixed(1)),
             lifecycleHidden
         }),
         resetQuality: () => {
             heavyStreak = 0;
             healthyStreak = 0;
+            idleProbesRemaining = 2;
             applyQuality(QUALITY_FULL);
         }
     });
