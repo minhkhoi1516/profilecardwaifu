@@ -38,12 +38,14 @@
 
     function render(value) {
         const f = clamp(value, -0.15, 1.04);
+        const t = clamp(f / 0.72, 0, 1);
+        const alpha = t * (2 - t);
         menu.style.transformOrigin = `${originX}px ${originY}px`;
         menu.style.transform = sheet
             ? `translateY(${((1 - f) * (height + 16)).toFixed(2)}px)`
-            : `translateY(${((1 - f) * 7).toFixed(2)}px) scale(${(0.9 + f * 0.1).toFixed(4)})`;
-        menu.style.opacity = clamp(f * 1.5, 0, 1).toFixed(3);
-        scrim.style.opacity = clamp(f, 0, 1).toFixed(3);
+            : `translateY(${((1 - Math.min(1, f)) * 7).toFixed(2)}px) scale(${(0.9 + f * 0.1).toFixed(4)})`;
+        menu.style.opacity = alpha.toFixed(3);
+        scrim.style.opacity = clamp(alpha * 0.95, 0, 1).toFixed(3);
     }
     function setState(next) {
         state = next;

@@ -187,6 +187,7 @@
             '.persona-chip',
             '.social-link-pill',
             '.fx-preset-btn',
+            '.fx-option',
             '.playlist-row',
             '.row-fav-btn',
             '.top-more-item',
@@ -323,9 +324,18 @@
         }
 
         const hero = el => el.matches('.play-hero-btn');
-        function press(el) {
+        const pressLit = el => el.matches('.persona-chip, .social-link-pill, .top-action-btn, .ctrl-btn, .playlist-row, .fx-option, .viz-menu-item');
+        function press(el, event) {
+            el.classList.add('is-pressed');
+            if (event && Number.isFinite(event.clientX) && pressLit(el)) {
+                const r = el.getBoundingClientRect();
+                if (r.width > 0 && r.height > 0) {
+                    el.style.setProperty('--press-x', `${(event.clientX - r.left).toFixed(1)}px`);
+                    el.style.setProperty('--press-y', `${(event.clientY - r.top).toFixed(1)}px`);
+                }
+            }
             if (spLib.isAccessibilityReducedMotion()) return;
-            const quiet = el.matches('.cat-tab, .social-link-pill, .playlist-row, .row-fav-btn, .top-more-item, .nav-material-switch button, .lyrics-display-menu button, .viz-menu-item');
+            const quiet = el.matches('.cat-tab, .social-link-pill, .playlist-row, .row-fav-btn, .top-more-item, .nav-material-switch button, .lyrics-display-menu button, .viz-menu-item, .fx-option');
             getScaleSpring(el, hero(el) ? 1 : quiet ? 3 : 2)
                 .setTarget(hero(el) ? .95 : quiet && !el.matches('.cat-tab, .social-link-pill') ? .985 : .97);
         }
@@ -368,6 +378,7 @@
             if (!e.isPrimary) { release(e); return; }
             const target = e.target && e.target.closest ? e.target.closest(selector) : null;
             if (!target || target.disabled) return;
+            if (activeEl) activeEl.classList.remove('is-pressed');
             activeEl = target;
             activePointerId = e.pointerId;
             tapX = e.clientX;
@@ -377,7 +388,7 @@
             cancelledClick = null;
             lastTap = null;
 
-            press(target);
+            press(target, e);
         }, { passive: true });
 
         doc.addEventListener('pointermove', (e) => {
@@ -385,7 +396,7 @@
             const dx = e.clientX - tapX;
             const dy = e.clientY - tapY;
             if (Math.hypot(dx, dy) > 11) {
-                if (!moved) springs.get(activeEl)?.setTarget(1);
+                if (!moved) { activeEl.classList.remove('is-pressed'); springs.get(activeEl)?.setTarget(1); }
                 moved = true;
                 elastic(activeEl, Math.tanh(dx / 50) * 2, Math.tanh(dy / 50) * 2, Math.tanh(dx / 50) * 1.2);
             }
@@ -402,6 +413,7 @@
             activeEl = null;
             activePointerId = null;
             moved = false;
+            el.classList.remove('is-pressed');
             springs.get(el)?.setTarget(1);
             elastic(el);
             // Time limits tactile feedback, not native button activation. A
@@ -452,6 +464,12 @@
     }
 
     // ----------------------------------------------------------------------
+    // Monotonic eased overlay alpha (Miuix GlassMotion.kt: never oscillates with spring overshoot)
+    function easeOverlayAlpha(f) {
+        const t = Math.max(0, Math.min(1, f / 0.72));
+        return t * (2 - t);
+    }
+
     // 4. MIUIX TOP-RIGHT LISTPOPUP (#top-more-dropdown)
     // ----------------------------------------------------------------------
     function initTopMorePopup() {
@@ -492,13 +510,14 @@
         const applyFraction = (f) => {
             const clamped = Math.max(0, Math.min(1.04, f));
             // Miuix natural listpopup scale: starts at 0.84 and gently settles at 1.0
-            const scaleVal = 0.84 + 0.16 * clamped;
-            const alpha = Math.max(0, Math.min(1, clamped * 1.35));
+            const scaleVal = 0.88 + 0.12 * clamped;
+            const shiftY = (1 - Math.min(1, clamped)) * (popupOriginY === '100%' ? 6 : -6);
+            const alpha = easeOverlayAlpha(clamped);
 
             dropdown.style.transformOrigin = `${popupOriginX} ${popupOriginY}`;
-            dropdown.style.transform = `scale(${scaleVal.toFixed(4)})`;
+            dropdown.style.transform = `translate3d(0, ${shiftY.toFixed(2)}px, 0) scale(${scaleVal.toFixed(4)})`;
             dropdown.style.opacity = alpha.toFixed(3);
-            scrim.style.opacity = Math.min(1, Math.max(0, clamped * 0.95)).toFixed(3);
+            scrim.style.opacity = (alpha * 0.95).toFixed(3);
         };
 
         const fractionSpring = spLib
@@ -741,8 +760,9 @@
 
         const spLib = Spring();
         const applySheetOpacity = (f) => {
-            panelEl.style.opacity = Math.min(1, f * 1.5).toFixed(3);
-            mobileBackdrop.style.opacity = Math.min(1, f * 0.95).toFixed(3);
+            const alpha = easeOverlayAlpha(f);
+            panelEl.style.opacity = alpha.toFixed(3);
+            mobileBackdrop.style.opacity = (alpha * 0.95).toFixed(3);
         };
         const applyFraction = (f) => {
             currentFraction = f;
@@ -758,19 +778,21 @@
                 panelEl.style.transform = `translateY(${slidePercent.toFixed(2)}%)`;
                 applySheetOpacity(clamped);
             } else if (isCenterModal) {
-                const scaleVal = 0.88 + 0.12 * clamped;
-                const alpha = Math.max(0, Math.min(1, clamped * 1.35));
+                const scaleVal = 0.92 + 0.08 * clamped;
+                const liftY = (1 - Math.min(1, clamped)) * 10;
+                const alpha = easeOverlayAlpha(clamped);
                 panelEl.style.transformOrigin = '50% 50%';
-                panelEl.style.transform = `translate(-50%, -50%) scale(${scaleVal.toFixed(4)})`;
+                panelEl.style.transform = `translate(-50%, calc(-50% + ${liftY.toFixed(2)}px)) scale(${scaleVal.toFixed(4)})`;
                 panelEl.style.opacity = alpha.toFixed(3);
                 if (mobileBackdrop) {
-                    mobileBackdrop.style.opacity = Math.min(1, clamped * 0.95).toFixed(3);
+                    mobileBackdrop.style.opacity = (alpha * 0.95).toFixed(3);
                 }
             } else {
-                const scaleVal = 0.85 + 0.15 * clamped;
-                const alpha = Math.max(0, Math.min(1, clamped * 1.35));
+                const scaleVal = 0.88 + 0.12 * clamped;
+                const shiftY = (1 - Math.min(1, clamped)) * (originY === '100%' ? 6 : -6);
+                const alpha = easeOverlayAlpha(clamped);
                 panelEl.style.transformOrigin = `${originX} ${originY}`;
-                panelEl.style.transform = `scale(${scaleVal.toFixed(4)})`;
+                panelEl.style.transform = `translate3d(0, ${shiftY.toFixed(2)}px, 0) scale(${scaleVal.toFixed(4)})`;
                 panelEl.style.opacity = alpha.toFixed(3);
             }
         };
@@ -1005,7 +1027,7 @@
                 }
             };
 
-            if (options.instant || !fractionSpring || (spLib && spLib.isReducedMotion && spLib.isReducedMotion())) {
+            if (options.instant || !fractionSpring || (spLib && spLib.isAccessibilityReducedMotion && spLib.isAccessibilityReducedMotion())) {
                 if (fractionSpring) fractionSpring.snap(0);
                 applyFraction(0);
                 closeDone();
@@ -2474,10 +2496,26 @@
         });
     }
 
+    function initHeaderScrollElevation() {
+        const header = doc.querySelector('.site-brand-header');
+        if (!header) return;
+        let scrolled = false;
+        const sync = () => {
+            const next = (global.scrollY || doc.documentElement.scrollTop || 0) > 12;
+            if (next !== scrolled) {
+                scrolled = next;
+                header.classList.toggle('is-scrolled', scrolled);
+            }
+        };
+        global.addEventListener('scroll', sync, { passive: true });
+        sync();
+    }
+
     function init() {
         initPressFeedback();
         initTopMorePopup();
         initNavMaterial();
+        initHeaderScrollElevation();
     }
 
     if (doc.readyState === 'loading') {
