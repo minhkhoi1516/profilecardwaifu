@@ -545,6 +545,39 @@
             loadLyricsForTrack(initialTrack);
         }
 
+        // Pure in-memory lookup for Seek Bar Lyric Peek (zero network, zero second parser)
+        function peekLineAt(timeSec) {
+            if (!Number.isFinite(timeSec) || !currentDoc || currentDoc.isInstrumental) return null;
+            if (currentDoc.syncLevel === 'plain' || currentDoc.syncLevel === 'unavailable' || currentDoc.syncLevel === 'restricted') {
+                return null;
+            }
+            const lines = currentDoc.lines;
+            if (!Array.isArray(lines) || lines.length === 0 || !Number.isFinite(lines[0]?.startMs)) {
+                return null;
+            }
+            const docOffMs = Number.isFinite(currentDoc.offsetMs) ? currentDoc.offsetMs : 0;
+            const userOffMs = Math.round((syncEngine.userOffsetSec || 0) * 1000);
+            const effectiveMs = Math.max(0, Math.round(timeSec * 1000) + docOffMs + userOffMs);
+            const idx = ns.SyncMath.findActiveLineIndex(lines, effectiveMs);
+            if (idx < 0 || !lines[idx]) return null;
+
+            const line = lines[idx];
+            const active = displayLayers.split(',');
+            const pref = active.includes('jp')
+                ? ['jp', ...active.filter(k => k !== 'jp')]
+                : [...active, 'jp'];
+            let raw = '';
+            for (const layer of pref) {
+                if (layer === 'jp') raw = (line.jp || line.text || '').trim();
+                else if (layer === 'romaji') raw = (line.romaji || '').trim();
+                else if (layer === 'vi') raw = (line.vi || '').trim();
+                if (raw) break;
+            }
+            if (!raw) raw = (line.text || line.jp || line.romaji || line.vi || '').trim();
+            if (!raw) return null;
+            return { index: idx, text: raw.replace(/\s+/g, ' ') };
+        }
+
         const api = {
             toggleLyrics,
             openLyrics,
@@ -553,6 +586,7 @@
             resetOffset,
             setDisplayLayers,
             loadLyricsForTrack,
+            peekLineAt,
             getState: () => ({
                 track: currentTrack,
                 document: currentDoc,

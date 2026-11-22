@@ -484,6 +484,7 @@
             albumArt.alt = track.name ? `${track.name} Cover` : 'Album Cover';
         }
 
+        if (typeof resetSeekScrubState === 'function') resetSeekScrubState();
         setSeekProgressUI(0);
 
         if (currentTimeEl) currentTimeEl.textContent = '0:00';
@@ -518,6 +519,10 @@
         }
     }
 
+    let resetSeekScrubState = null;
+    let volumeThumbCtrl = null;
+    const volumeDockEl = volumeCtrl ? volumeCtrl.closest('.volume-slider-dock') : null;
+
     function ensureSeekThumbDot() {
         if (!seekContainer) return null;
         let dot = seekContainer.querySelector('.seek-thumb-dot');
@@ -532,10 +537,11 @@
 
     function setSeekProgressUI(pos) {
         const clamped = Math.max(0, Math.min(1, pos || 0));
-        if (seekFill) seekFill.style.setProperty('--seek-progress', clamped.toFixed(4));
-        if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${clamped.toFixed(5)})`;
-        const dot = ensureSeekThumbDot();
-        if (dot) dot.style.left = `${(clamped * 100).toFixed(2)}%`;
+        const valueStr = clamped.toFixed(5);
+        if (seekContainer) seekContainer.style.setProperty('--seek-progress', valueStr);
+        if (seekFill) seekFill.style.setProperty('--seek-progress', valueStr);
+        if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${valueStr})`;
+        ensureSeekThumbDot();
     }
 
     let crossfadeTimer = 0;
@@ -726,12 +732,14 @@
             volumeCtrl.setAttribute('aria-valuenow', clamped.toString());
         }
         isMuted = clamped === 0;
+        if (volumeDockEl) volumeDockEl.classList.toggle('is-muted', isMuted);
 
         if (!isMuted) {
             safeSet('minkoi_player_volume', clamped.toString());
         }
 
         if (muteBtn) {
+            muteBtn.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
             if (clamped === 0) {
                 muteBtn.innerHTML = '<i class="fas fa-volume-xmark" aria-hidden="true"></i>';
                 muteBtn.title = 'Bật tiếng (M)';
@@ -752,6 +760,7 @@
             lastVolume = parseInt(volumeCtrl?.value || '45', 10);
             setVolume(0);
         }
+        volumeThumbCtrl?.pulse?.();
     }
 
     // Persona & Favorites Playlist Tabs
@@ -952,9 +961,9 @@
     // Audio Progress & Seek Bar with Pointer Dragging (Scrubbing)
     let pendingScrubPos = null;
 
-    function getSeekPos(clientX) {
+    function getSeekPos(clientX, rectOverride) {
         if (!seekContainer) return 0;
-        const rect = seekContainer.getBoundingClientRect();
+        const rect = rectOverride && rectOverride.width ? rectOverride : seekContainer.getBoundingClientRect();
         if (!rect.width) return 0;
         return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     }
@@ -984,9 +993,9 @@
         });
     }
 
-    function seekToPosition(clientX, commitAudio = true) {
+    function seekToPosition(clientX, commitAudio = true, posOverride = null) {
         if (!audio.duration || !seekContainer) return;
-        const pos = getSeekPos(clientX);
+        const pos = typeof posOverride === 'number' ? Math.max(0, Math.min(1, posOverride)) : getSeekPos(clientX);
         pendingScrubPos = pos;
         if (commitAudio) {
             audio.currentTime = pos * audio.duration;
@@ -1113,23 +1122,36 @@
     // thumb springs; the hit area, slider dock and audio value do not deform.
     function bindSliderThumb(surface, property, rest, held) {
         const motion = window.MinkoiSpring;
-        if (!motion) return;
+        if (!motion) return { pulse() {} };
         const spring = motion.createSpring({
             initial: rest, preset: motion.PRESETS.SLIDER_SETTLE, precision: .002,
             onUpdate: value => {
-                if (value === rest) surface.style.removeProperty(property);
-                else surface.style.setProperty(property, value.toFixed(3));
+                if (motion.isAccessibilityReducedMotion() || Math.abs(value - rest) < .0025) {
+                    surface.style.removeProperty(property);
+                } else {
+                    surface.style.setProperty(property, value.toFixed(3));
+                }
             }
         });
         let pointer = null;
         surface.addEventListener('pointerdown', e => {
-            if (pointer !== null || e.button !== 0 || !e.isPrimary || motion.isAccessibilityReducedMotion()) return;
+            if (pointer !== null || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            if (motion.isAccessibilityReducedMotion()) {
+                spring.snap(rest);
+                surface.style.removeProperty(property);
+                return;
+            }
             pointer = e.pointerId;
             spring.setTarget(held, motion.PRESETS.SLIDER_DRAG);
         }, { passive: true });
         const release = e => {
-            if (pointer === null || (e.pointerId !== undefined && pointer !== e.pointerId)) return;
+            if (pointer === null || (e?.pointerId !== undefined && pointer !== e.pointerId)) return;
             pointer = null;
+            if (motion.isAccessibilityReducedMotion()) {
+                spring.snap(rest);
+                surface.style.removeProperty(property);
+                return;
+            }
             spring.setTarget(rest, motion.PRESETS.SLIDER_SETTLE);
         };
         for (const event of ['pointerup', 'pointercancel', 'lostpointercapture', 'blur']) {
@@ -1137,93 +1159,222 @@
         }
         window.addEventListener('pointerup', release, { passive: true });
         window.addEventListener('blur', release);
+        return {
+            pulse() {
+                if (pointer !== null || motion.isAccessibilityReducedMotion()) return;
+                spring.setTarget(rest, motion.PRESETS.SLIDER_SETTLE);
+                spring.impulse((held - rest) * 10);
+            },
+            reset() {
+                pointer = null;
+                if (motion.isAccessibilityReducedMotion()) {
+                    spring.snap(rest);
+                    surface.style.removeProperty(property);
+                } else {
+                    spring.setTarget(rest, motion.PRESETS.SLIDER_SETTLE);
+                }
+            }
+        };
     }
 
     if (seekContainer) {
-        bindSliderThumb(seekContainer, '--seek-thumb-scale', .85, 1.12);
-        function updateSeekTooltip(clientX, pos) {
-            if (!seekTip || !seekContainer) return;
-            const trackRect = seekContainer.getBoundingClientRect();
-            const tipWidth = seekTip.offsetWidth || 48;
-            const halfTip = tipWidth / 2;
-            const px = (typeof pos === 'number' ? pos : getSeekPos(clientX)) * trackRect.width;
-            const clampedPx = Math.max(halfTip, Math.min(trackRect.width - halfTip, px));
-            seekTip.style.left = `${clampedPx.toFixed(1)}px`;
-            seekTip.textContent = formatTime((typeof pos === 'number' ? pos : getSeekPos(clientX)) * (audio.duration || 0));
-            seekTip.classList.add('visible');
-            seekTip.style.opacity = '1';
+        const progressWrap = seekContainer.closest('.playback-progress-wrap');
+        const seekThumbCtrl = bindSliderThumb(seekContainer, '--seek-thumb-scale', 0.88, 1.22);
+
+        let seekTipTime = null;
+        let seekTipLyric = null;
+        if (seekTip) {
+            seekTip.textContent = '';
+            seekTipTime = document.createElement('span');
+            seekTipTime.className = 'seek-tip-time';
+            seekTipTime.textContent = '0:00';
+            seekTipLyric = document.createElement('span');
+            seekTipLyric.className = 'seek-tip-lyric';
+            seekTip.appendChild(seekTipTime);
+            seekTip.appendChild(seekTipLyric);
         }
 
+        let activeSeekPointerId = null;
+        let scrubRect = null;
+        let cachedTipWidth = 52;
+        let tipWidthDirty = true;
+        let lastTipSec = -1;
+        let lastPeekBucket = -1;
+        let lastPeekKey = '';
+
+        function hideSeekTooltip() {
+            if (!seekTip) return;
+            seekTip.classList.remove('visible', 'has-lyric');
+            if (seekTipLyric) seekTipLyric.textContent = '';
+            lastTipSec = -1;
+            lastPeekBucket = -1;
+            lastPeekKey = '';
+            tipWidthDirty = true;
+        }
+
+        function updateSeekTooltip(pos, rect, allowLyricPeek) {
+            if (!seekTip || !seekContainer || !rect || !rect.width) return;
+            const duration = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0;
+            const previewSec = pos * duration;
+            const secFloor = Math.floor(previewSec);
+
+            if (seekTipTime && secFloor !== lastTipSec) {
+                lastTipSec = secFloor;
+                seekTipTime.textContent = formatTime(previewSec);
+                if (!lastPeekKey) tipWidthDirty = true;
+            }
+
+            if (allowLyricPeek && duration > 0 && seekTipLyric) {
+                const bucket = Math.floor(previewSec * 4);
+                if (bucket !== lastPeekBucket) {
+                    lastPeekBucket = bucket;
+                    const peek = window.MinkoiLyrics?.controller?.peekLineAt?.(previewSec) || null;
+                    const nextKey = peek ? `${peek.index}:${peek.text}` : '';
+                    if (nextKey !== lastPeekKey) {
+                        lastPeekKey = nextKey;
+                        seekTipLyric.textContent = peek ? peek.text : '';
+                        seekTip.classList.toggle('has-lyric', Boolean(peek));
+                        tipWidthDirty = true;
+                    }
+                }
+            } else if (lastPeekKey) {
+                lastPeekKey = '';
+                lastPeekBucket = -1;
+                if (seekTipLyric) seekTipLyric.textContent = '';
+                seekTip.classList.remove('has-lyric');
+                tipWidthDirty = true;
+            }
+
+            const wasVisible = seekTip.classList.contains('visible');
+            if (!wasVisible) {
+                seekTip.classList.add('visible');
+                tipWidthDirty = true;
+            }
+
+            if (tipWidthDirty || !cachedTipWidth) {
+                cachedTipWidth = seekTip.offsetWidth || 52;
+                tipWidthDirty = false;
+            }
+
+            const halfTip = cachedTipWidth / 2;
+            const vw = window.innerWidth || document.documentElement.clientWidth || rect.width;
+            const edgePad = 12;
+            const minFromViewport = (edgePad + halfTip) - rect.left;
+            const maxFromViewport = (vw - edgePad - halfTip) - rect.left;
+            const minX = Math.max(halfTip, minFromViewport);
+            const maxX = Math.min(rect.width - halfTip, maxFromViewport);
+            const px = pos * rect.width;
+            const clampedPx = minX <= maxX ? Math.max(minX, Math.min(maxX, px)) : (rect.width / 2);
+            seekTip.style.setProperty('--tip-x', `${clampedPx.toFixed(1)}px`);
+        }
+
+        const setScrubClasses = (active) => {
+            seekContainer.classList.toggle('is-scrubbing', active);
+            if (progressWrap) progressWrap.classList.toggle('is-scrubbing', active);
+        };
+
+        resetSeekScrubState = () => {
+            isScrubbing = false;
+            activeSeekPointerId = null;
+            scrubRect = null;
+            pendingScrubPos = null;
+            setScrubClasses(false);
+            hideSeekTooltip();
+            seekThumbCtrl?.reset?.();
+        };
+
         seekContainer.addEventListener('pointerdown', (e) => {
+            if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
             isScrubbing = true;
-            seekContainer.classList.add('is-scrubbing');
-            const pos = getSeekPos(e.clientX);
-            updateSeekTooltip(e.clientX, pos);
+            activeSeekPointerId = e.pointerId;
+            scrubRect = seekContainer.getBoundingClientRect();
+            setScrubClasses(true);
+            const pos = getSeekPos(e.clientX, scrubRect);
+            updateSeekTooltip(pos, scrubRect, true);
             try { seekContainer.setPointerCapture(e.pointerId); } catch (_) {}
-            seekToPosition(e.clientX, false);
+            seekToPosition(e.clientX, false, pos);
         });
 
         seekContainer.addEventListener('pointermove', (e) => {
-            if (!audio.duration) return;
-            const pos = getSeekPos(e.clientX);
-            updateSeekTooltip(e.clientX, pos);
-
             if (isScrubbing) {
-                seekToPosition(e.clientX, false);
+                if (activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
+                const rect = scrubRect && scrubRect.width ? scrubRect : seekContainer.getBoundingClientRect();
+                const pos = getSeekPos(e.clientX, rect);
+                updateSeekTooltip(pos, rect, true);
+                seekToPosition(e.clientX, false, pos);
+                return;
             }
+            if (e.pointerType !== 'mouse' || !audio.duration) return;
+            const rect = seekContainer.getBoundingClientRect();
+            const pos = getSeekPos(e.clientX, rect);
+            updateSeekTooltip(pos, rect, true);
         });
 
         seekContainer.addEventListener('pointerup', (e) => {
-            if (isScrubbing) {
-                isScrubbing = false;
-                seekContainer.classList.remove('is-scrubbing');
-                if (seekTip) seekTip.classList.remove('visible');
-                seekToPosition(e.clientX, true);
-            }
+            if (!isScrubbing) return;
+            if (activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
+            const rect = scrubRect && scrubRect.width ? scrubRect : seekContainer.getBoundingClientRect();
+            const pos = getSeekPos(e.clientX, rect);
+            isScrubbing = false;
+            activeSeekPointerId = null;
+            scrubRect = null;
+            setScrubClasses(false);
+            hideSeekTooltip();
+            try { seekContainer.releasePointerCapture(e.pointerId); } catch (_) {}
+            seekToPosition(e.clientX, true, pos);
         });
 
-        const cancelSeek = () => {
-            if (isScrubbing) {
-                isScrubbing = false;
-                seekContainer.classList.remove('is-scrubbing');
-                if (seekTip) {
-                    seekTip.classList.remove('visible');
-                    seekTip.style.opacity = '0';
-                }
-                pendingScrubPos = null;
-                if (audio.duration) {
-                    const pos = audio.currentTime / audio.duration;
-                    setSeekProgressUI(pos);
-                    if (currentTimeEl) currentTimeEl.textContent = formatTime(audio.currentTime);
-                    seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
-                }
+        const cancelSeek = (e) => {
+            if (!isScrubbing) return;
+            if (e?.pointerId !== undefined && activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
+            isScrubbing = false;
+            activeSeekPointerId = null;
+            scrubRect = null;
+            setScrubClasses(false);
+            hideSeekTooltip();
+            pendingScrubPos = null;
+            if (audio.duration) {
+                const pos = audio.currentTime / audio.duration;
+                setSeekProgressUI(pos);
+                updateTimeDisplay(audio.currentTime, audio.duration);
+                seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
             }
         };
         seekContainer.addEventListener('pointercancel', cancelSeek);
         seekContainer.addEventListener('lostpointercapture', cancelSeek);
 
         seekContainer.addEventListener('mouseleave', () => {
-            if (!isScrubbing && seekTip) {
-                seekTip.classList.remove('visible');
-                seekTip.style.opacity = '0';
-            }
+            if (!isScrubbing) hideSeekTooltip();
         });
 
-        // Keyboard accessibility for Seek Bar
+        window.addEventListener('resize', () => {
+            scrubRect = null;
+            tipWidthDirty = true;
+        }, { passive: true });
+
+        // Keyboard accessibility for Seek Bar (instant visual sync even when paused)
         seekContainer.addEventListener('keydown', (e) => {
             if (!audio.duration) return;
+            let nextTime = null;
             if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                audio.currentTime = Math.max(0, audio.currentTime - 5);
+                nextTime = Math.max(0, audio.currentTime - 5);
             } else if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                audio.currentTime = Math.min(audio.duration, audio.currentTime + 5);
+                nextTime = Math.min(audio.duration, audio.currentTime + 5);
             } else if (e.key === 'Home') {
                 e.preventDefault();
-                audio.currentTime = 0;
+                nextTime = 0;
             } else if (e.key === 'End') {
                 e.preventDefault();
-                audio.currentTime = audio.duration;
+                nextTime = audio.duration;
+            }
+            if (nextTime !== null) {
+                audio.currentTime = nextTime;
+                const pos = nextTime / audio.duration;
+                setSeekProgressUI(pos);
+                updateTimeDisplay(nextTime, audio.duration);
+                seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
             }
         });
     }
@@ -1281,12 +1432,13 @@
     }
 
     if (volumeCtrl) {
-        const volumeDock = volumeCtrl.closest('.volume-slider-dock');
-        bindSliderThumb(volumeCtrl, '--volume-thumb-scale', 1, 1.16);
+        const volumeDock = volumeDockEl || volumeCtrl.closest('.volume-slider-dock');
+        volumeThumbCtrl = bindSliderThumb(volumeCtrl, '--volume-thumb-scale', 1, 1.18);
         volumeCtrl.addEventListener('input', (e) => {
             setVolume(parseInt(e.target.value, 10));
         });
         volumeCtrl.addEventListener('pointerdown', (event) => {
+            if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
             try { volumeCtrl.setPointerCapture(event.pointerId); } catch (_) {}
             volumeCtrl.classList.add('is-scrubbing');
             if (volumeDock) volumeDock.classList.add('is-scrubbing');
