@@ -909,6 +909,8 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     .lyrics-drawer-modal.open {
         opacity: 1 !important;
         visibility: visible !important;
+    }
+    .lyrics-drawer-modal.open:not(.sheet-swiping) {
         transform: translate(-50%, -50%) !important;
     }
 }
