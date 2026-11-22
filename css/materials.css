@@ -261,13 +261,22 @@ body.light-mode .nav-material-switch button[aria-pressed="true"] {
 }
 .sheet-drag-handle {
     display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    touch-action: none;
+    cursor: grab;
+    flex-shrink: 0;
+}
+.sheet-drag-handle::before {
+    content: '';
     width: 38px;
     height: 4px;
     border-radius: 999px;
     background: var(--color-text-muted);
     opacity: 0.45;
-    margin: 0 auto 0.4rem;
-    flex-shrink: 0;
+    pointer-events: none;
 }
 /* Edge tint approximates a progressive material fade, not optical progressive blur. */
 .flyout-header {
@@ -572,7 +581,6 @@ body.light-mode.zen-mode .banner-stage::after {
     background: radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.05), rgba(3, 5, 12, 0.4));
 }
 @media (max-width: 768px) {
-    .sheet-drag-handle { display: block; }
     .top-action-btn, .ctrl-btn, .mute-btn, .zen-ctrl-btn, .lyrics-close-btn, .lyrics-mode-btn, .offset-nudge-btn, .audio-iqoo-close { min-width: 44px; min-height: 44px; flex-shrink: 0; }
     #zen-mode-toggle, #top-more-btn, #theme-toggle { width: 44px; height: 44px; border-radius: 14px; }
     .mobile-flyout-backdrop { background: var(--surface-scrim); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }

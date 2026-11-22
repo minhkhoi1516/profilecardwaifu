@@ -944,6 +944,8 @@ body.light-mode .ctrl-btn.repeat-btn.active {
     .dropdown-flyout.open {
         opacity: 1 !important;
         visibility: visible !important;
+    }
+    .dropdown-flyout.open:not(.sheet-swiping) {
         transform: none !important;
     }
 }

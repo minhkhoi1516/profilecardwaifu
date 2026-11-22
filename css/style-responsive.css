@@ -46,6 +46,8 @@
    TABLET & MOBILE BREAKPOINT (< 860px)
 ======================================================== */
 @media (max-width: 860px) {
+    .dropdown-flyout .sheet-drag-handle,
+    .lyrics-drawer-modal .sheet-drag-handle { display: flex; }
     body {
         padding: 0.5rem 0.35rem 1.75rem;
         padding-top: max(0.5rem, env(safe-area-inset-top));
@@ -783,7 +785,7 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-        .lyrics-drawer-modal.open {
+        .lyrics-drawer-modal.open:not(.sheet-swiping) {
             /* Desktop reduced-motion centering must not apply to mobile sheets. */
             transform: none !important;
             opacity: 1 !important;

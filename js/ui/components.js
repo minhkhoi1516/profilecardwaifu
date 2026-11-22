@@ -961,6 +961,7 @@
             }
 
             setPanelState('closing');
+            resetBottomSheetSwipe(panelEl);
             panelEl.style.pointerEvents = 'none';
 
             const isMobile = (global.innerWidth || doc.documentElement.clientWidth) <= 860;
@@ -1066,10 +1067,11 @@
             if (panelState === 'opening' || panelState === 'open') {
                 computeAnchor();
                 const mobile = global.innerWidth <= 860;
+                if (!mobile) resetBottomSheetSwipe(panelEl);
                 if (mobile && !ownsScrollLock) { lockBodyScroll(); ownsScrollLock = true; }
                 if (!mobile && ownsScrollLock) { unlockBodyScroll(); ownsScrollLock = false; }
                 mobileBackdrop.classList.toggle('active', mobile || isCenterModal);
-                applyFraction(currentFraction);
+                if (!panelEl.classList.contains('sheet-swiping')) applyFraction(currentFraction);
             }
         };
         global.addEventListener('resize', onViewportChange, { passive: true });
@@ -1091,6 +1093,29 @@
     // ----------------------------------------------------------------------
     const bottomSheetStates = new WeakMap();
 
+    function resetBottomSheetSwipe(sheetEl) {
+        const state = bottomSheetStates.get(sheetEl);
+        if (!state) return;
+        const handle = state.activeHandle;
+        const pointer = state.activePointerId;
+        state.gestureGen += 1;
+        state.dragging = false;
+        state.exiting = false;
+        state.activeFinalize = null;
+        state.exitTarget = 0;
+        state.activePointerId = null;
+        state.activeHandle = null;
+        state.currentY = 0;
+        sheetEl.classList.remove('sheet-swiping');
+        if (state.spring) {
+            state.spring.onComplete = null;
+            state.spring.snap(0);
+        }
+        try {
+            if (handle?.hasPointerCapture(pointer)) handle.releasePointerCapture(pointer);
+        } catch (_) {}
+    }
+
     function bindBottomSheetSwipe(sheetEl, onDismiss) {
         if (!sheetEl) return;
 
@@ -1110,6 +1135,7 @@
                 dragging: false,
                 exiting: false,
                 activePointerId: null,
+                activeHandle: null,
                 gestureGen: 0,
                 onDismiss: typeof onDismiss === 'function' ? onDismiss : null,
                 spring: null
@@ -1124,10 +1150,7 @@
                     velocityPrecision: 3,
                     onUpdate: (y) => {
                         state.currentY = y;
-                        if (!sheetEl.classList.contains('open') && !state.exiting && !state.dragging) {
-                            sheetEl.style.transform = '';
-                            return;
-                        }
+                        if (!sheetEl.classList.contains('sheet-swiping')) return;
                         sheetEl.style.transform = `translateY(${Math.abs(y) < 0.2 ? 0 : y.toFixed(1)}px)`;
                         if (state.exiting && Number.isFinite(state.exitTarget) && y >= state.exitTarget - 8 && typeof state.activeFinalize === 'function') {
                             state.activeFinalize();
@@ -1138,18 +1161,6 @@
             bottomSheetStates.set(sheetEl, state);
         } else {
             state.onDismiss = typeof onDismiss === 'function' ? onDismiss : null;
-            state.gestureGen += 1;
-            state.dragging = false;
-            state.exiting = false;
-            state.activePointerId = null;
-            if (state.spring) {
-                state.spring.onComplete = null;
-                if (!sheetEl.classList.contains('open')) {
-                    state.spring.snap(0);
-                    sheetEl.classList.remove('sheet-swiping');
-                    sheetEl.style.transform = '';
-                }
-            }
         }
 
         const hasScrolledContent = (target) => {
@@ -1163,10 +1174,11 @@
             if (!state.dragging) return;
             state.dragging = false;
             state.activePointerId = null;
+            state.activeHandle = null;
 
             const shouldDismiss = !cancelled && (
                 state.currentY > 110 ||
-                (state.velocityY > 650 && state.currentY > 20)
+                (performance.now() - state.lastTime < 100 && state.velocityY > 650 && state.currentY > 20)
             );
 
             if (shouldDismiss) {
@@ -1186,8 +1198,11 @@
                         state.spring.snap(exitTarget);
                     }
                     const controller = getPanelController(sheetEl.id);
-                    if (controller) controller.close({ instant: true, restoreFocus: false });
-                    else if (typeof state.onDismiss === 'function') state.onDismiss();
+                    if (controller) {
+                        controller.close({ instant: true, restoreFocus: true });
+                        return;
+                    }
+                    if (typeof state.onDismiss === 'function') state.onDismiss();
                     global.requestAnimationFrame(() => {
                         if (exitGen !== state.gestureGen || state.dragging || state.exiting) return;
                         sheetEl.classList.remove('sheet-swiping');
@@ -1240,13 +1255,16 @@
             handle.dataset.swipeHandleBound = 'true';
 
             handle.addEventListener('pointerdown', (e) => {
-                if ((global.innerWidth || 1024) > 860) return;
+                if (!global.matchMedia('(max-width: 860px)').matches || !e.isPrimary || state.dragging) return;
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
+                const grip = handle.classList.contains('sheet-drag-handle');
+                // Only the dedicated grip declares touch ownership in CSS.
+                // Headers still support mouse drag without stealing touch scroll.
+                if (!grip && e.pointerType !== 'mouse') return;
                 if (e.target.closest('button, input, a, select, textarea') && !e.target.closest('.sheet-drag-handle')) return;
                 if (hasScrolledContent(e.target)) return;
                 const controller = getPanelController(sheetEl.id);
                 if (controller && !controller.prepareSwipe()) return;
-                if (state.dragging && state.activePointerId !== null && state.activePointerId !== e.pointerId) return;
 
                 // Interrupt any active settle or exit animation smoothly from currentY
                 state.gestureGen += 1;
@@ -1255,6 +1273,7 @@
                 state.exitTarget = 0;
                 state.dragging = true;
                 state.activePointerId = e.pointerId;
+                state.activeHandle = handle;
                 state.startY = e.clientY - state.currentY;
                 state.lastY = e.clientY;
                 state.lastTime = performance.now();
@@ -1284,12 +1303,12 @@
 
             handle.addEventListener('pointerup', (e) => {
                 if (!state.dragging || e.pointerId !== state.activePointerId) return;
+                finishDrag(false);
                 try {
                     if (handle.hasPointerCapture && handle.hasPointerCapture(e.pointerId)) {
                         handle.releasePointerCapture(e.pointerId);
                     }
                 } catch (_) {}
-                finishDrag(false);
             });
 
             handle.addEventListener('pointercancel', (e) => {
@@ -1299,7 +1318,7 @@
 
             handle.addEventListener('lostpointercapture', (e) => {
                 if (!state.dragging || e.pointerId !== state.activePointerId) return;
-                finishDrag(false);
+                finishDrag(true);
             });
         });
     }
