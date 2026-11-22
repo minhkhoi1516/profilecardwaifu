@@ -628,6 +628,7 @@ body.light-mode.zen-mode .banner-stage::after {
 }
 @media (prefers-reduced-motion: reduce) {
     :root { transition: none; }
+    .status-pulse-dot { animation: none; }
 }
 
 /* Finish the existing Full Fusion roles without introducing new capture
@@ -650,7 +651,6 @@ body.light-mode.zen-mode .banner-stage::after {
 .brand-sub { letter-spacing: .075em; color: var(--color-text-secondary); }
 .top-bar-controls { flex: none; gap: var(--ui-gap-tight); }
 .top-action-btn { border-radius: var(--ui-radius-inset); }
-.status-pulse-dot { animation: none; box-shadow: none; }
 .status-label { color: var(--ui-positive-ink); }
 .top-more-item {
     gap: var(--ui-gap);
@@ -666,10 +666,15 @@ body.light-mode.zen-mode .banner-stage::after {
 .creator-tagline { color: var(--color-text-secondary); letter-spacing: .045em; }
 .social-link-pill, .persona-chip { border-radius: var(--ui-radius-inset); }
 :is(.persona-chip, .social-link-pill):focus-visible { outline-color: var(--ui-focus); }
-.persona-chip.active, body.light-mode .persona-chip.active {
+.persona-chip.active {
     border-color: var(--color-accent);
     background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-2));
-    box-shadow: var(--v3-specular-soft);
+    box-shadow: var(--v3-specular-soft), 0 0 14px var(--color-accent-glow);
+}
+body.light-mode .persona-chip.active {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-2));
+    box-shadow: var(--v3-specular-soft), 0 4px 14px -4px var(--color-accent-glow);
 }
 .persona-name { color: var(--color-text); }
 .persona-chip.active .persona-name { color: var(--color-accent); }

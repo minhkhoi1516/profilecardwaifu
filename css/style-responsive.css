@@ -513,7 +513,7 @@
     .live-visualizer-bars { display: none; }
     .controls-playback-group { gap: clamp(0.4rem, 2.5vw, 1rem); }
     .identity-header { min-width: 0; max-width: 100%; }
-    .persona-chip-info { min-width: 0; }
+    .persona-meta, .persona-chip-info { min-width: 0; }
     .section-micro-header { gap: 0.5rem; flex-wrap: wrap; }
 
     /* Action Toolbar (Ergonomic Utility Glass Dock) */
@@ -658,24 +658,30 @@
     /* Waifu & Theme Collection */
     .persona-section {
         margin-top: 0.5rem;
+        min-width: 0;
+        width: 100%;
     }
 
     .persona-selector-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.65rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.6rem;
         margin-top: 0.65rem;
+        width: 100%;
+        min-width: 0;
     }
 
     .persona-chip {
         min-height: 52px;
-        padding: 0.45rem 0.65rem;
+        min-width: 0;
+        width: 100%;
+        padding: 0.5rem 0.6rem;
         border-radius: 16px;
         background: rgba(255, 255, 255, 0.035);
         border: 1px solid rgba(255, 255, 255, 0.08);
         display: flex;
         align-items: center;
-        gap: 0.65rem;
+        gap: 0.55rem;
         box-sizing: border-box;
     }
 
@@ -919,7 +925,7 @@
     }
 
     .persona-selector-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
