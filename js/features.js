@@ -167,23 +167,38 @@
         const mainCard = document.getElementById('main-card');
         const header = document.querySelector('.site-brand-header');
         const dock = document.getElementById('zen-mini-dock');
+        const bannerStage = document.getElementById('banner-stage');
         const zenLyricsBtn = document.getElementById('zen-lyrics-toggle');
         const zenLyrics = document.getElementById('zen-ambient-lyric');
         const zenSurfaces = [mainCard, header, dock].filter(Boolean);
         const spring = window.MinkoiSpring;
+        const easeOutQuad = t => t * (2 - t);
+        const clamp01 = v => Math.max(0, Math.min(1, v));
+        // V5.5 Living Soundstage: 3-phase choreographed Player <-> Zen spatial morph
+        // driven by one shared MinkoiSpring (100% interruptible, zero wallpaper cloning).
         const renderZen = value => {
-            const f = Math.max(0, Math.min(1, value));
+            const f = clamp01(value);
+            const cardFade = easeOutQuad(1 - clamp01(f / 0.56));
+            const dockProgress = clamp01((f - 0.32) / 0.68);
+            const dockAlpha = easeOutQuad(dockProgress);
             if (mainCard) {
-                mainCard.style.opacity = (1 - f).toFixed(4);
-                mainCard.style.transform = `translate3d(0,${(12 * f).toFixed(2)}px,0) scale(${(1 - 0.02 * f).toFixed(4)})`;
+                mainCard.style.opacity = cardFade.toFixed(4);
+                mainCard.style.transform = `translate3d(0,${(18 * f).toFixed(2)}px,0) scale(${(1 - 0.034 * f).toFixed(4)})`;
             }
             if (header) {
-                header.style.opacity = (1 - f).toFixed(4);
-                header.style.transform = `translate3d(0,${(-8 * f).toFixed(2)}px,0)`;
+                header.style.opacity = cardFade.toFixed(4);
+                header.style.transform = `translate3d(0,${(-12 * f).toFixed(2)}px,0) scale(${(1 - 0.014 * f).toFixed(4)})`;
+            }
+            if (bannerStage) {
+                // Smoothly reaches exact scale(1.018) while .zen-morphing holds zenCinematicDrift;
+                // onComplete clears both in one frame for a zero-seam handoff into ambient drift.
+                bannerStage.style.transform = f > 0.0005
+                    ? `scale(${(1 + 0.018 * f).toFixed(4)})`
+                    : '';
             }
             if (dock) {
-                dock.style.opacity = f.toFixed(4);
-                dock.style.transform = `translate(-50%,${((1 - f) * 24).toFixed(2)}px)`;
+                dock.style.opacity = dockAlpha.toFixed(4);
+                dock.style.transform = `translate3d(-50%,${((1 - dockProgress) * 18).toFixed(2)}px,0) scale(${(0.94 + 0.06 * dockProgress).toFixed(4)})`;
             }
         };
         const zenSpring = spring?.createSpring({
@@ -197,6 +212,7 @@
         function animateZen(enabled) {
             if (!zenSpring) return;
             const gen = ++zenMotionGen;
+            document.body.classList.add('zen-morphing');
             zenSurfaces.forEach(el => {
                 el.style.visibility = 'visible';
                 el.style.willChange = 'transform, opacity';
@@ -211,6 +227,8 @@
                     if (mainCard) mainCard.style.visibility = enabled ? 'hidden' : '';
                     if (header) header.style.visibility = enabled ? 'hidden' : '';
                     if (dock) dock.style.visibility = enabled ? '' : 'hidden';
+                    if (bannerStage) bannerStage.style.transform = '';
+                    document.body.classList.remove('zen-morphing');
                     zenSurfaces.forEach(el => { el.style.willChange = ''; });
                 }
             });
@@ -305,9 +323,8 @@
                 window.MinkoiUI?.lockBodyScroll();
                 zenExitBtn?.focus({ preventScroll: true });
                 requestWakeLock();
-                if (typeof window.randomizeCurrentBanner === 'function') {
-                    window.randomizeCurrentBanner();
-                }
+                // Keep the exact current anime artwork through Player -> Zen morph
+                // (zero wallpaper flash or cold JPEG decode mid-transition).
                 if (typeof window.syncZenPlayer === 'function') {
                     window.syncZenPlayer();
                 }
@@ -345,7 +362,6 @@
         }
 
         // Click outside on banner stage to exit Zen mode
-        const bannerStage = document.getElementById('banner-stage');
         if (bannerStage) {
             bannerStage.addEventListener('click', (e) => {
                 if (!document.body.classList.contains('zen-mode')) return;

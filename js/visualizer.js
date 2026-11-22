@@ -50,6 +50,7 @@
     let barsVisible = false;
     const vinyl = doc.getElementById('vinyl-disc');
     const pedestal = stage.querySelector('.avatar-backdrop-disc');
+    const nowPlayingStage = doc.querySelector('.now-playing-stage');
     const vinylGlow = vinyl?.querySelector('.audio-reactive-glow');
     const pedestalGlow = pedestal?.querySelector('.audio-reactive-glow');
     const caption = doc.getElementById('soundstage-caption');
@@ -83,7 +84,8 @@
     let resizeTimer = 0;
     let idlePainted = false;
     const bounds = { left: 0, right: 0, top: 0, bottom: 0 };
-    const domCache = { vinylScale: '', discScale: '', vinylGlow: '', discGlow: '' };
+    const domCache = { vinylScale: '', discScale: '', vinylGlow: '', discGlow: '', breath: '' };
+    let materialBreath = 0;
 
     function read(key) { try { return global.localStorage.getItem(key); } catch (_) { return null; } }
     function save(key, value) { try { global.localStorage.setItem(key, String(value)); } catch (_) {} }
@@ -300,6 +302,10 @@
         gradientClock += dt * (0.1 + energy * 0.42) + (f.onset || 0) * 0.2;
         const nextStep = Math.floor(gradientClock * 24);
         if (nextStep !== gradientStep) buildGradient(gradientClock);
+        // Ultra-low-frequency liquid material breath (tau = 0.42s play, 0.20s pause exhale)
+        const targetBreath = playing && !f.silent ? clamp(energy * 0.65 + f.bass * 0.35, 0, 1) : 0;
+        const breathTau = targetBreath > 0 ? 0.42 : 0.2;
+        materialBreath += (targetBreath - materialBreath) * (1 - Math.exp(-dt / breathTau));
     }
 
     function addBounds(x, y, r) {
@@ -544,6 +550,20 @@
         if (pedestal && d !== domCache.discScale) { pedestal.style.transform = `translate(-50%, -50%) scale(${d})`; domCache.discScale = d; }
         if (vinylGlow && glow !== domCache.vinylGlow) { vinylGlow.style.opacity = glow; domCache.vinylGlow = glow; }
         if (pedestalGlow && glow !== domCache.discGlow) { pedestalGlow.style.opacity = glow; domCache.discGlow = glow; }
+        // V5.5 Soft Audio-Reactive Material: restrained local edge breath only when not in balanced GPU tier
+        const perfTier = global.MinkoiPerf?.getState?.().tier;
+        const breathNum = (perfTier === 'balanced' || reduced.matches) ? 0 : Math.round(sceneOpacity * materialBreath * 50) / 50;
+        const breathStr = breathNum > 0.01 ? breathNum.toFixed(2) : '';
+        if (breathStr !== domCache.breath) {
+            domCache.breath = breathStr;
+            if (breathStr) {
+                stage.style.setProperty('--soundstage-breath', breathStr);
+                if (nowPlayingStage) nowPlayingStage.style.setProperty('--soundstage-breath', breathStr);
+            } else {
+                stage.style.removeProperty('--soundstage-breath');
+                if (nowPlayingStage) nowPlayingStage.style.removeProperty('--soundstage-breath');
+            }
+        }
         if (!barsVisible) return;
         for (let i = 0; i < barsUI.length; i++) {
             const value = Math.max(0.18, Math.min(1, positions[Math.round(i / Math.max(1, barsUI.length - 1) * 47)]));
@@ -557,6 +577,9 @@
         if (pedestal) { pedestal.style.transform = ''; pedestal.classList.remove('audio-reactive'); }
         if (vinylGlow) vinylGlow.style.opacity = '';
         if (pedestalGlow) pedestalGlow.style.opacity = '';
+        stage.style.removeProperty('--soundstage-breath');
+        if (nowPlayingStage) nowPlayingStage.style.removeProperty('--soundstage-breath');
+        materialBreath = 0;
         barsUI.forEach(bar => { bar.style.transform = ''; bar.style.setProperty('--bar-scale', '0.18'); });
         barValues.fill(-1);
         Object.keys(domCache).forEach(key => { domCache[key] = ''; });

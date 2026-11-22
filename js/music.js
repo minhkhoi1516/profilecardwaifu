@@ -532,12 +532,18 @@
     let hasLoadedInitialTrack = false;
     const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
     const trackInfoCol = trackNameEl ? trackNameEl.closest('.track-metadata') : null;
+    const zenInfoCol = zenTitle ? zenTitle.closest('.zen-dock-info') : null;
+    let trackInfoAnim = null;
+    let albumArtAnim = null;
+    let zenInfoAnim = null;
 
     function animateTrackContinuity(coverChanged) {
         if (!hasLoadedInitialTrack || reducedMotionMQ?.matches) return;
         const opts = { duration: 210, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' };
-        if (trackInfoCol && typeof trackInfoCol.animate === 'function') {
-            trackInfoCol.animate(
+        const inZen = document.body.classList.contains('zen-mode');
+        if (!inZen && trackInfoCol && typeof trackInfoCol.animate === 'function') {
+            if (trackInfoAnim) { try { trackInfoAnim.cancel(); } catch (_) {} }
+            trackInfoAnim = trackInfoCol.animate(
                 [
                     { opacity: 0.58, transform: 'translate3d(0, 4px, 0)' },
                     { opacity: 1, transform: 'translate3d(0, 0, 0)' }
@@ -545,11 +551,22 @@
                 opts
             );
         }
-        if (coverChanged && albumArt && typeof albumArt.animate === 'function') {
-            albumArt.animate(
+        if (!inZen && coverChanged && albumArt && typeof albumArt.animate === 'function') {
+            if (albumArtAnim) { try { albumArtAnim.cancel(); } catch (_) {} }
+            albumArtAnim = albumArt.animate(
                 [
                     { opacity: 0.68 },
                     { opacity: 1 }
+                ],
+                opts
+            );
+        }
+        if (inZen && zenInfoCol && typeof zenInfoCol.animate === 'function') {
+            if (zenInfoAnim) { try { zenInfoAnim.cancel(); } catch (_) {} }
+            zenInfoAnim = zenInfoCol.animate(
+                [
+                    { opacity: 0.55, transform: 'translate3d(0, 3px, 0)' },
+                    { opacity: 1, transform: 'translate3d(0, 0, 0)' }
                 ],
                 opts
             );

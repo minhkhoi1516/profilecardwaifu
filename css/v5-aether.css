@@ -467,9 +467,10 @@ body.light-mode .persona-chip.is-pending {
 }
 
 /* ==========================================================================
-   2.1 · NOW PLAYING V5 & MUSIC EXPERIENCE 2.0
+   2.1 · NOW PLAYING V5 & LIVING SOUNDSTAGE (SOFT AUDIO-REACTIVE MATERIAL)
    ========================================================================== */
 .now-playing-stage {
+    position: relative;
     border-radius: var(--aether-radius-stage);
     background-image: var(--aether-sheen);
     border-color: var(--glass-edge);
@@ -477,6 +478,46 @@ body.light-mode .persona-chip.is-pending {
         var(--aether-rim-top),
         var(--aether-rim-bottom),
         0 14px 34px -14px rgba(0, 0, 0, 0.42);
+}
+
+/* Soft Audio-Reactive Top Specular Filament (pure compositor opacity, zero blur/flash) */
+.now-playing-stage::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 16%;
+    right: 16%;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-accent) 42%, rgba(255, 255, 255, 0.72)) 50%,
+        transparent 100%
+    );
+    opacity: calc(0.18 + var(--soundstage-breath, 0) * 0.34);
+    pointer-events: none;
+}
+
+body.light-mode .now-playing-stage::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-accent) 46%, #ffffff) 50%,
+        transparent 100%
+    );
+    opacity: calc(0.2 + var(--soundstage-breath, 0) * 0.32);
+}
+
+/* Subtle inner optical rim on the artwork pedestal driven by low-frequency audio breath */
+.avatar-backdrop-disc::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 48%, rgba(255, 255, 255, 0.62));
+    opacity: calc(0.16 + var(--soundstage-breath, 0) * 0.36);
+    pointer-events: none;
 }
 
 body.light-mode .now-playing-stage {
@@ -886,23 +927,89 @@ body.light-mode .now-playing-stage {
 }
 
 /* ==========================================================================
-   2.4 & 2.5 · LYRICS EXPERIENCE 3.0 & ZEN MODE V5
+   2.4 & 2.5 · LYRIC FLOW (MUSIC-AWARE TYPOGRAPHY) & LIVING ZEN V5.5
+   4-tier focus hierarchy (active / ±1 adjacent / ±2 near / distant) with zero
+   per-line blur, zero text glow, and zero DOM churn when line index is steady.
    ========================================================================== */
 .lyric-line {
     border-radius: 14px;
-    transition: opacity 220ms var(--v3-fluid-ease), background-color 220ms var(--v3-fluid-ease),
-        border-color 220ms var(--v3-fluid-ease);
+    transition: opacity 240ms var(--v3-fluid-ease), transform 240ms var(--v3-fluid-ease),
+        background-color 240ms var(--v3-fluid-ease), border-color 240ms var(--v3-fluid-ease);
+}
+
+.lyrics-body:not(.full-view) .lyric-line:not(.active),
+.lyrics-body.floating-view .lyric-line:not(.active):not(.is-near):not(.is-adjacent) {
+    opacity: 0.4;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-near:not(.active),
+.lyrics-body.floating-view .lyric-line.is-near:not(.active):not(.is-adjacent) {
+    opacity: 0.58;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-adjacent:not(.active),
+.lyrics-body.floating-view .lyric-line.is-adjacent:not(.active) {
+    opacity: 0.76;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-overlapping,
+.lyrics-body.floating-view .lyric-line.is-overlapping {
+    opacity: 0.88;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line:not(.active):not(.is-near):not(.is-adjacent) {
+    opacity: 0.56;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line.is-near:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line.is-near:not(.active):not(.is-adjacent) {
+    opacity: 0.7;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line.is-adjacent:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line.is-adjacent:not(.active) {
+    opacity: 0.84;
+}
+
+.lyrics-body.full-view .lyric-line,
+body.light-mode .lyrics-body.full-view .lyric-line {
+    opacity: 0.94;
 }
 
 .lyrics-body.floating-view .lyric-line.active,
+.lyrics-body .lyric-line.active,
 .lyric-line.active {
-    background: color-mix(in srgb, var(--color-accent) 11%, var(--surface-hover));
-    border: 1px solid color-mix(in srgb, var(--color-accent) 26%, transparent);
+    opacity: 1;
+    transform: translate3d(2px, 0, 0);
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-hover));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
+    border-left: 3px solid var(--color-accent);
     box-shadow: var(--aether-rim-soft);
 }
 
-.lyric-line:hover:not(.active) {
+.lyric-line.active .lyric-jp {
+    font-weight: 750;
+    letter-spacing: -0.008em;
+}
+
+.lyric-line.active .lyric-romaji,
+.lyric-line.active .lyric-vi {
+    color: color-mix(in srgb, var(--color-text) 82%, var(--color-text-secondary));
+}
+
+.lyrics-body .lyric-line:hover:not(.active),
+.lyrics-body.floating-view .lyric-line:hover:not(.active) {
+    opacity: 0.9;
     background: color-mix(in srgb, var(--surface-hover) 70%, transparent);
+}
+
+.lyrics-body.full-view .lyric-line.active {
+    transform: none;
+}
+
+body.zen-mode.zen-morphing .banner-layer.active {
+    animation: none;
 }
 
 .zen-mini-dock {
@@ -948,6 +1055,9 @@ body.light-mode .now-playing-stage {
 @media (prefers-reduced-motion: reduce) {
     .social-link-pill:hover .pill-arrow { transform: none; }
     .lyric-line { transition: none; }
+    .lyric-line.active { transform: none; }
+    .now-playing-stage::after { opacity: 0.2; }
+    .avatar-backdrop-disc::after { opacity: 0.2; }
     .seek-hover-tooltip, .seek-thumb-dot { transition: none; }
     .seek-bar-track:hover:not(.is-scrubbing),
     .seek-bar-track:focus-visible:not(.is-scrubbing) { --seek-thumb-scale: 0.88; }

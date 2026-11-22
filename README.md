@@ -6,9 +6,9 @@
 
 *Where Motion Meets Emotion.*
 
-**V4 Refined · IN DEVELOPMENT**
+**V5.5 · LIVING SOUNDSTAGE (FINAL FEATURE MILESTONE)**
 
-[![MinKoi V4 Refined](https://img.shields.io/badge/MINKOI-V4_Refined-78b9d2?style=flat-square)](https://github.com/minhkhoi1516/profilecardwaifu)
+[![MinKoi V5.5](https://img.shields.io/badge/MINKOI-V5.5_Living_Soundstage-78b9d2?style=flat-square)](https://github.com/minhkhoi1516/profilecardwaifu)
 [![Deployed on Vercel](https://img.shields.io/badge/Deployed_on-Vercel-181818?style=flat-square&logo=vercel)](https://pro5-waifu-minkoi.vercel.app/)
 [![Source License MIT](https://img.shields.io/badge/Source_License-MIT-c5b58c?style=flat-square)](LICENSE)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2020+-e6ce76?style=flat-square&logo=javascript&logoColor=181818)](js/)
@@ -29,14 +29,14 @@ Một bộ sưu tập nhân vật waifu, nhạc anime, chuyển động tự nhi
 
 | Không gian | Điều làm nên MinKoi |
 | :--- | :--- |
-| **Waifu Collection** | 8 persona, avatar và banner chuyển cảnh hai lớp, chibi, màu sắc và particles riêng. |
-| **Music Studio** | 34 bản nhạc; playlist, favorites, bộ lọc nhân vật, tìm kiếm, shuffle/repeat, seek, playback speed, EQ và sleep timer. |
+| **Waifu Collection** | 8 persona, avatar và banner chuyển cảnh hai lớp với Smart Artwork Pipeline (chuyển đổi tức thì), chibi, màu sắc và particles riêng. |
+| **Music Studio** | 34 bản nhạc; playlist, favorites, bộ lọc nhân vật, tìm kiếm, shuffle/repeat, Liquid Seek kèm Lyric Peek, Glass Volume, playback speed, EQ 5-band (6 preset) và sleep timer. |
 | **日本語 × Romaji × Tiếng Việt** | Một câu, ba tầng nội dung; mặc định bật cả ba, sáu lựa chọn hiển thị lưu trên trình duyệt và dùng chung cho Drawer/Zen. |
-| **Lyrics Flow** | Floating, Karaoke và Toàn bài; chạm câu để tua, recenter, offset từng bản audio, Tap to Sync và Editor. Word/syllable sweep **chỉ** dùng khi nguồn có timestamp tương ứng. |
-| **Cinematic Zen** | Thẻ lời Frosted trên artwork, chuyển câu bằng spring, Mini Dock kính mờ nhuộm màu waifu và nút ẩn/hiện lời được lưu trên trình duyệt. Ẩn lời không thoát Zen và không dừng nhạc. |
-| **Live Soundstage** | Aurora Crown, Spectral Halo, Manga Soundwave và Kinetic Orbit đọc dữ liệu audio thật. |
-| **Natural Motion** | Spring ngắt/đổi đích được, press feedback, popup/sheet enter–exit; thanh danh mục kéo trực tiếp hoặc vuốt danh sách với quán tính. |
-| **Two Materials** | Frosted mặc định và Liquid tùy chọn trong menu ba chấm; chung một bộ vật lý, không phải hai indicator. Liquid là hiệu ứng quang học CSS, không tuyên bố khúc xạ vật lý. |
+| **Lyric Flow** | Phân cấp thị giác 4 tầng (`active` / `±1` / `±2` / xa) ở Floating, Karaoke và Toàn bài; chạm câu để tua, recenter, offset từng bản audio, Tap to Sync và Editor. Word/syllable sweep **chỉ** dùng khi nguồn có timestamp tương ứng. |
+| **Living Soundstage & Zen** | Chuyển tiếp không gian Player ↔ Zen bằng một `MinkoiSpring` đồng bộ (giữ nguyên artwork hiện tại, ngắt/đổi chiều tức thì), thẻ lời trên artwork, Mini Dock kính mờ và ánh sáng viền cục bộ đáp ứng theo năng lượng âm thanh tần số thấp (tự tắt ở chế độ `balanced` hoặc Reduced Motion). |
+| **Live Soundstage Visualizers** | Aurora Crown, Spectral Halo, Manga Soundwave và Kinetic Orbit đọc dữ liệu audio thật qua Web Audio Analyser. |
+| **Natural Motion** | Spring ngắt/đổi đích được, press illumination cục bộ, chuyển bài liên tục bằng WAAPI; thanh danh mục Liquid Capsule kéo trực tiếp hoặc vuốt danh sách với quán tính. |
+| **Two Materials & Adaptive Perf** | Frosted mặc định và Liquid tùy chọn trong menu ba chấm; `js/perf-engine.js` tự điều chỉnh tỷ lệ canvas nội bộ khi GPU tải cao mà không tắt tính năng thị giác. |
 
 Âm thanh tương tác và rung là tùy chọn, mặc định tắt; khả năng rung tùy thiết bị/trình duyệt. Dark/Light Mode và Reduced Motion được hỗ trợ.
 
@@ -50,7 +50,7 @@ Hai bản **小さな恋のうた** được tách theo ID/persona/file. Ba voca
 
 Dữ liệu Romaji/Việt cũ vẫn còn trong repository và có thể mở để đối chiếu; bản dịch đã có không bị thay bằng bản kém hơn. Custom import luôn ưu tiên trước nguồn mặc định; JSON giữ được ba tầng, tokens và thời gian kết thúc. LRC/ELRC/TTML, transcript interval, timestamp inline và plain text vẫn có thể nhập. Cài đặt, favorites, custom lyrics và offset được lưu cục bộ, không gửi lên tài khoản hay máy chủ.
 
-> **V4 Refined vẫn đang phát triển.** Không có cam kết “mọi bài đã xác minh” hay “60 FPS trên mọi máy”. Kiểm thử viewport/touch emulation không thay thế kiểm thử Android thật. Nhánh `main` có thể chứa tính năng chưa được phát hành lên production.
+> **MINKOI V5.5 — Final Feature Milestone.** Dự án đã hoàn thiện các cột mốc tính năng lớn và chuyển sang chế độ ổn định / bảo trì lỗi. Không có cam kết “mọi bài đã xác minh” hay “60 FPS trên mọi máy”; trên các GPU cũ không hỗ trợ GPU Rasterization, một số hiệu ứng kính mờ và giải mã ảnh nền lớn vẫn phụ thuộc phần cứng trình duyệt. Kiểm thử viewport/touch emulation không thay thế kiểm thử điện thoại thật.
 
 ## Kiến trúc
 
@@ -58,9 +58,10 @@ Website tĩnh bằng **HTML, CSS và JavaScript**, không có framework runtime 
 
 ```text
 index.html             Semantic UI, Music Studio, Lyrics Drawer, existing Zen overlay
-css/                   Responsive layouts, shared materials, trilingual typography
+css/                   Responsive layouts, shared materials, trilingual typography & V5 Aether UI
 js/config.js           Persona catalogue & stable track IDs / audio mapping
-js/music.js            Player, playlist, favorites & Web Audio EQ
+js/music.js            Player, playlist, favorites, Liquid Seek, Glass Volume & Web Audio EQ
+js/perf-engine.js      Adaptive GPU performance & visibility lifecycle coordinator
 js/audio-reactivity.js Shared audio feature analysis
 js/visualizer.js        Four chibi soundstage styles
 js/ui/                 Shared spring scheduler, gestures, popups & tactile feedback

@@ -532,7 +532,9 @@
                 const ref = this.lineRefs[i];
                 const isPrimary = i === activeIdx;
                 const isOverlapping = !isPrimary && overlapSet.has(i);
-                const isNear = activeIdx >= 0 && Math.abs(i - activeIdx) <= 2;
+                const dist = activeIdx >= 0 ? Math.abs(i - activeIdx) : 99;
+                const isAdjacent = dist === 1;
+                const isNear = dist === 1 || dist === 2;
 
                 let state;
                 if (isPrimary) state = 'active';
@@ -540,8 +542,8 @@
                 else if (activeIdx >= 0 && i < activeIdx) state = 'past';
                 else state = 'upcoming';
 
-                const nearFlag = isNear ? 'near' : 'far';
-                const combinedKey = `${state}:${nearFlag}`;
+                const distTier = dist <= 2 ? dist : 3;
+                const combinedKey = `${state}:${distTier}`;
 
                 if (ref.lastLineState !== combinedKey) {
                     ref.lastLineState = combinedKey;
@@ -550,6 +552,7 @@
                     cl.toggle('is-overlapping', isOverlapping);
                     cl.toggle('is-past', state === 'past');
                     cl.toggle('is-upcoming', state === 'upcoming');
+                    cl.toggle('is-adjacent', isAdjacent);
                     cl.toggle('is-near', isNear);
                 }
 
