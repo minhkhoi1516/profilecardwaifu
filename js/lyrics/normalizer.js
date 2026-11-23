@@ -254,11 +254,16 @@
             const romaji = typeof raw.romaji === 'string' && !containsJapanese(raw.romaji)
                 ? raw.romaji : (!containsJapanese(text) ? text : '');
 
+            const hasUserCorrectedEnd = Number.isFinite(raw.correctedEndMs) && Number.isFinite(startMs) && correctedEndMs > startMs;
+            const hasExplicitEnd = Number.isFinite(endMs) && Number.isFinite(startMs) && endMs > startMs &&
+                (hasUserCorrectedEnd || (raw.endTimingSource !== 'estimated' && raw.endTimingSource !== 'next-line-boundary'));
+
             return {
                 id: raw.id || `track-${doc.trackId ?? trackMeta?.id ?? 'custom'}-line-${idx + 1}`,
                 index: idx,
                 startMs,
                 endMs,
+                hasExplicitEnd,
                 text,
                 jp,
                 romaji,
@@ -300,6 +305,7 @@
                 preparedLines[i].index = i;
                 const cur = preparedLines[i];
                 if (cur.endMs === null) {
+                    cur.hasExplicitEnd = false;
                     // Find next non-background line start as boundary when no explicit endMs was given
                     let nextStart = null;
                     for (let j = i + 1; j < preparedLines.length; j++) {
@@ -310,10 +316,13 @@
                     }
                     if (nextStart !== null) {
                         cur.endMs = nextStart;
+                        if (!cur.endTimingSource) cur.endTimingSource = 'next-line-boundary';
                     } else if (Number.isFinite(trackMeta?.durationMs) && trackMeta.durationMs > cur.startMs) {
                         cur.endMs = trackMeta.durationMs;
+                        if (!cur.endTimingSource) cur.endTimingSource = 'estimated';
                     } else {
                         cur.endMs = cur.startMs + 4000;
+                        if (!cur.endTimingSource) cur.endTimingSource = 'estimated';
                     }
                 }
                 // Fill last token's missing endMs strictly using next line timestamp ONLY if it came from ELRC without closing tag

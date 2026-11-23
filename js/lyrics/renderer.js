@@ -52,6 +52,7 @@
             this.zenTokenRefs = [];
             this.zenPending = null;
             this.zenRenderedIndex = -1;
+            this._zenInstantRaf = 0;
 
             this.viewMode = 'floating'; // 'floating' | 'karaoke' | 'full'
             this.tapSyncActive = false;
@@ -180,14 +181,46 @@
             }
         }
 
+        _clearZenInstant(box) {
+            if (this._zenInstantRaf && typeof global.cancelAnimationFrame === 'function') {
+                global.cancelAnimationFrame(this._zenInstantRaf);
+                this._zenInstantRaf = 0;
+            }
+            if (box) box.classList.remove('is-instant');
+        }
+
+        _commitZenInstant(box, mutateFn) {
+            if (!box) {
+                mutateFn();
+                return;
+            }
+            if (this._zenInstantRaf && typeof global.cancelAnimationFrame === 'function') {
+                global.cancelAnimationFrame(this._zenInstantRaf);
+                this._zenInstantRaf = 0;
+            }
+            box.classList.add('is-instant');
+            mutateFn();
+            void box.offsetWidth;
+            if (typeof global.requestAnimationFrame === 'function') {
+                this._zenInstantRaf = global.requestAnimationFrame(() => {
+                    this._zenInstantRaf = 0;
+                    box.classList.remove('is-instant');
+                });
+            } else {
+                box.classList.remove('is-instant');
+            }
+        }
+
         renderLoading(track) {
             this.zenPending = null;
             this.zenRenderedIndex = -1;
             if (this.scrollSpring) this.scrollSpring.snap(this.dom.body?.scrollTop || 0);
             this.zenMotion?.snap(1);
             if (this.dom.zenAmbientBox) {
-                this.dom.zenAmbientBox.classList.remove('has-lyric');
-                this.dom.zenAmbientBox.setAttribute('aria-hidden', 'true');
+                this._commitZenInstant(this.dom.zenAmbientBox, () => {
+                    this.dom.zenAmbientBox.classList.remove('has-lyric', 'is-breathing-out');
+                    this.dom.zenAmbientBox.setAttribute('aria-hidden', 'true');
+                });
             }
             for (const el of [this.dom.zenJp, this.dom.zenRomaji, this.dom.zenVi]) if (el) el.textContent = '';
             this.track = track;
@@ -218,6 +251,10 @@
         mountDocument(track, doc, diagnostics) {
             this.zenPending = null;
             this.zenRenderedIndex = -1;
+            if (this.dom.zenAmbientBox) {
+                this._clearZenInstant(this.dom.zenAmbientBox);
+                this.dom.zenAmbientBox.classList.remove('is-breathing-out');
+            }
             this.track = track;
             this.doc = doc;
             this.diagnostics = diagnostics;
@@ -633,6 +670,8 @@
 
             if (showFallback) {
                 this.zenPending = null;
+                this._clearZenInstant(box);
+                box.classList.remove('is-breathing-out');
                 // Never leave Zen as an unexplained empty wallpaper when the
                 // current track has no timed lyric lines.
                 const title = this.doc.title || this.track?.name || '';
@@ -652,30 +691,52 @@
                 return;
             }
 
-            if (!zenOpen || !this.doc || snapshot.activeLineIndex < 0) {
+            const zen = snapshot.zen || {
+                lineIndex: snapshot.activeLineIndex,
+                phase: snapshot.activeLineIndex >= 0 ? 'visible' : 'hidden'
+            };
+            const idx = zen.lineIndex;
+            const reducedMotion = Boolean(global.MinkoiSpring?.isAccessibilityReducedMotion?.());
+
+            if (!zenOpen || !this.doc || idx < 0) {
                 this.zenPending = null;
                 this.zenRenderedIndex = -1;
-                if (this.lastZenLineIndex !== -1) {
-                    box.classList.remove('has-lyric');
-                    box.setAttribute('aria-hidden', 'true');
+                const isBreathingOut = Boolean(zenOpen && this.doc && zen.phase === 'breathing-out');
+                const shouldHideInstant = !zenOpen || Boolean(snapshot.wasSeek) || reducedMotion || !isBreathingOut;
+                if (this.lastZenLineIndex !== -1 || box.classList.contains('has-lyric')) {
+                    const hide = () => {
+                        box.classList.toggle('is-breathing-out', isBreathingOut && !shouldHideInstant);
+                        box.classList.remove('has-lyric');
+                        box.setAttribute('aria-hidden', 'true');
+                    };
+                    if (shouldHideInstant) {
+                        this._commitZenInstant(box, hide);
+                    } else {
+                        this._clearZenInstant(box);
+                        hide();
+                    }
                     this.lastZenLineIndex = -1;
                 }
                 return;
             }
 
-            const idx = snapshot.activeLineIndex;
             const line = this.doc.lines[idx];
             if (!line) {
-                box.classList.remove('has-lyric');
-                box.setAttribute('aria-hidden', 'true');
+                this._commitZenInstant(box, () => {
+                    box.classList.remove('has-lyric', 'is-breathing-out');
+                    box.setAttribute('aria-hidden', 'true');
+                });
+                this.lastZenLineIndex = -1;
+                this.zenRenderedIndex = -1;
                 return;
             }
 
             const isWordMode = (this.doc.syncLevel === 'word' || this.doc.syncLevel === 'syllable') && Array.isArray(line.tokens);
             const tokenIsJapanese = ns.Normalizer.containsJapanese(line.tokens?.map(t => t.text).join('') || line.text);
             const tokenEl = tokenIsJapanese && jpEl ? jpEl : romanEl;
+            const wasHidden = !box.classList.contains('has-lyric') || this.zenRenderedIndex < 0;
 
-            if (idx !== this.lastZenLineIndex || (snapshot.wasSeek && this.zenPending)) {
+            if (idx !== this.lastZenLineIndex || (snapshot.wasSeek && this.zenPending) || wasHidden) {
                 box.classList.remove('is-fallback');
                 this.lastZenLineIndex = idx;
                 const currentDocument = this.doc;
@@ -710,16 +771,28 @@
                         viEl.textContent = '';
                     }
                 };
-                if (this.zenMotion && !global.MinkoiSpring.isAccessibilityReducedMotion?.()
-                    && this.zenRenderedIndex >= 0 && !snapshot.wasSeek) {
+                if (this.zenMotion && !reducedMotion && !wasHidden && !snapshot.wasSeek) {
+                    // Continuous phrase-to-phrase flow (<1.8s gap): keep MinkoiSpring cross-swap.
                     this.zenPending = commit;
                     this.zenMotion.setTarget(0);
                 } else {
+                    // Fresh entrance (from intro, long break, seek, or reduced motion):
+                    // commit new text before revealing so container CSS fade-in (300ms) stays pure.
                     this.zenPending = null;
                     commit();
                     if (this.zenMotion) {
-                        this.zenMotion.snap(snapshot.wasSeek ? 1 : 0);
-                        this.zenMotion.setTarget(1);
+                        this.zenMotion.snap(1);
+                    }
+                    const reveal = () => {
+                        box.classList.remove('is-breathing-out');
+                        box.classList.add('has-lyric');
+                        box.setAttribute('aria-hidden', 'false');
+                    };
+                    if (snapshot.wasSeek || reducedMotion) {
+                        this._commitZenInstant(box, reveal);
+                    } else {
+                        this._clearZenInstant(box);
+                        reveal();
                     }
                 }
             }
@@ -741,6 +814,7 @@
             }
 
             if (!box.classList.contains('has-lyric')) {
+                box.classList.remove('is-breathing-out');
                 box.classList.add('has-lyric');
                 box.setAttribute('aria-hidden', 'false');
             }

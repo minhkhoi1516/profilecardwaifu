@@ -1,0 +1,2035 @@
+{
+  "archive": "art moi.zip",
+  "cropFields": [
+    "centerX",
+    "centerY",
+    "zoom"
+  ],
+  "socialPreview": {
+    "path": "assets/og_banner.jpg",
+    "derivedFrom": "assets/banners/alya/pc/01.webp"
+  },
+  "banners": {
+    "assets/banners/alya/pc/01.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4243361.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.5,
+        1.0
+      ],
+      "bytes": 81654
+    },
+    "assets/banners/alya/pc/02.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4333684.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.175,
+        1
+      ],
+      "bytes": 48046,
+      "previousSource": "Arya/Alisa.Mikhailova.Kujou.1024.4187566.webp",
+      "size": [
+        1024,
+        512
+      ],
+      "cropBox": [
+        0,
+        0,
+        1024,
+        512
+      ],
+      "compositionNote": "Replace the tight flag portrait with a sky-backed school-uniform portrait; use a 2:1 crop to preserve headroom in short Zen."
+    },
+    "assets/banners/alya/pc/03.webp": {
+      "source": "Arya/IMG_20261118_071120.webp",
+      "origin": "archive",
+      "crop": [
+        0.55,
+        0.32,
+        1.0
+      ],
+      "bytes": 175106
+    },
+    "assets/banners/alya/pc/04.webp": {
+      "source": "Arya/IMG_20261118_071132.webp",
+      "origin": "archive",
+      "crop": [
+        0.52,
+        0.24,
+        1.0
+      ],
+      "bytes": 267604
+    },
+    "assets/banners/alya/pc/05.webp": {
+      "source": "Arya/IMG_20261118_071140.webp",
+      "origin": "archive",
+      "crop": [
+        0.55,
+        0.3,
+        1.0
+      ],
+      "bytes": 141446
+    },
+    "assets/banners/alya/pc/06.webp": {
+      "source": "Arya/roshidere_wp_47.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.17,
+        1
+      ],
+      "bytes": 153520,
+      "size": [
+        1168,
+        657
+      ],
+      "cropBox": [
+        6,
+        106,
+        1174,
+        763
+      ],
+      "compositionNote": "Restore the hairline and headroom."
+    },
+    "assets/banners/alya/pc/07.webp": {
+      "source": "Arya/ROSHIDERE_illustration_book_1_illustration_1.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.25,
+        1.0
+      ],
+      "bytes": 200866
+    },
+    "assets/banners/alya/pc/08.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4144336.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.28,
+        1.07
+      ],
+      "bytes": 147890
+    },
+    "assets/banners/alya/pc/09.webp": {
+      "source": "Arya/Light_Novel_Volume_3_1st_Ed_Rev_Cover_%26_Bonus_SS_Illustration.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.18,
+        1.0
+      ],
+      "bytes": 88984
+    },
+    "assets/banners/alya/pc/10.webp": {
+      "source": "Arya/Light_Novel_Volume_10_Color_Illustration_1.webp",
+      "origin": "archive",
+      "crop": [
+        0.48,
+        0.43,
+        1
+      ],
+      "bytes": 187408
+    },
+    "assets/banners/alya/pc/11.webp": {
+      "source": "Arya/roshidere_wp_50.jpg",
+      "origin": "archive",
+      "crop": [
+        0.47,
+        0.22,
+        1
+      ],
+      "bytes": 148112
+    },
+    "assets/banners/alya/pc/12.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4318955.webp",
+      "origin": "archive",
+      "crop": [
+        0.71,
+        0.62,
+        1.22
+      ],
+      "bytes": 156070
+    },
+    "assets/banners/alya/pc/13.webp": {
+      "source": "Arya/Light_Novel_Volume_8_Cover_%28Clean%29.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.31,
+        1
+      ],
+      "bytes": 142430
+    },
+    "assets/banners/alya/pc/14.webp": {
+      "source": "assets/banner_alya_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 143928
+    },
+    "assets/banners/alya/pc/15.webp": {
+      "source": "assets/banner_alya_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 204334
+    },
+    "assets/banners/alya/phone/01.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4144336.webp",
+      "origin": "archive",
+      "crop": [
+        0.61,
+        0.48,
+        1.12
+      ],
+      "bytes": 187342
+    },
+    "assets/banners/alya/phone/02.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4187566.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.4,
+        1.0
+      ],
+      "bytes": 162774
+    },
+    "assets/banners/alya/phone/03.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4290949.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 206358
+    },
+    "assets/banners/alya/phone/04.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4291555.webp",
+      "origin": "archive",
+      "crop": [
+        0.64,
+        0.62,
+        1.2
+      ],
+      "bytes": 231190
+    },
+    "assets/banners/alya/phone/05.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4333684.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.4,
+        1.0
+      ],
+      "bytes": 155778
+    },
+    "assets/banners/alya/phone/06.webp": {
+      "source": "Arya/Light_Novel_Volume_3_1st_Ed_Rev_Cover_%26_Bonus_SS_Illustration.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.4,
+        1.0
+      ],
+      "bytes": 170350
+    },
+    "assets/banners/alya/phone/07.webp": {
+      "source": "Arya/Light_Novel_Volume_8_Cover_%28Clean%29.webp",
+      "origin": "archive",
+      "crop": [
+        0.54,
+        0.43,
+        1.06
+      ],
+      "bytes": 211356
+    },
+    "assets/banners/alya/phone/08.webp": {
+      "source": "Arya/ROSHIDERE_illustration_book_1_illustration_1.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.38,
+        1.0
+      ],
+      "bytes": 248674
+    },
+    "assets/banners/alya/phone/09.webp": {
+      "source": "Arya/roshidere_wp_46.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.25,
+        1.2
+      ],
+      "bytes": 206214
+    },
+    "assets/banners/alya/phone/10.webp": {
+      "source": "Arya/Alisa.Mikhailova.Kujou.1024.4225106.webp",
+      "origin": "archive",
+      "crop": [
+        0.53,
+        0.46,
+        1
+      ],
+      "bytes": 122794
+    },
+    "assets/banners/alya/phone/11.webp": {
+      "source": "Arya/Light_Novel_Volume_10_Color_Illustration_1.webp",
+      "origin": "archive",
+      "crop": [
+        0.23,
+        0.39,
+        0.94
+      ],
+      "bytes": 91076,
+      "cropBox": [
+        66,
+        0,
+        486,
+        910
+      ],
+      "size": [
+        420,
+        910
+      ],
+      "reviewNote": "Recenter the face away from the left edge."
+    },
+    "assets/banners/alya/phone/12.webp": {
+      "source": "Arya/roshidere_wp_47.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.1
+      ],
+      "bytes": 257834
+    },
+    "assets/banners/alya/phone/13.webp": {
+      "source": "Arya/roshidere_wp_50.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.1
+      ],
+      "bytes": 217270
+    },
+    "assets/banners/alya/phone/14.webp": {
+      "source": "assets/banner_alya_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 166736
+    },
+    "assets/banners/alya/phone/15.webp": {
+      "source": "assets/banner_alya_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 177354
+    },
+    "assets/banners/alya/phone/16.webp": {
+      "source": "Arya/IMG_20261118_071120.webp",
+      "origin": "archive",
+      "crop": [
+        0.28,
+        0.38,
+        1.15
+      ],
+      "bytes": 177706
+    },
+    "assets/banners/alya/phone/17.webp": {
+      "source": "Arya/IMG_20261118_071132.webp",
+      "origin": "archive",
+      "crop": [
+        0.72,
+        0.44,
+        1
+      ],
+      "bytes": 320890
+    },
+    "assets/banners/alya/phone/18.webp": {
+      "source": "Arya/IMG_20261118_071140.webp",
+      "origin": "archive",
+      "crop": [
+        0.32,
+        0.43,
+        1
+      ],
+      "bytes": 169866
+    },
+    "assets/banners/hinako/pc/01.webp": {
+      "source": "assets/banner_hinako_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 111900
+    },
+    "assets/banners/hinako/pc/02.webp": {
+      "source": "assets/banner_hinako_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 93390
+    },
+    "assets/banners/hinako/pc/03.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520790.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.27,
+        1.0
+      ],
+      "bytes": 89738
+    },
+    "assets/banners/hinako/pc/04.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520795.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.25,
+        1.0
+      ],
+      "bytes": 80618
+    },
+    "assets/banners/hinako/pc/05.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3637617.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.29,
+        1
+      ],
+      "bytes": 47412,
+      "size": [
+        1024,
+        576
+      ],
+      "cropBox": [
+        0,
+        127,
+        1024,
+        703
+      ],
+      "compositionNote": "Raise the smiling face above the lyrics and dock."
+    },
+    "assets/banners/hinako/pc/06.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3744634.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.24,
+        1.0
+      ],
+      "bytes": 66304
+    },
+    "assets/banners/hinako/pc/07.webp": {
+      "source": "hinako/Konohana.Hinako.1024.4128658.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1
+      ],
+      "bytes": 53710,
+      "size": [
+        1024,
+        576
+      ],
+      "cropBox": [
+        0,
+        141,
+        1024,
+        717
+      ],
+      "compositionNote": "Raise the face inside the short viewport."
+    },
+    "assets/banners/hinako/pc/08.webp": {
+      "source": "hinako/Konohana.Hinako.1024.4128662.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.29,
+        1
+      ],
+      "bytes": 63788,
+      "size": [
+        1024,
+        576
+      ],
+      "cropBox": [
+        0,
+        127,
+        1024,
+        703
+      ],
+      "compositionNote": "Raise the eyes inside the short viewport."
+    },
+    "assets/banners/hinako/pc/09.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520793.webp",
+      "origin": "archive",
+      "crop": [
+        0.55,
+        0.22,
+        1.15
+      ],
+      "bytes": 80888
+    },
+    "assets/banners/hinako/phone/01.webp": {
+      "source": "assets/banner_hinako_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 182460
+    },
+    "assets/banners/hinako/phone/02.webp": {
+      "source": "assets/banner_hinako_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 260992
+    },
+    "assets/banners/hinako/phone/03.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520790.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 153376
+    },
+    "assets/banners/hinako/phone/04.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520795.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 155636
+    },
+    "assets/banners/hinako/phone/05.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3744634.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 129960
+    },
+    "assets/banners/hinako/phone/06.webp": {
+      "source": "hinako/Konohana.Hinako.1024.4128658.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 133748
+    },
+    "assets/banners/hinako/phone/07.webp": {
+      "source": "hinako/Konohana.Hinako.1024.4128662.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 163010
+    },
+    "assets/banners/hinako/phone/08.webp": {
+      "source": "hinako/Saijo.no.Osewa.1024.3744635.webp",
+      "origin": "archive",
+      "crop": [
+        0.77,
+        0.24,
+        1.61
+      ],
+      "bytes": 37314,
+      "cropBox": [
+        584,
+        0,
+        992,
+        884
+      ],
+      "size": [
+        408,
+        884
+      ],
+      "reviewNote": "Center the solo face without opening the adjacent panel."
+    },
+    "assets/banners/hinako/phone/09.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3637617.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.05
+      ],
+      "bytes": 127312
+    },
+    "assets/banners/hinako/phone/10.webp": {
+      "source": "hinako/Konohana.Hinako.1024.3520793.webp",
+      "origin": "archive",
+      "crop": [
+        0.44,
+        0.32,
+        1.52
+      ],
+      "bytes": 128072
+    },
+    "assets/banners/kaoruko/pc/01.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4323518.webp",
+      "origin": "archive",
+      "crop": [
+        0.45,
+        0.41,
+        1.24
+      ],
+      "bytes": 140574
+    },
+    "assets/banners/kaoruko/pc/02.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4413151.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.43,
+        1
+      ],
+      "bytes": 95904,
+      "cropBox": [
+        0,
+        244,
+        1024,
+        820
+      ],
+      "size": [
+        1024,
+        576
+      ],
+      "reviewNote": "Keep the smile inside the landscape frame."
+    },
+    "assets/banners/kaoruko/pc/03.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4418354.webp",
+      "origin": "archive",
+      "crop": [
+        0.44,
+        0.34,
+        1.25
+      ],
+      "bytes": 80354,
+      "size": [
+        816,
+        459
+      ],
+      "cropBox": [
+        43,
+        201,
+        859,
+        660
+      ],
+      "compositionNote": "Move the cut away from her glasses and retain the book."
+    },
+    "assets/banners/kaoruko/pc/04.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4419046.webp",
+      "origin": "archive",
+      "crop": [
+        0.6,
+        0.34,
+        1.25
+      ],
+      "bytes": 108856
+    },
+    "assets/banners/kaoruko/pc/05.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4491952.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.0
+      ],
+      "bytes": 185418
+    },
+    "assets/banners/kaoruko/pc/06.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4514100.webp",
+      "origin": "archive",
+      "crop": [
+        0.48,
+        0.45,
+        1.15
+      ],
+      "bytes": 142356
+    },
+    "assets/banners/kaoruko/pc/07.webp": {
+      "source": "Kaoruko/250722.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.1
+      ],
+      "bytes": 124248
+    },
+    "assets/banners/kaoruko/pc/08.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4416129.webp",
+      "origin": "archive",
+      "crop": [
+        0.62,
+        0.35,
+        1.25
+      ],
+      "bytes": 126108
+    },
+    "assets/banners/kaoruko/pc/09.webp": {
+      "source": "assets/banner_kaoruko_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 142486
+    },
+    "assets/banners/kaoruko/pc/10.webp": {
+      "source": "assets/banner_kaoruko_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 112840
+    },
+    "assets/banners/kaoruko/phone/01.webp": {
+      "source": "assets/banner_kaoruko_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 178598
+    },
+    "assets/banners/kaoruko/phone/02.webp": {
+      "source": "assets/banner_kaoruko_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.65,
+        0.44,
+        1.18
+      ],
+      "bytes": 254360
+    },
+    "assets/banners/kaoruko/phone/03.webp": {
+      "source": "Kaoruko/250722.jpg",
+      "origin": "archive",
+      "crop": [
+        0.53,
+        0.44,
+        1.52
+      ],
+      "bytes": 155528
+    },
+    "assets/banners/kaoruko/phone/04.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4323518.webp",
+      "origin": "archive",
+      "crop": [
+        0.46,
+        0.43,
+        1.15
+      ],
+      "bytes": 206202
+    },
+    "assets/banners/kaoruko/phone/05.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4413151.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 216138
+    },
+    "assets/banners/kaoruko/phone/06.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4418354.webp",
+      "origin": "archive",
+      "crop": [
+        0.45,
+        0.55,
+        1.2
+      ],
+      "bytes": 200226
+    },
+    "assets/banners/kaoruko/phone/07.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4419046.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.55,
+        1.15
+      ],
+      "bytes": 169230
+    },
+    "assets/banners/kaoruko/phone/08.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4491952.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 300352
+    },
+    "assets/banners/kaoruko/phone/09.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4514100.webp",
+      "origin": "archive",
+      "crop": [
+        0.6,
+        0.45,
+        1.34
+      ],
+      "bytes": 190838
+    },
+    "assets/banners/kaoruko/phone/10.webp": {
+      "source": "Kaoruko/Waguri.Kaoruko.1024.4416129.webp",
+      "origin": "archive",
+      "crop": [
+        0.53,
+        0.19,
+        2.48
+      ],
+      "bytes": 155110
+    },
+    "assets/banners/mahiru/pc/01.webp": {
+      "source": "Mahiru/Shiina.Mahiru.1024.3886817.webp",
+      "origin": "archive",
+      "crop": [
+        0.57,
+        0.57,
+        1.18
+      ],
+      "bytes": 266764
+    },
+    "assets/banners/mahiru/pc/02.webp": {
+      "source": "Mahiru/261206_mahiru-birthday-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 123838
+    },
+    "assets/banners/mahiru/pc/03.webp": {
+      "source": "Mahiru/mahiru_iteza02-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.52,
+        0.32,
+        1.0
+      ],
+      "bytes": 125846
+    },
+    "assets/banners/mahiru/pc/04.webp": {
+      "source": "Mahiru/mahiru_mizugame-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.275,
+        1.045
+      ],
+      "bytes": 58666,
+      "cropBox": [
+        18,
+        88,
+        706,
+        475
+      ],
+      "size": [
+        688,
+        387
+      ],
+      "reviewNote": "Trim blank cover borders; keep the eye and nose."
+    },
+    "assets/banners/mahiru/pc/05.webp": {
+      "source": "Mahiru/mahiru_ohitsujiza-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 154440
+    },
+    "assets/banners/mahiru/pc/06.webp": {
+      "source": "Mahiru/mahiru_oushi-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 156214
+    },
+    "assets/banners/mahiru/pc/07.webp": {
+      "source": "Mahiru/mahiru_uoza_fix-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.27,
+        1.06
+      ],
+      "bytes": 67790,
+      "cropBox": [
+        26,
+        87,
+        698,
+        465
+      ],
+      "size": [
+        672,
+        378
+      ],
+      "reviewNote": "Trim white cover edges and leave room for the hair."
+    },
+    "assets/banners/mahiru/pc/08.webp": {
+      "source": "Mahiru/mahiru_yagiz-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 130994
+    },
+    "assets/banners/mahiru/pc/09.webp": {
+      "source": "Mahiru/tenshisama_2025xmas-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.48,
+        0.3,
+        1.26
+      ],
+      "bytes": 148226
+    },
+    "assets/banners/mahiru/pc/10.webp": {
+      "source": "assets/banner_mahiru_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 85508
+    },
+    "assets/banners/mahiru/pc/11.webp": {
+      "source": "assets/banner_mahiru_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 265616
+    },
+    "assets/banners/mahiru/pc/12.webp": {
+      "source": "Mahiru/tenshisama_2026newyear-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.54,
+        0.34,
+        1.19
+      ],
+      "bytes": 43740,
+      "size": [
+        608,
+        342
+      ],
+      "cropBox": [
+        87,
+        177,
+        695,
+        519
+      ],
+      "compositionNote": "Keep the nose and mouth farther above the dock in short Zen."
+    },
+    "assets/banners/mahiru/phone/01.webp": {
+      "source": "assets/banner_mahiru_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 255082
+    },
+    "assets/banners/mahiru/phone/02.webp": {
+      "source": "assets/banner_mahiru_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 243876
+    },
+    "assets/banners/mahiru/phone/03.webp": {
+      "source": "Mahiru/261206_mahiru-birthday-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.55,
+        1.4
+      ],
+      "bytes": 166510
+    },
+    "assets/banners/mahiru/phone/04.webp": {
+      "source": "Mahiru/mahiru_iteza02-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.6,
+        0.3,
+        1.34
+      ],
+      "bytes": 48522,
+      "cropBox": [
+        261,
+        0,
+        609,
+        754
+      ],
+      "size": [
+        348,
+        754
+      ],
+      "reviewNote": "Move the right-facing portrait into the safe area."
+    },
+    "assets/banners/mahiru/phone/05.webp": {
+      "source": "Mahiru/mahiru_mizugame-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.65,
+        0.3,
+        1.34
+      ],
+      "bytes": 56022,
+      "cropBox": [
+        297,
+        0,
+        645,
+        754
+      ],
+      "size": [
+        348,
+        754
+      ],
+      "reviewNote": "Move the face in from the right edge and keep the fish."
+    },
+    "assets/banners/mahiru/phone/06.webp": {
+      "source": "Mahiru/mahiru_ohitsujiza-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.6
+      ],
+      "bytes": 164560
+    },
+    "assets/banners/mahiru/phone/07.webp": {
+      "source": "Mahiru/mahiru_oushi-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.6
+      ],
+      "bytes": 155922
+    },
+    "assets/banners/mahiru/phone/08.webp": {
+      "source": "Mahiru/mahiru_uoza_fix-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.6
+      ],
+      "bytes": 159222
+    },
+    "assets/banners/mahiru/phone/09.webp": {
+      "source": "Mahiru/mahiru_yagiz-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.6
+      ],
+      "bytes": 135874
+    },
+    "assets/banners/mahiru/phone/10.webp": {
+      "source": "Mahiru/tenshisama_2026newyear-724x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.4
+      ],
+      "bytes": 140080
+    },
+    "assets/banners/mahiru/phone/11.webp": {
+      "source": "Mahiru/tenshisama_2025xmas-725x1024.jpg",
+      "origin": "archive",
+      "crop": [
+        0.47,
+        0.48,
+        1.6
+      ],
+      "bytes": 133042
+    },
+    "assets/banners/nakanomiku/pc/01.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.3124658.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 93054
+    },
+    "assets/banners/nakanomiku/pc/02.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.4065834.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 121632
+    },
+    "assets/banners/nakanomiku/pc/03.webp": {
+      "source": "NakanoMiku/Nakano.Miku.full.2855657.jpg",
+      "origin": "archive",
+      "crop": [
+        0.45,
+        0.3,
+        1.0
+      ],
+      "bytes": 137940
+    },
+    "assets/banners/nakanomiku/pc/04.webp": {
+      "source": "NakanoMiku/Nakano.Miku.full.4065911.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.12,
+        1.0
+      ],
+      "bytes": 121748
+    },
+    "assets/banners/nakanomiku/pc/05.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.2747553.webp",
+      "origin": "archive",
+      "crop": [
+        0.375,
+        0.21,
+        1.4
+      ],
+      "bytes": 26284,
+      "size": [
+        720,
+        405
+      ],
+      "cropBox": [
+        24,
+        104,
+        744,
+        509
+      ],
+      "compositionNote": "Relax zoom without introducing lettering at the right."
+    },
+    "assets/banners/nakanomiku/pc/06.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.4014099.webp",
+      "origin": "archive",
+      "crop": [
+        0.68,
+        0.22,
+        1.5
+      ],
+      "bytes": 92346
+    },
+    "assets/banners/nakanomiku/pc/07.webp": {
+      "source": "assets/banner_nakanomiku_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 125104
+    },
+    "assets/banners/nakanomiku/pc/08.webp": {
+      "source": "assets/banner_nakanomiku_pc3.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.54,
+        0.46,
+        1.12
+      ],
+      "bytes": 89360
+    },
+    "assets/banners/nakanomiku/pc/09.webp": {
+      "source": "assets/banner_nakanomiku_pc5.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 193992
+    },
+    "assets/banners/nakanomiku/pc/10.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.3284214.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.34,
+        1
+      ],
+      "bytes": 77814
+    },
+    "assets/banners/nakanomiku/phone/01.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.2747553.webp",
+      "origin": "archive",
+      "crop": [
+        0.435,
+        0.42,
+        1.58
+      ],
+      "bytes": 83506
+    },
+    "assets/banners/nakanomiku/phone/02.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.3124658.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 138086
+    },
+    "assets/banners/nakanomiku/phone/03.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.3284214.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.2
+      ],
+      "bytes": 128806
+    },
+    "assets/banners/nakanomiku/phone/04.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.3415714.webp",
+      "origin": "archive",
+      "crop": [
+        0.53,
+        0.33,
+        1.7
+      ],
+      "bytes": 136980
+    },
+    "assets/banners/nakanomiku/phone/05.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.4014099.webp",
+      "origin": "archive",
+      "crop": [
+        0.65,
+        0.4,
+        1.25
+      ],
+      "bytes": 190748
+    },
+    "assets/banners/nakanomiku/phone/06.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.4065834.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 206876
+    },
+    "assets/banners/nakanomiku/phone/07.webp": {
+      "source": "NakanoMiku/Nakano.Miku.full.2855657.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.0
+      ],
+      "bytes": 232934
+    },
+    "assets/banners/nakanomiku/phone/08.webp": {
+      "source": "NakanoMiku/Nakano.Miku.full.4065911.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.35,
+        1.0
+      ],
+      "bytes": 195492
+    },
+    "assets/banners/nakanomiku/phone/09.webp": {
+      "source": "assets/banner_nakanomiku_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 191996
+    },
+    "assets/banners/nakanomiku/phone/10.webp": {
+      "source": "assets/banner_nakanomiku_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 84486
+    },
+    "assets/banners/nakanomiku/phone/11.webp": {
+      "source": "assets/banner_nakanomiku_phone3.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 310698
+    },
+    "assets/banners/nakanomiku/phone/12.webp": {
+      "source": "assets/banner_nakanomiku_phone4.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.5,
+        1
+      ],
+      "bytes": 107590
+    },
+    "assets/banners/nakanomiku/phone/13.webp": {
+      "source": "assets/banner_nakanomiku_phone5.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.54,
+        0.45,
+        1.14
+      ],
+      "bytes": 149936,
+      "sameMasterAs": "assets/banner_nakanomiku_pc3.jpg"
+    },
+    "assets/banners/nakanomiku/phone/14.webp": {
+      "source": "NakanoMiku/Nakano.Miku.1024.4188233.webp",
+      "origin": "archive",
+      "crop": [
+        0.78,
+        0.48,
+        1.02
+      ],
+      "bytes": 182786
+    },
+    "assets/banners/nakanomiku/phone/15.webp": {
+      "source": "NakanoMiku/Nakano.Miku.full.4309451.jpg",
+      "origin": "archive",
+      "crop": [
+        0.55,
+        0.235,
+        2.05
+      ],
+      "bytes": 182440
+    },
+    "assets/banners/sakuramiku/pc/01.webp": {
+      "source": "assets/banner_sakuramiku_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 166942
+    },
+    "assets/banners/sakuramiku/pc/02.webp": {
+      "source": "SakuraMiku(ishiterugame)/5fe571ef0da8e459063353ef1322a2a3694b8f362c0690_29223607_2ac71058941fb469b3f832fd4bf7e5ed5923ca24.webp",
+      "origin": "archive",
+      "crop": [
+        0.66,
+        0.42,
+        1.59
+      ],
+      "bytes": 76230,
+      "size": [
+        800,
+        450
+      ],
+      "cropBox": [
+        445,
+        138,
+        1245,
+        588
+      ],
+      "compositionNote": "Recover the Santa hood and keep the face and gift visible without the scan border."
+    },
+    "assets/banners/sakuramiku/pc/03.webp": {
+      "source": "SakuraMiku(ishiterugame)/fb7da7c9944d0691aaca897c4b48966f699a98e3731b56_74527597_9cbb20883115a70377641d3fcdca163abbc14d12.webp",
+      "origin": "archive",
+      "crop": [
+        0.313,
+        0.32,
+        1.68
+      ],
+      "bytes": 37196,
+      "size": [
+        704,
+        396
+      ],
+      "cropBox": [
+        24,
+        90,
+        728,
+        486
+      ],
+      "compositionNote": "Raise the eyes and mouth above the dock in short Zen."
+    },
+    "assets/banners/sakuramiku/pc/04.webp": {
+      "source": "SakuraMiku(ishiterugame)/HA8TwwdaEAAqtr9.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.6,
+        1.1
+      ],
+      "bytes": 151810
+    },
+    "assets/banners/sakuramiku/pc/05.webp": {
+      "source": "SakuraMiku(ishiterugame)/151938967_p0_master1200.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.34,
+        1.0
+      ],
+      "bytes": 64048
+    },
+    "assets/banners/sakuramiku/pc/06.webp": {
+      "source": "SakuraMiku(ishiterugame)/Sakura.Miku.(Aishiteru.Game.wo.Owarasetai).1024.4672855.webp",
+      "origin": "archive",
+      "crop": [
+        0.4,
+        0.25,
+        1.25
+      ],
+      "bytes": 100216
+    },
+    "assets/banners/sakuramiku/pc/07.webp": {
+      "source": "assets/banner_sakuramiku_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.26,
+        1.0
+      ],
+      "bytes": 99398
+    },
+    "assets/banners/sakuramiku/pc/08.webp": {
+      "source": "assets/banner_sakuramiku_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 121110
+    },
+    "assets/banners/sakuramiku/pc/09.webp": {
+      "source": "assets/banner_sakuramiku_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.25,
+        1.0
+      ],
+      "bytes": 81538
+    },
+    "assets/banners/sakuramiku/phone/01.webp": {
+      "source": "assets/banner_sakuramiku_phone2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 125116
+    },
+    "assets/banners/sakuramiku/phone/02.webp": {
+      "source": "SakuraMiku(ishiterugame)/151938967_p0_master1200.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 105500
+    },
+    "assets/banners/sakuramiku/phone/03.webp": {
+      "source": "SakuraMiku(ishiterugame)/5fe571ef0da8e459063353ef1322a2a3694b8f362c0690_29223607_2ac71058941fb469b3f832fd4bf7e5ed5923ca24.webp",
+      "origin": "archive",
+      "crop": [
+        0.505,
+        0.48,
+        1.13
+      ],
+      "bytes": 44858,
+      "cropBox": [
+        472,
+        38,
+        820,
+        792
+      ],
+      "size": [
+        348,
+        754
+      ],
+      "reviewNote": "Center Sakura in the Santa frame."
+    },
+    "assets/banners/sakuramiku/phone/04.webp": {
+      "source": "SakuraMiku(ishiterugame)/fb7da7c9944d0691aaca897c4b48966f699a98e3731b56_74527597_9cbb20883115a70377641d3fcdca163abbc14d12.webp",
+      "origin": "archive",
+      "crop": [
+        0.3,
+        0.46,
+        1.15
+      ],
+      "bytes": 47460,
+      "cropBox": [
+        180,
+        24,
+        540,
+        804
+      ],
+      "size": [
+        360,
+        780
+      ],
+      "reviewNote": "Exclude the upper white border without clipping her ears."
+    },
+    "assets/banners/sakuramiku/phone/05.webp": {
+      "source": "SakuraMiku(ishiterugame)/HA8TwwdaEAAqtr9.jpg",
+      "origin": "archive",
+      "crop": [
+        0.66,
+        0.48,
+        1.0
+      ],
+      "bytes": 130412
+    },
+    "assets/banners/sakuramiku/phone/06.webp": {
+      "source": "SakuraMiku(ishiterugame)/Sakura.Miku.(Aishiteru.Game.wo.Owarasetai).1024.4672855.webp",
+      "origin": "archive",
+      "crop": [
+        0.46,
+        0.22,
+        2.16
+      ],
+      "bytes": 125180
+    },
+    "assets/banners/sakuramiku/phone/07.webp": {
+      "source": "assets/banner_sakuramiku_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.58,
+        0.48,
+        1.16
+      ],
+      "bytes": 160718
+    },
+    "assets/banners/sakuramiku/phone/08.webp": {
+      "source": "assets/banner_sakuramiku_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.52,
+        0.5,
+        1
+      ],
+      "bytes": 103528
+    },
+    "assets/banners/shinobu/pc/01.webp": {
+      "source": "assets/banner_shinobuuzuki_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 76218
+    },
+    "assets/banners/shinobu/pc/02.webp": {
+      "source": "assets/banner_shinobuuzuki_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 97964
+    },
+    "assets/banners/shinobu/pc/03.webp": {
+      "source": "uzuki/Uzuki.Shinobu.1024.4216416.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.29,
+        1
+      ],
+      "bytes": 69244,
+      "size": [
+        720,
+        405
+      ],
+      "cropBox": [
+        4,
+        97,
+        724,
+        502
+      ],
+      "compositionNote": "Leave room above the school portrait."
+    },
+    "assets/banners/shinobu/pc/04.webp": {
+      "source": "uzuki/Uzuki.Shinobu.full.4663225.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.32,
+        1.0
+      ],
+      "bytes": 169496
+    },
+    "assets/banners/shinobu/pc/05.webp": {
+      "source": "assets/banner_shinobuuzuki_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 58212
+    },
+    "assets/banners/shinobu/phone/01.webp": {
+      "source": "assets/banner_shinobuuzuki_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 96224
+    },
+    "assets/banners/shinobu/phone/02.webp": {
+      "source": "uzuki/Uzuki.Shinobu.1024.4216416.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 200872
+    },
+    "assets/banners/shinobu/phone/03.webp": {
+      "source": "uzuki/Uzuki.Shinobu.full.4663225.jpg",
+      "origin": "archive",
+      "crop": [
+        0.6,
+        0.552,
+        1.09
+      ],
+      "bytes": 210594,
+      "cropBox": [
+        285,
+        117,
+        867,
+        1378
+      ],
+      "size": [
+        582,
+        1261
+      ],
+      "reviewNote": "Bring the face inside the frame while limiting cover text."
+    },
+    "assets/banners/shinobu/phone/04.webp": {
+      "source": "uzuki/00000197.jpg",
+      "origin": "archive",
+      "crop": [
+        0.45,
+        0.365,
+        1.48
+      ],
+      "bytes": 109138
+    },
+    "assets/banners/shinobu/phone/05.webp": {
+      "source": "assets/banner_shinobuuzuki_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.64,
+        0.5,
+        1
+      ],
+      "bytes": 23682,
+      "cropBox": [
+        491,
+        4,
+        737,
+        537
+      ],
+      "size": [
+        246,
+        533
+      ],
+      "reviewNote": "Recenter the eyes in the portrait taken from a landscape still."
+    },
+    "assets/banners/umi/pc/01.webp": {
+      "source": "assets/banner_umi_pc.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 85676
+    },
+    "assets/banners/umi/pc/02.webp": {
+      "source": "assets/banner_umi_pc2.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.22,
+        1.0
+      ],
+      "bytes": 72000
+    },
+    "assets/banners/umi/pc/03.webp": {
+      "source": "umi/135499178_p0_master1200.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 155496
+    },
+    "assets/banners/umi/pc/04.webp": {
+      "source": "umi/Asanagi.Umi.1024.4048031.webp",
+      "origin": "archive",
+      "crop": [
+        0.605,
+        0.235,
+        1.45
+      ],
+      "bytes": 48880,
+      "size": [
+        704,
+        396
+      ],
+      "cropBox": [
+        268,
+        143,
+        972,
+        539
+      ],
+      "compositionNote": "Recover the yukata portrait’s head and retain shoulder."
+    },
+    "assets/banners/umi/pc/05.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716668.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 141024
+    },
+    "assets/banners/umi/pc/06.webp": {
+      "source": "umi/Asanagi.Umi.1024.4048033.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 95368
+    },
+    "assets/banners/umi/pc/07.webp": {
+      "source": "umi/Asanagi.Umi.1024.4599224.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 87376
+    },
+    "assets/banners/umi/pc/08.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716667.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.213,
+        1
+      ],
+      "bytes": 66470,
+      "cropBox": [
+        0,
+        21,
+        1024,
+        597
+      ],
+      "size": [
+        1024,
+        576
+      ],
+      "reviewNote": "Restore headroom in the school doorway."
+    },
+    "assets/banners/umi/pc/09.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716671.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.397,
+        1
+      ],
+      "bytes": 83188,
+      "size": [
+        1024,
+        576
+      ],
+      "cropBox": [
+        0,
+        289,
+        1024,
+        865
+      ],
+      "compositionNote": "Move the mouth away from the dock."
+    },
+    "assets/banners/umi/pc/10.webp": {
+      "source": "umi/Asanagi.Umi.1024.3895220.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 120360
+    },
+    "assets/banners/umi/pc/11.webp": {
+      "source": "umi/Asanagi.Umi.1024.4309361.webp",
+      "origin": "archive",
+      "crop": [
+        0.49,
+        0.26,
+        1
+      ],
+      "bytes": 91740
+    },
+    "assets/banners/umi/pc/12.webp": {
+      "source": "umi/bd_jkt01.png",
+      "origin": "archive",
+      "crop": [
+        0.52,
+        0.25,
+        1
+      ],
+      "bytes": 149194
+    },
+    "assets/banners/umi/phone/01.webp": {
+      "source": "assets/banner_umi_phone.jpg",
+      "origin": "legacy",
+      "crop": [
+        0.5,
+        0.3,
+        1.0
+      ],
+      "bytes": 212626
+    },
+    "assets/banners/umi/phone/02.webp": {
+      "source": "umi/135499178_p0_master1200.jpg",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.42,
+        1.0
+      ],
+      "bytes": 190652
+    },
+    "assets/banners/umi/phone/03.webp": {
+      "source": "umi/Asanagi.Umi.1024.4048031.webp",
+      "origin": "archive",
+      "crop": [
+        0.64,
+        0.4,
+        1.22
+      ],
+      "bytes": 276768
+    },
+    "assets/banners/umi/phone/04.webp": {
+      "source": "umi/bd_jkt01.png",
+      "origin": "archive",
+      "crop": [
+        0.55,
+        0.34,
+        1.49
+      ],
+      "bytes": 183738
+    },
+    "assets/banners/umi/phone/05.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716667.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 135302
+    },
+    "assets/banners/umi/phone/06.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716668.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 163002
+    },
+    "assets/banners/umi/phone/07.webp": {
+      "source": "umi/Asanagi.Umi.1024.3716671.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 164710
+    },
+    "assets/banners/umi/phone/08.webp": {
+      "source": "umi/Asanagi.Umi.1024.3895220.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 141088
+    },
+    "assets/banners/umi/phone/09.webp": {
+      "source": "umi/Asanagi.Umi.1024.4048033.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 130740
+    },
+    "assets/banners/umi/phone/10.webp": {
+      "source": "umi/Asanagi.Umi.1024.4309361.webp",
+      "origin": "archive",
+      "crop": [
+        0.5,
+        0.45,
+        1.0
+      ],
+      "bytes": 116704
+    },
+    "assets/banners/umi/phone/11.webp": {
+      "source": "umi/Asanagi.Umi.1024.4599224.webp",
+      "origin": "archive",
+      "crop": [
+        0.39,
+        0.45,
+        1
+      ],
+      "bytes": 85750,
+      "cropBox": [
+        66,
+        0,
+        732,
+        1443
+      ],
+      "size": [
+        666,
+        1443
+      ],
+      "reviewNote": "Recenter the face and retain the shoulder."
+    }
+  },
+  "excludedSources": {
+    "Arya/Alisa.Mikhailova.Kujou.1024.4375574.webp": "Near-identical to the selected pillow art, with heavier New Year lettering.",
+    "Arya/Alisa.Mikhailova.Kujou.full.3424899.jpg": "Competing figures and lettering; no cleaner framing than the selected school scenes.",
+    "Arya/Happy_Birthday_Alya_2023.webp": "Birthday lettering too close to the hair; a clean crop felt cramped.",
+    "Arya/Roshidere_Anime_Season_2_Commemoration_Illustration_%28Momoco%29.webp": "Promotional lettering remains near the head in otherwise usable crops.",
+    "Kaoruko/Waguri.Kaoruko.1024.4413142.webp": "Face buried in the composition; seasonal solo portrait is clearer.",
+    "Kaoruko/wallpaper_02.jpg": "Small inset panels and title dominate the source.",
+    "Mahiru/tenshi_kabegami_sp_01.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "Mahiru/tenshi_kabegami_sp_02.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "Mahiru/tenshi_kabegami_sp_03.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "Mahiru/tenshi_kabegami_sp_06.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "Mahiru/tenshi_kabegami_sp_08.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "Mahiru/tenshi_kabegami_sp_11.jpg": "Multi-panel collage; usable fragments are too small or include other characters.",
+    "SakuraMiku(ishiterugame)/__sakura_miku_and_asagi_yukiya_aishiteru_game_wo_owarasetai_drawn_by_hirakawa_aya__70d5f2c0781943ef2ffe118cd9beadc9.jpg": "Busy multi-figure collage.",
+    "SakuraMiku(ishiterugame)/aishiteru_koibito_0604.webp": "Competing character or excessive zoom in a solo crop.",
+    "assets/banner_nakanomiku_pc2.jpg": "Extremely tight face-only frame; cleaner solo masters selected.",
+    "assets/banner_nakanomiku_pc4.jpg": "Manga panel collage with competing faces and speech bubbles.",
+    "assets/banner_shinobuuzuki_phone2.jpg": "Same illustration as the selected archive master.",
+    "assets/banner_umi_phone2.jpg": "Other characters still crowd the portrait, including after a tighter crop.",
+    "hinako/Saijo.no.Osewa.1024.3637616.webp": "Group spread with captions next to Hinako.",
+    "umi/129202290_p0_master1200.jpg": "Other characters still enter the portrait crop.",
+    "umi/Asanagi.Umi.1024.3716676.webp": "Cover text and volume mark sit too close to the face.",
+    "umi/img_soki-tokuten.jpg": "Prominent SAMPLE watermark.",
+    "umi/novel02.jpg": "Lower-resolution version of the text-heavy cover.",
+    "umi/novel07.jpg": "Low-resolution cover with text and a co-lead.",
+    "umi/novel10.jpg": "Low-resolution cover with intrusive lettering.",
+    "uzuki/00000141.jpg": "Small, soft cover with lettering through the background.",
+    "uzuki/Mayonaka.Heart.Tune.1024.4216407.webp": "Tight group collage with title over the art.",
+    "uzuki/Mayonaka.Heart.Tune.1024.4656731.webp": "Group composition; a solo crop is soft or cramped.",
+    "uzuki/Mayonaka.Heart.Tune.1024.4657396.webp": "Rotated group composition and title.",
+    "uzuki/Mayonaka.Heart.Tune.1024.4663224.webp": "Multi-character cover with title.",
+    "uzuki/作品紹介_main真夜中ハートチューン_pc1-1.webp": "Wide promo layout dominated by text and group art."
+  }
+}

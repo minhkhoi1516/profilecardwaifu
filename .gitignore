@@ -27,7 +27,9 @@ node_modules/
 playwright-report/
 # Local-only QA and AI development artifacts are never release source.
 /scripts/qa/
-/tests/
+/tests/*
+!/tests/banner-browser.cjs
+!/tests/banner-shuffle.cjs
 /tools/
 /docs/qa/
 /docs/screenshots/

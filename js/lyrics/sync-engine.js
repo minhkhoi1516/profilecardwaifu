@@ -76,6 +76,91 @@
         return bestPos;
     }
 
+    const ZEN_BREATHE_MIN_GAP_MS = 1800;
+    const ZEN_TAIL_HOLD_MS = 350;
+
+    /**
+     * Pure deterministic Zen Lyric Breathing calculation (Zen Mode only).
+     * Never guesses an end timestamp when explicit timing data is unavailable,
+     * never hides while the singer is holding a note or during gaps < 1.8s,
+     * and holds the phrase tail ~350ms before breathing out on gaps >= 1.8s.
+     */
+    function computeZenBreathing(doc, currentTimeMs) {
+        const lines = doc?.lines;
+        if (!Array.isArray(lines) || lines.length === 0 || !Number.isFinite(currentTimeMs)) {
+            return { lineIndex: -1, phase: 'hidden', gapMs: 0 };
+        }
+        if (!Number.isFinite(lines[0].startMs) || currentTimeMs < lines[0].startMs) {
+            return { lineIndex: -1, phase: 'hidden', gapMs: 0 };
+        }
+
+        let lo = 0;
+        let hi = lines.length - 1;
+        let ans = -1;
+        while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const lineStart = lines[mid].startMs;
+            if (!Number.isFinite(lineStart)) return { lineIndex: -1, phase: 'hidden', gapMs: 0 };
+            if (lineStart <= currentTimeMs) {
+                ans = mid;
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        if (ans < 0) return { lineIndex: -1, phase: 'hidden', gapMs: 0 };
+
+        const active = lines[ans];
+        const reliableEnd = Number.isFinite(active.endMs) &&
+            Number.isFinite(active.startMs) &&
+            active.endMs > active.startMs &&
+            active.hasExplicitEnd !== false &&
+            active.endTimingSource !== 'estimated' &&
+            active.endTimingSource !== 'next-line-boundary';
+
+        // Still actively singing this phrase (including sustained notes) or lacking reliable endMs.
+        if (!reliableEnd || currentTimeMs <= active.endMs) {
+            return { lineIndex: ans, phase: 'visible', gapMs: 0 };
+        }
+
+        // Never breathe out while an overlapping vocal line is still singing.
+        const winStart = Math.max(0, ans - 4);
+        const winEnd = Math.min(lines.length - 1, ans + 2);
+        for (let i = winStart; i <= winEnd; i++) {
+            if (i === ans) continue;
+            const other = lines[i];
+            if (Number.isFinite(other.startMs) && Number.isFinite(other.endMs) &&
+                other.hasExplicitEnd !== false && other.endTimingSource !== 'estimated' &&
+                currentTimeMs >= other.startMs && currentTimeMs <= other.endMs) {
+                return { lineIndex: ans, phase: 'visible', gapMs: 0 };
+            }
+        }
+
+        const next = lines[ans + 1];
+        let gapMs = 0;
+        if (next) {
+            if (!Number.isFinite(next.startMs)) {
+                return { lineIndex: ans, phase: 'visible', gapMs: 0 };
+            }
+            gapMs = next.startMs - active.endMs;
+        } else if (Number.isFinite(doc.durationMs) && doc.durationMs > active.endMs) {
+            gapMs = doc.durationMs - active.endMs;
+        } else {
+            gapMs = Infinity;
+        }
+
+        if (gapMs < ZEN_BREATHE_MIN_GAP_MS) {
+            return { lineIndex: ans, phase: 'visible', gapMs };
+        }
+
+        const pastEndMs = currentTimeMs - active.endMs;
+        if (pastEndMs < ZEN_TAIL_HOLD_MS) {
+            return { lineIndex: ans, phase: 'tail-hold', gapMs };
+        }
+
+        return { lineIndex: -1, phase: 'breathing-out', gapMs, afterLineIndex: ans };
+    }
+
     /**
      * Pure deterministic state calculation for any timestamp (used both at runtime and in unit tests).
      */
@@ -89,7 +174,8 @@
                 lineProgress: 0,
                 activeTokenIndex: -1,
                 tokenProgressByLine: new Map(),
-                activeInterlude: null
+                activeInterlude: null,
+                zen: { lineIndex: -1, phase: 'hidden', gapMs: 0 }
             };
         }
 
@@ -169,7 +255,8 @@
             lineProgress,
             activeTokenIndex,
             tokenProgressByLine,
-            activeInterlude
+            activeInterlude,
+            zen: computeZenBreathing(doc, currentTimeMs)
         };
     }
 
@@ -422,7 +509,10 @@
     ns.SyncMath = {
         findActiveLineIndex,
         findActiveTokenIndex,
+        computeZenBreathing,
         computeSnapshot,
+        ZEN_BREATHE_MIN_GAP_MS,
+        ZEN_TAIL_HOLD_MS,
         computeTokenProgress: (tok, timeMs) => tok ? ns.Normalizer.clampProgress(timeMs, tok.startMs, tok.endMs) : 0
     };
 })(typeof window !== 'undefined' ? window : globalThis);

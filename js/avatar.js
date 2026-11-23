@@ -28,14 +28,13 @@
         currentIndex = 0;
     }
 
-    // Remember the last banner variant per persona so the same image never repeats twice in a row.
-    const lastBannerPick = new Map();
+    const bannerBags = new Map();
+    const recentMasters = new Map();
     let currentBannerSrc = '';
-    let lastCommitAt = -Infinity;
 
     // Smart Bounded Artwork Cache:
     // - Avatars are already mounted in .persona-chip thumbnails (track decoded URLs with zero extra RAM)
-    // - Decoded banners use a strict LRU cap (max 8 textures, never holds all 5 Nakano Miku variants at once)
+    // - Decoded banners use a strict LRU cap; the cache never influences which URL is picked.
     const MAX_DECODED_BANNERS = 5;
     const BANNER_COALESCE_MS = 45;
     const decodedAvatars = new Set();
@@ -78,10 +77,17 @@
         return decodedBanners.has(src);
     }
 
-    function bannerPool(persona) {
-        if (!persona.banners) return [];
-        const pool = isMobileViewport() ? persona.banners.phone : persona.banners.pc;
-        return Array.isArray(pool) ? pool.slice() : [];
+    const viewportRole = () => isMobileViewport() ? 'phone' : 'pc';
+    const masterOf = src => BANNER_MASTER_BY_URL.get(src) || src;
+
+    function pickBanner(persona, role = viewportRole(), excluded) {
+        const key = `${persona.key}/${role}`;
+        if (!bannerBags.has(key)) {
+            bannerBags.set(key, createBannerShuffle(persona.banners?.[role] || [], masterOf));
+        }
+        const bag = bannerBags.get(key);
+        const pick = bag.peek(recentMasters.get(persona.key), excluded);
+        return pick && { ...pick, bag, role, key: persona.key };
     }
 
     // ------------------------------------------------------------------
@@ -90,48 +96,22 @@
     // layers so even same-persona randomizations (Zen mode) crossfade cleanly.
     // ------------------------------------------------------------------
     let bannerLoadSeq = 0;
-    let bannerReleaseTimer = null;
     let bannerSwapFrame = 0;
+    let bannerFade = null;
     function releaseInactiveBannerTextures() {
         if (bannerStage) bannerStage.querySelectorAll('.banner-layer:not(.active)').forEach(layer => {
             layer.style.backgroundImage = 'none';
+            layer.style.opacity = '0';
         });
-        bannerReleaseTimer = null;
     }
 
-    function pickBanner(persona, options = {}) {
-        const pool = bannerPool(persona);
-        if (pool.length === 0) return '';
-        if (pool.length === 1) return pool[0];
-
-        const last = lastBannerPick.get(persona.key);
-
-        // During rapid persona cycling, reuse an already-decoded banner for this persona
-        // (distinct from the active banner) so large pools like Nakano Miku stay instant.
-        if (options.preferCached) {
-            const cachedFresh = pool.find(src => decodedBanners.has(src) && src !== last && src !== currentBannerSrc);
-            const cachedAny = cachedFresh || pool.find(src => decodedBanners.has(src) && src !== currentBannerSrc);
-            if (cachedAny) {
-                lastBannerPick.set(persona.key, cachedAny);
-                return cachedAny;
-            }
+    function beginBannerRequest() {
+        const seq = ++bannerLoadSeq;
+        if (bannerSwapFrame) {
+            window.cancelAnimationFrame(bannerSwapFrame);
+            bannerSwapFrame = 0;
         }
-
-        // On first visit to a persona, prefer any pre-warmed variant (or deterministic pool[0])
-        // so hover/pointerdown/idle warmups hit 100% instead of racing a random cold variant.
-        if (!last && !options.randomize) {
-            const prewarmed = pool.find(src => (decodedBanners.has(src) || inflightImages.has(src)) && src !== currentBannerSrc);
-            const primary = prewarmed || pool.find(src => src !== currentBannerSrc) || pool[0];
-            lastBannerPick.set(persona.key, primary);
-            return primary;
-        }
-
-        const candidates = pool.filter(src => src !== last && src !== currentBannerSrc);
-        const fallback = pool.filter(src => src !== currentBannerSrc);
-        const usable = candidates.length > 0 ? candidates : (fallback.length > 0 ? fallback : pool);
-        const chosen = usable[Math.floor(Math.random() * usable.length)] || pool[0];
-        lastBannerPick.set(persona.key, chosen);
-        return chosen;
+        return seq;
     }
 
     let neighborWarmTimer = 0;
@@ -166,11 +146,11 @@
 
     function warmPersonaBanner(persona) {
         if (!persona || !persona.available || !canPreloadBanners()) return;
-        const pool = bannerPool(persona);
-        if (pool.length === 0) return;
-        // Never warm a second variant if this persona already has one decoded or in flight.
-        if (pool.some(src => decodedBanners.has(src) || inflightImages.has(src))) return;
-        prepareImage(pool[0], 'banner').catch(() => {});
+        // Only warm the next bag choice, not an arbitrary cached or first variant.
+        const pick = pickBanner(persona);
+        if (pick && !decodedBanners.has(pick.src) && !inflightImages.has(pick.src)) {
+            prepareImage(pick.src, 'banner').catch(() => {});
+        }
     }
 
     // Progressive idle preload: register already-loaded chip avatars + at most 1 neighbor primary banner
@@ -285,47 +265,76 @@
         }
     }
 
-    function commitBannerCrossfade(src, immediate) {
-        if (bannerSwapFrame) {
-            window.cancelAnimationFrame(bannerSwapFrame);
-            bannerSwapFrame = 0;
-        }
-        currentBannerSrc = src;
-        if (!bannerStage) return;
+    function commitBannerCrossfade(pick, seq, immediate = false) {
+        if (!bannerStage || !isBannerRequestCurrent(pick, seq)) return;
+        const { src } = pick;
 
         ensureBannerLayers();
         const layers = Array.from(bannerStage.querySelectorAll('.banner-layer'));
         if (layers.length === 0) return;
 
         const currentActive = layers.find(l => l.classList.contains('active')) || layers[0];
+
+        function startSwap() {
+            // Retire the previous fade and its cleanup before reusing either buffer.
+            bannerFade?.cancel();
+            bannerFade = null;
+            layers.forEach(layer => { layer.style.transition = 'none'; });
+        }
+
+        function recordDisplay() {
+            if (!pick.bag.commit(pick)) return;
+            currentBannerSrc = src;
+            const seen = recentMasters.get(pick.key) || [];
+            recentMasters.set(pick.key, [masterOf(src), ...seen].slice(0, 3));
+            notifyZenArtwork(src);
+        }
+
         if (immediate) {
+            startSwap();
             layers.forEach((layer) => {
                 const isTarget = layer === currentActive;
                 layer.classList.toggle('active', isTarget);
                 if (isTarget) {
-                    layer.style.backgroundImage = src ? `url('${src}')` : 'none';
+                    layer.style.backgroundImage = `url('${src}')`;
+                    layer.style.opacity = '1';
                 }
             });
-            clearTimeout(bannerReleaseTimer);
             releaseInactiveBannerTextures();
-            notifyZenArtwork(src);
+            recordDisplay();
             return;
         }
 
-        // Always swap to an inactive standby buffer layer for true crossfade even within same persona
+        // Leave both live buffers untouched until this swap is actually committed.
         const standby = layers.find(l => !l.classList.contains('active')) || layers.find(l => l !== currentActive) || layers[0];
-        standby.style.backgroundImage = src ? `url('${src}')` : 'none';
-        // Keep the inactive standby buffer without forcing a sync layout flush.
-        standby.classList.remove('active');
 
         bannerSwapFrame = window.requestAnimationFrame(() => {
             bannerSwapFrame = 0;
+            if (!isBannerRequestCurrent(pick, seq)) return;
+            startSwap();
+            standby.style.backgroundImage = `url('${src}')`;
+            standby.style.opacity = '1';
             layers.forEach((layer) => {
                 layer.classList.toggle('active', layer === standby);
             });
-            clearTimeout(bannerReleaseTimer);
-            bannerReleaseTimer = setTimeout(releaseInactiveBannerTextures, 1150);
-            notifyZenArtwork(src);
+            // Fade the incoming layer over a fully opaque backdrop so neither
+            // a slow frame nor back-to-back swaps can expose the empty stage.
+            if (!reducedMotionMQ?.matches && currentBannerSrc && typeof standby.animate === 'function') {
+                currentActive.style.opacity = '1';
+                const fade = standby.animate([{ opacity: 0 }, { opacity: 1 }], {
+                    duration: 850,
+                    easing: 'cubic-bezier(0.22, 1, 0.36, 1)'
+                });
+                bannerFade = fade;
+                fade.finished.then(() => {
+                    if (bannerFade !== fade) return;
+                    bannerFade = null;
+                    releaseInactiveBannerTextures();
+                }, () => {});
+            } else {
+                releaseInactiveBannerTextures();
+            }
+            recordDisplay();
         });
     }
 
@@ -334,33 +343,29 @@
         window.dispatchEvent(new CustomEvent('minkoi:zen-artwork', { detail: { src } }));
     }
 
-    function updateBannerLayers(persona, options) {
-        const src = options?.src || pickBanner(persona);
-        if (!src) {
-            commitBannerCrossfade('', true);
-            return '';
-        }
+    function isBannerRequestCurrent(pick, seq) {
+        return pick && seq === bannerLoadSeq && pick.role === viewportRole() &&
+            pick.key === personas[currentIndex]?.key;
+    }
 
-        const immediate = Boolean(options && options.immediate);
-        const seq = ++bannerLoadSeq;
+    function retryBanner(persona, failed, seq, immediate) {
+        if (!isBannerRequestCurrent(failed, seq)) return;
+        // One alternate, without consuming the failed URL or clearing the current layer.
+        const alternate = pickBanner(persona, failed.role, new Set([failed.src]));
+        if (alternate) prepareImage(alternate.src, 'banner')
+            .then(() => commitBannerCrossfade(alternate, seq, immediate)).catch(() => {});
+    }
 
-        if (options?.decoded || isImageReady(src, 'banner')) {
-            commitBannerCrossfade(src, immediate);
-            return src;
-        }
-
-        if (immediate || (currentBannerSrc === '' && bannerStage?.querySelector('.banner-layer.active')?.style.backgroundImage.includes(src))) {
-            commitBannerCrossfade(src, true);
-            return src;
-        }
-
-        // Pre-decode image asynchronously via bounded cache before starting opacity crossfade.
-        clearTimeout(bannerReleaseTimer);
-        prepareImage(src, 'banner').then(() => {
-            if (seq !== bannerLoadSeq) return;
-            commitBannerCrossfade(src, false);
-        }).catch(() => {});
-        return src;
+    function updateBannerLayers(persona) {
+        if (pendingPersona) return '';
+        const seq = beginBannerRequest();
+        const pick = pickBanner(persona);
+        if (!pick) return '';
+        prepareImage(pick.src, 'banner').then(
+            () => commitBannerCrossfade(pick, seq),
+            () => retryBanner(persona, pick, seq, false)
+        );
+        return pick.src;
     }
 
     let avatarSeq = 0;
@@ -416,8 +421,8 @@
     // Quote Bubble Engine removed permanently
     window.showWaifuQuote = () => {};
 
-    let currentPersona = null;
     let personaLoadSeq = 0;
+    let pendingPersona = false;
 
     function setPendingChip(index) {
         if (!personaContainer) return;
@@ -483,17 +488,14 @@
         return promise;
     }
 
-    function commitPersonaTransaction(index, persona, banner, bannerReady, persist) {
+    function commitPersonaTransaction(index, persona, pick, bannerReady, bannerSeq, persist) {
         currentIndex = index;
-        currentPersona = persona;
-        lastCommitAt = performance.now();
+        pendingPersona = false;
         safeStorageSet('minkoi_persona_index', index.toString());
 
         applyPersonaTokens(persona);
         updatePersonaText(persona);
-        if (bannerReady) {
-            updateBannerLayers(persona, { src: banner, decoded: true, immediate: !persist && currentBannerSrc === '' });
-        }
+        if (bannerReady) commitBannerCrossfade(pick, bannerSeq, !persist && !currentBannerSrc);
         applyAvatar(persona, persist);
 
         // Update ambient particle mode (Sakura petals, snowflakes, stardust)
@@ -538,11 +540,12 @@
         if (!persona || !persona.available) return;
 
         const seq = ++personaLoadSeq;
-        const myBannerSeq = ++bannerLoadSeq;
+        const myBannerSeq = beginBannerRequest();
+        pendingPersona = true;
         cancelNeighborWarmup();
-        const mobile = isMobileViewport();
-        const isRapidRepeat = Boolean(persist && (performance.now() - lastCommitAt) < 1800);
-        const banner = pickBanner(persona, { preferCached: isRapidRepeat });
+        const role = viewportRole();
+        const pick = pickBanner(persona, role);
+        const banner = pick?.src;
 
         // Check if chip thumbnail already finished decoding this avatar in DOM
         if (persona.avatar && !decodedAvatars.has(persona.avatar) && personaContainer) {
@@ -557,8 +560,9 @@
 
         // Fast path: BOTH avatar & banner are already decoded -> instant synchronous atomic commit (0ms wait)!
         if (avatarReadyNow && bannerReadyNow) {
+            if (banner) rememberDecodedBanner(banner, decodedBanners.get(banner));
             personaContainer?.setAttribute('aria-busy', 'false');
-            commitPersonaTransaction(index, persona, banner, true, persist);
+            commitPersonaTransaction(index, persona, pick, true, myBannerSeq, persist);
             return;
         }
 
@@ -584,6 +588,7 @@
             await avatarPromise;
         } catch (_) {
             if (seq === personaLoadSeq) {
+                pendingPersona = false;
                 clearPendingChips();
                 personaContainer?.setAttribute('aria-busy', 'false');
                 window.showToast?.('Không thể tải artwork. Giữ nhân vật hiện tại.', 'fa-triangle-exclamation');
@@ -591,11 +596,9 @@
             return;
         }
         if (seq !== personaLoadSeq) return;
-        if (mobile !== isMobileViewport()) return setPersona(index, persist);
+        if (role !== viewportRole()) return setPersona(index, persist);
 
-        // Keep Stage B atomic (banner + avatar + palette + audio mapping commit together)
-        // so cold JPEG decode never collides with the :root accent transition; only fall back
-        // to deferred banner crossfade if a slow network takes longer than 600ms.
+        // Hold briefly for the banner; on a slow load keep the previous backdrop visible.
         if (!bannerResolved && !bannerFailed) {
             await Promise.race([
                 bannerPromise,
@@ -603,16 +606,17 @@
             ]);
         }
         if (seq !== personaLoadSeq) return;
-        if (mobile !== isMobileViewport()) return setPersona(index, persist);
+        if (role !== viewportRole()) return setPersona(index, persist);
 
         personaContainer?.setAttribute('aria-busy', 'false');
-        commitPersonaTransaction(index, persona, banner, bannerResolved, persist);
+        const immediate = !persist && !currentBannerSrc;
+        commitPersonaTransaction(index, persona, pick, bannerResolved, myBannerSeq, persist);
 
-        if (!bannerResolved && !bannerFailed && banner) {
+        if (!bannerResolved && pick) {
             bannerPromise.then((img) => {
-                if (!img || seq !== personaLoadSeq || myBannerSeq !== bannerLoadSeq) return;
-                if (mobile !== isMobileViewport()) return;
-                commitBannerCrossfade(banner, false);
+                if (seq !== personaLoadSeq) return;
+                if (img) commitBannerCrossfade(pick, myBannerSeq, immediate);
+                else retryBanner(persona, pick, myBannerSeq, immediate);
             });
         }
     }
@@ -625,8 +629,7 @@
     window.randomizeCurrentBanner = () => {
         const persona = personas[currentIndex];
         if (!persona) return '';
-        const nextSrc = pickBanner(persona, { randomize: true });
-        return updateBannerLayers(persona, { src: nextSrc, immediate: false });
+        return updateBannerLayers(persona);
     };
 
     // Graceful fallback when an avatar file is missing

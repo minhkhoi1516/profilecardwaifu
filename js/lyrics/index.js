@@ -514,8 +514,11 @@
 
         // Observe zen-mode toggles on body so RAF wakes/sleeps smoothly
         if (typeof MutationObserver !== 'undefined') {
+            let lastZenOpen = document.body.classList.contains('zen-mode');
             const zenObserver = new MutationObserver(() => {
                 const zenOpen = document.body.classList.contains('zen-mode');
+                if (zenOpen === lastZenOpen) return;
+                lastZenOpen = zenOpen;
                 syncEngine.forceSync(true);
                 if (zenOpen && !audio.paused) {
                     syncEngine.startLoop();

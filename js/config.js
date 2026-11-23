@@ -2,6 +2,13 @@
    MINKOI · BESPOKE DIGITAL IDENTITY & STUDIO CONFIG
    Persona roster + per-persona audio library
 ======================================================== */
+function numberedBanners(key, pcCount, phoneCount) {
+    const pool = (role, count) => Array.from({ length: count }, (_, i) =>
+        `assets/banners/${key}/${role}/${String(i + 1).padStart(2, '0')}.webp`
+    );
+    return { pc: pool("pc", pcCount), phone: pool("phone", phoneCount) };
+}
+
 const CONFIG = {
     // Brand & Identity Information
     brand: {
@@ -19,9 +26,7 @@ const CONFIG = {
 
     // ------------------------------------------------------------------
     // PERSONA ROSTER
-    // Mỗi persona = 1 avatar + 2 banner PC + 2 banner phone.
-    // Quy ước tên file: avatar_<key>.png, banner_<key>_pc.png, banner_<key>_pc2.png,
-    //                   banner_<key>_phone.png, banner_<key>_phone2.png
+    // Banner crops: assets/banners/<key>/{pc,phone}/NN.webp
     // ------------------------------------------------------------------
     personas: [
         {
@@ -31,10 +36,7 @@ const CONFIG = {
             role: "Solitary Princess",
             title: "Alya Sometimes Hides Her Feelings in Russian",
             avatar: "assets/avatar_alya.png",
-            banners: {
-                pc: ["assets/banner_alya_pc.jpg", "assets/banner_alya_pc2.jpg"],
-                phone: ["assets/banner_alya_phone.jpg", "assets/banner_alya_phone2.jpg"]
-            },
+            banners: numberedBanners("alya", 15, 18),
             accent: "#38bdf8",
             accentSecondary: "#f43f5e",
             accentGlow: "rgba(56, 189, 248, 0.28)",
@@ -53,10 +55,7 @@ const CONFIG = {
             role: "Angel of Light",
             title: "The Angel Next Door",
             avatar: "assets/avatar_mahiru.png",
-            banners: {
-                pc: ["assets/banner_mahiru_pc.jpg", "assets/banner_mahiru_pc2.jpg"],
-                phone: ["assets/banner_mahiru_phone.jpg", "assets/banner_mahiru_phone2.jpg"]
-            },
+            banners: numberedBanners("mahiru", 12, 11),
             accent: "#fbbf24",
             accentSecondary: "#f59e0b",
             accentGlow: "rgba(251, 191, 36, 0.28)",
@@ -75,10 +74,7 @@ const CONFIG = {
             role: "Blooming Camellia",
             title: "The Fragrant Flower Blooms with Dignity",
             avatar: "assets/avatar_kaoruko.png",
-            banners: {
-                pc: ["assets/banner_kaoruko_pc.jpg", "assets/banner_kaoruko_pc2.jpg"],
-                phone: ["assets/banner_kaoruko_phone.jpg", "assets/banner_kaoruko_phone2.jpg"]
-            },
+            banners: numberedBanners("kaoruko", 10, 10),
             accent: "#fb7185",
             accentSecondary: "#fda4af",
             accentGlow: "rgba(251, 113, 133, 0.28)",
@@ -94,21 +90,18 @@ const CONFIG = {
             id: 3,
             key: "sakuramiku",
             name: "Sakura Miku",
-            role: "Spring Blossom Idol",
-            title: "Vocaloid Collection",
+            role: "Blossoming Childhood Friend",
+            title: "Aishiteru Game wo Owarasetai",
             avatar: "assets/avatar_sakuramiku.png",
-            banners: {
-                pc: ["assets/banner_sakuramiku_pc.jpg", "assets/banner_sakuramiku_pc2.jpg"],
-                phone: ["assets/banner_sakuramiku_phone.jpg", "assets/banner_sakuramiku_phone2.jpg"]
-            },
+            banners: numberedBanners("sakuramiku", 9, 8),
             accent: "#f472b6",
             accentSecondary: "#fb7185",
             accentGlow: "rgba(244, 114, 182, 0.28)",
             particleTheme: "sakura",
             quotes: [
-                "Mùa xuân đến rồi, hoa anh đào nở rộ khắp nơi!",
-                "Hãy cùng hòa ca khúc hát của những cánh hoa nhé!",
-                "Senbonzakura yoru ni magire~ ✨"
+                "Trò chơi tình yêu này, tớ nhất định sẽ là người kết thúc nó!",
+                "Yukiya này... cậu có biết mình đã thua từ lúc nào không?",
+                "Chỉ cần ở cạnh cậu, ngày thường cũng hóa thành mùa xuân rồi."
             ],
             available: true
         },
@@ -119,11 +112,7 @@ const CONFIG = {
             role: "Midnight Announcer",
             title: "Tune In to the Midnight Heart",
             avatar: "assets/avatar_shinobu.png",
-            // Lưu ý: banner dùng tiền tố "shinobuuzuki" theo file gốc của bạn.
-            banners: {
-                pc: ["assets/banner_shinobuuzuki_pc.jpg", "assets/banner_shinobuuzuki_pc2.jpg"],
-                phone: ["assets/banner_shinobuuzuki_phone.jpg", "assets/banner_shinobuuzuki_phone2.jpg"]
-            },
+            banners: numberedBanners("shinobu", 5, 5),
             accent: "#a855f7",
             accentSecondary: "#818cf8",
             accentGlow: "rgba(168, 85, 247, 0.28)",
@@ -140,12 +129,9 @@ const CONFIG = {
             key: "hinako",
             name: "Konohana Hinako",
             role: "Midnight Storyteller",
-            title: "Tune In to the Midnight Heart",
+            title: "Saijo no Osewa",
             avatar: "assets/avatar_hinako.png",
-            banners: {
-                pc: ["assets/banner_hinako_pc.jpg", "assets/banner_hinako_pc2.jpg"],
-                phone: ["assets/banner_hinako_phone.jpg", "assets/banner_hinako_phone2.jpg"]
-            },
+            banners: numberedBanners("hinako", 9, 10),
             accent: "#f9a8d4",
             accentSecondary: "#fb7185",
             accentGlow: "rgba(249, 168, 212, 0.28)",
@@ -162,12 +148,9 @@ const CONFIG = {
             key: "umi",
             name: "Asanagi Umi",
             role: "Tide of Dawn",
-            title: "Tune In to the Midnight Heart",
+            title: "I Made Friends with the Second Prettiest Girl in My Class",
             avatar: "assets/avatar_umi.png",
-            banners: {
-                pc: ["assets/banner_umi_pc.jpg", "assets/banner_umi_pc2.jpg"],
-                phone: ["assets/banner_umi_phone.jpg", "assets/banner_umi_phone2.jpg"]
-            },
+            banners: numberedBanners("umi", 12, 11),
             accent: "#22d3ee",
             accentSecondary: "#0ea5e9",
             accentGlow: "rgba(34, 211, 238, 0.28)",
@@ -186,22 +169,7 @@ const CONFIG = {
             role: "No. 3 Sister · Headphones",
             title: "The Quintessential Quintuplets",
             avatar: "assets/avatar_nakanomiku.png",
-            banners: {
-                pc: [
-                    "assets/banner_nakanomiku_pc.jpg",
-                    "assets/banner_nakanomiku_pc2.jpg",
-                    "assets/banner_nakanomiku_pc3.jpg",
-                    "assets/banner_nakanomiku_pc4.jpg",
-                    "assets/banner_nakanomiku_pc5.jpg"
-                ],
-                phone: [
-                    "assets/banner_nakanomiku_phone.jpg",
-                    "assets/banner_nakanomiku_phone2.jpg",
-                    "assets/banner_nakanomiku_phone3.jpg",
-                    "assets/banner_nakanomiku_phone4.jpg",
-                    "assets/banner_nakanomiku_phone5.jpg"
-                ]
-            },
+            banners: numberedBanners("nakanomiku", 10, 15),
             accent: "#3b82f6",
             accentSecondary: "#60a5fa",
             accentGlow: "rgba(59, 130, 246, 0.30)",
