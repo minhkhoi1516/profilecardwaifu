@@ -1,25 +1,23 @@
 import {
-  SinkFeedbackmagtsu295yod as SinkFeedback,
+  roundToInt1ue8x8yshtznx as roundToInt,
+  Unit_instance3kz1zqli6gr1r as Unit_instance,
+  HashMap_init_$Create$m2z141lj3xfu as HashMap_init_$Create$,
+  protoOf180f3jzyo7rfj as protoOf,
+  numberToLong345n6tb1n1i71 as numberToLong,
+  coerceAtMostfyc3emgaderp as coerceAtMost,
+  initMetadataForObject1cxne3s9w65el as initMetadataForObject,
+} from './kotlin-kotlin-stdlib.mjs';
+import { folmeSpring2kwyeztf1urxz as folmeSpring } from './compose-miuix-ui-miuix-ui.mjs';
+import { FloatSpringSpec2az8c9z506uzv as FloatSpringSpec } from './compose-multiplatform-core-compose-animation-animation-core.mjs';
+import {
+  couiSpringglxbjlayxbyn as couiSpring,
   COUISpringEasing3483417belkvv as COUISpringEasing,
+  SinkFeedbackmagtsu295yod as SinkFeedback,
   get_COUIInEaseEasing1fltnhkb2an9y as get_COUIInEaseEasing,
   get_COUIMoveEaseEasing10fp53f6449ps as get_COUIMoveEaseEasing,
   get_COUIOutEaseEasing2elfmvnrle7gi as get_COUIOutEaseEasing,
   get_COUIEaseEasing1qziozyu42jq3 as get_COUIEaseEasing,
-  couiSpringglxbjlayxbyn as couiSpring,
 } from './compose-coui-ui-coui-ui.mjs';
-import { folmeSpring2kwyeztf1urxz as folmeSpring } from './compose-miuix-ui-miuix-ui.mjs';
-import {
-  protoOf180f3jzyo7rfj as protoOf,
-  FloatCompanionObject_instanceokgc3apyetrg as FloatCompanionObject_instance,
-  numberToLong345n6tb1n1i71 as numberToLong,
-  coerceAtMostfyc3emgaderp as coerceAtMost,
-  initMetadataForObject1cxne3s9w65el as initMetadataForObject,
-  Unit_instance3kz1zqli6gr1r as Unit_instance,
-} from './kotlin-kotlin-stdlib.mjs';
-import {
-  get_VectorConvertermm8cecmwglax as get_VectorConverter,
-  AnimationVector1D1417vrhjxultj as AnimationVector1D,
-} from './compose-multiplatform-core-compose-animation-animation-core.mjs';
 //region block: imports
 var sign = Math.sign;
 var hypot = Math.hypot;
@@ -28,34 +26,99 @@ var hypot = Math.hypot;
 initMetadataForObject(DirectMavenBridge, 'DirectMavenBridge');
 initMetadataForObject(ReferenceMathAdapters, 'ReferenceMathAdapters');
 //endregion
+function packPairKey($this, a, b) {
+  // Inline function 'kotlin.math.roundToInt' call
+  var this_0 = a * 1000.0;
+  var qa = roundToInt(this_0) & 65535;
+  // Inline function 'kotlin.math.roundToInt' call
+  var this_1 = (b + 2.0) * 1000.0;
+  var qb = roundToInt(this_1) & 65535;
+  return qa << 16 | qb;
+}
+function getFolmeFloatSpec($this, damping, response) {
+  var key = packPairKey($this, damping, response);
+  var tmp0_safe_receiver = $this.a5_1.l(key);
+  if (tmp0_safe_receiver == null)
+    null;
+  else {
+    // Inline function 'kotlin.let' call
+    return tmp0_safe_receiver;
+  }
+  if ($this.a5_1.e() >= 64) {
+    $this.a5_1.q1();
+  }
+  var springSpec = folmeSpring(damping, response);
+  var floatSpec = new FloatSpringSpec(springSpec.r3_1, springSpec.s3_1);
+  // Inline function 'kotlin.collections.set' call
+  $this.a5_1.e1(key, floatSpec);
+  return floatSpec;
+}
+function getCouiFloatSpec($this, response, bounce) {
+  var key = packPairKey($this, response, bounce);
+  var tmp0_safe_receiver = $this.b5_1.l(key);
+  if (tmp0_safe_receiver == null)
+    null;
+  else {
+    // Inline function 'kotlin.let' call
+    return tmp0_safe_receiver;
+  }
+  if ($this.b5_1.e() >= 64) {
+    $this.b5_1.q1();
+  }
+  var springSpec = couiSpring(response, bounce);
+  var floatSpec = new FloatSpringSpec(springSpec.r3_1, springSpec.s3_1);
+  // Inline function 'kotlin.collections.set' call
+  $this.b5_1.e1(key, floatSpec);
+  return floatSpec;
+}
+function getCouiSpringEasing($this, response, bounce) {
+  var key = packPairKey($this, response, bounce);
+  var tmp0_safe_receiver = $this.c5_1.l(key);
+  if (tmp0_safe_receiver == null)
+    null;
+  else {
+    // Inline function 'kotlin.let' call
+    return tmp0_safe_receiver;
+  }
+  if ($this.c5_1.e() >= 64) {
+    $this.c5_1.q1();
+  }
+  var easing = new COUISpringEasing(response, bounce);
+  // Inline function 'kotlin.collections.set' call
+  $this.c5_1.e1(key, easing);
+  return easing;
+}
 function DirectMavenBridge() {
   DirectMavenBridge_instance = this;
-  this.n4_1 = new SinkFeedback();
+  this.y4_1 = new SinkFeedback();
+  this.z4_1 = 64;
+  this.a5_1 = HashMap_init_$Create$(32);
+  this.b5_1 = HashMap_init_$Create$(32);
+  this.c5_1 = HashMap_init_$Create$(16);
 }
-protoOf(DirectMavenBridge).o4 = function (damping, response) {
+protoOf(DirectMavenBridge).d5 = function (damping, response) {
   // Inline function 'kotlin.math.max' call
   var safeD = Math.max(0.05, damping);
   // Inline function 'kotlin.math.max' call
   var safeR = Math.max(0.05, response);
-  return folmeSpring(safeD, safeR).i1_1;
+  return getFolmeFloatSpec(this, safeD, safeR).c4_1;
 };
-protoOf(DirectMavenBridge).p4 = function (value, target, velocity, dtSeconds, damping, response, outPair) {
+protoOf(DirectMavenBridge).e5 = function (value, target, velocity, dtSeconds, damping, response, outPair) {
   // Inline function 'kotlin.math.max' call
-  var tmp = Math.max(0.05, damping);
+  var safeD = Math.max(0.05, damping);
   // Inline function 'kotlin.math.max' call
-  var tmp$ret$1 = Math.max(0.05, response);
-  var spec = folmeSpring(tmp, tmp$ret$1);
-  var vec = spec.k1(get_VectorConverter(FloatCompanionObject_instance));
+  var safeR = Math.max(0.05, response);
+  var spec = getFolmeFloatSpec(this, safeD, safeR);
   // Inline function 'kotlin.math.max' call
   var tmp$ret$2 = Math.max(0.0, dtSeconds);
   var dtNanos = numberToLong(tmp$ret$2 * 1.0E9);
-  var initV = new AnimationVector1D(value);
-  var targetV = new AnimationVector1D(target);
-  var velV = new AnimationVector1D(velocity);
-  outPair[0] = vec.u3(dtNanos, initV, targetV, velV).m1_1;
-  outPair[1] = vec.y3(dtNanos, initV, targetV, velV).m1_1;
+  var v0 = value;
+  var vt = target;
+  var vel0 = velocity;
+  outPair[0] = spec.k4(dtNanos, v0, vt, vel0);
+  outPair[1] = spec.m4(dtNanos, v0, vt, vel0);
 };
-protoOf(DirectMavenBridge).q4 = function (fraction, response, bounce) {
+protoOf(DirectMavenBridge).f5 = function (fraction, response, bounce) {
   var tmp;
   if (response === 0.0) {
     tmp = 1.0;
@@ -64,12 +127,13 @@ protoOf(DirectMavenBridge).q4 = function (fraction, response, bounce) {
     tmp = Math.max(0.05, response);
   }
   var safeR = tmp;
-  var tmp_0 = new COUISpringEasing(safeR, bounce);
+  var safeB = bounce;
+  var tmp_0 = getCouiSpringEasing(this, safeR, safeB);
   // Inline function 'kotlin.math.max' call
   var tmp$ret$1 = Math.max(0.0, fraction);
-  return tmp_0.b3(tmp$ret$1);
+  return tmp_0.a4(tmp$ret$1);
 };
-protoOf(DirectMavenBridge).r4 = function (kind, fraction) {
+protoOf(DirectMavenBridge).g5 = function (kind, fraction) {
   // Inline function 'kotlin.math.max' call
   var tmp$ret$0 = Math.max(0.0, fraction);
   var f = coerceAtMost(tmp$ret$0, 1.0);
@@ -88,9 +152,9 @@ protoOf(DirectMavenBridge).r4 = function (kind, fraction) {
       easing = get_COUIEaseEasing();
       break;
   }
-  return easing.b3(f);
+  return easing.a4(f);
 };
-protoOf(DirectMavenBridge).s4 = function (response) {
+protoOf(DirectMavenBridge).h5 = function (response) {
   var tmp;
   if (response === 0.0) {
     tmp = 1.0;
@@ -99,12 +163,12 @@ protoOf(DirectMavenBridge).s4 = function (response) {
     tmp = Math.max(0.05, response);
   }
   var safeR = tmp;
-  return couiSpring(safeR, 0.0).i1_1;
+  return getCouiFloatSpec(this, safeR, 0.0).c4_1;
 };
-protoOf(DirectMavenBridge).t4 = function (bounce) {
-  return couiSpring(0.35, bounce).h1_1;
+protoOf(DirectMavenBridge).i5 = function (bounce) {
+  return getCouiFloatSpec(this, 0.35, bounce).b4_1;
 };
-protoOf(DirectMavenBridge).u4 = function (value, target, velocity, dtSeconds, response, bounce, outPair) {
+protoOf(DirectMavenBridge).j5 = function (value, target, velocity, dtSeconds, response, bounce, outPair) {
   var tmp;
   if (response === 0.0) {
     tmp = 1.0;
@@ -113,19 +177,19 @@ protoOf(DirectMavenBridge).u4 = function (value, target, velocity, dtSeconds, re
     tmp = Math.max(0.05, response);
   }
   var safeR = tmp;
-  var spec = couiSpring(safeR, bounce);
-  var vec = spec.k1(get_VectorConverter(FloatCompanionObject_instance));
+  var safeB = bounce;
+  var spec = getCouiFloatSpec(this, safeR, safeB);
   // Inline function 'kotlin.math.max' call
   var tmp$ret$1 = Math.max(0.0, dtSeconds);
   var dtNanos = numberToLong(tmp$ret$1 * 1.0E9);
-  var initV = new AnimationVector1D(value);
-  var targetV = new AnimationVector1D(target);
-  var velV = new AnimationVector1D(velocity);
-  outPair[0] = vec.u3(dtNanos, initV, targetV, velV).m1_1;
-  outPair[1] = vec.y3(dtNanos, initV, targetV, velV).m1_1;
+  var v0 = value;
+  var vt = target;
+  var vel0 = velocity;
+  outPair[0] = spec.k4(dtNanos, v0, vt, vel0);
+  outPair[1] = spec.m4(dtNanos, v0, vt, vel0);
 };
-protoOf(DirectMavenBridge).v4 = function () {
-  return this.n4_1.l4_1;
+protoOf(DirectMavenBridge).k5 = function () {
+  return this.y4_1.w4_1;
 };
 var DirectMavenBridge_instance;
 function DirectMavenBridge_getInstance() {
@@ -135,7 +199,7 @@ function DirectMavenBridge_getInstance() {
 }
 function ReferenceMathAdapters() {
 }
-protoOf(ReferenceMathAdapters).w4 = function (inputDistance, range) {
+protoOf(ReferenceMathAdapters).l5 = function (inputDistance, range) {
   if (range <= 0.0 || inputDistance === 0.0)
     return 0.0;
   // Inline function 'kotlin.math.sign' call
@@ -149,13 +213,13 @@ protoOf(ReferenceMathAdapters).w4 = function (inputDistance, range) {
   var dampedFactor = x - x * x + x * x * x / 3.0;
   return dir * dampedFactor * range;
 };
-protoOf(ReferenceMathAdapters).x4 = function (currentPixelOffset, range) {
+protoOf(ReferenceMathAdapters).m5 = function (currentPixelOffset, range) {
   if (range <= 0.0)
     return 0.0;
   // Inline function 'kotlin.math.abs' call
   var absPixelOffset = Math.abs(currentPixelOffset);
   // Inline function 'kotlin.math.abs' call
-  var x = this.w4(range, range);
+  var x = this.l5(range, range);
   var absMaxOffset = Math.abs(x);
   if (absPixelOffset <= 0.0)
     return 0.0;
@@ -175,7 +239,7 @@ protoOf(ReferenceMathAdapters).x4 = function (currentPixelOffset, range) {
   // Inline function 'kotlin.math.sign' call
   return sign(currentPixelOffset) * (range - part2);
 };
-protoOf(ReferenceMathAdapters).y4 = function (widthPx, heightPx, density) {
+protoOf(ReferenceMathAdapters).n5 = function (widthPx, heightPx, density) {
   // Inline function 'kotlin.math.max' call
   var safeDensity = Math.max(1.0, density);
   // Inline function 'kotlin.math.max' call
@@ -185,7 +249,7 @@ protoOf(ReferenceMathAdapters).y4 = function (widthPx, heightPx, density) {
   var sizeRatio = Math.max(1.0, b);
   return 2.0 / (1.0 + sizeRatio);
 };
-protoOf(ReferenceMathAdapters).z4 = function (value, target, velocity, dt, dampingRatio, stiffness, mass, outPair) {
+protoOf(ReferenceMathAdapters).o5 = function (value, target, velocity, dt, dampingRatio, stiffness, mass, outPair) {
   // Inline function 'kotlin.math.max' call
   // Inline function 'kotlin.math.sqrt' call
   var x = stiffness / Math.max(0.001, mass);
@@ -244,7 +308,7 @@ protoOf(ReferenceMathAdapters).z4 = function (value, target, velocity, dt, dampi
   outPair[0] = target + nextX;
   outPair[1] = nextV;
 };
-protoOf(ReferenceMathAdapters).a5 = function (cx, cy, halfW, halfH, radius) {
+protoOf(ReferenceMathAdapters).p5 = function (cx, cy, halfW, halfH, radius) {
   // Inline function 'kotlin.math.min' call
   // Inline function 'kotlin.math.min' call
   var b = Math.min(halfW, halfH);
@@ -265,7 +329,7 @@ protoOf(ReferenceMathAdapters).a5 = function (cx, cy, halfW, halfH, radius) {
   var inside = Math.min(a, 0.0);
   return outside + inside - r;
 };
-protoOf(ReferenceMathAdapters).b5 = function (cx, cy, halfW, halfH, radius, outGrad) {
+protoOf(ReferenceMathAdapters).q5 = function (cx, cy, halfW, halfH, radius, outGrad) {
   // Inline function 'kotlin.math.min' call
   // Inline function 'kotlin.math.min' call
   var b = Math.min(halfW, halfH);
@@ -298,7 +362,7 @@ protoOf(ReferenceMathAdapters).b5 = function (cx, cy, halfW, halfH, radius, outG
     outGrad[1] = sy * (1.0 - gradX);
   }
 };
-protoOf(ReferenceMathAdapters).c5 = function (x) {
+protoOf(ReferenceMathAdapters).r5 = function (x) {
   // Inline function 'kotlin.math.min' call
   // Inline function 'kotlin.math.max' call
   var b = Math.min(1.0, x);
@@ -309,7 +373,7 @@ protoOf(ReferenceMathAdapters).c5 = function (x) {
   var x_0 = Math.max(0.0, b_0);
   return 1.0 - Math.sqrt(x_0);
 };
-protoOf(ReferenceMathAdapters).d5 = function (coordX, coordY, width, height, radius, angleRad, falloff) {
+protoOf(ReferenceMathAdapters).s5 = function (coordX, coordY, width, height, radius, angleRad, falloff) {
   var halfW = width * 0.5;
   var halfH = height * 0.5;
   var cx = coordX - halfW;
@@ -320,7 +384,7 @@ protoOf(ReferenceMathAdapters).d5 = function (coordX, coordY, width, height, rad
   var b = Math.min(halfW, halfH);
   var gradRadius = Math.min(tmp0, b);
   var grad = new Float64Array(2);
-  this.b5(cx, cy, halfW, halfH, gradRadius, grad);
+  this.q5(cx, cy, halfW, halfH, gradRadius, grad);
   var tmp = grad[0];
   // Inline function 'kotlin.math.cos' call
   var tmp_0 = tmp * Math.cos(angleRad);
@@ -334,17 +398,17 @@ protoOf(ReferenceMathAdapters).d5 = function (coordX, coordY, width, height, rad
   var x = Math.max(0.1, falloff);
   return Math.pow(tmp0_0, x);
 };
-protoOf(ReferenceMathAdapters).e5 = function (coordX, coordY, width, height, radius, refractionHeight, refractionAmount) {
+protoOf(ReferenceMathAdapters).t5 = function (coordX, coordY, width, height, radius, refractionHeight, refractionAmount) {
   if (refractionHeight <= 0.0)
     return 0.0;
   var halfW = width * 0.5;
   var halfH = height * 0.5;
-  var sd = this.a5(coordX - halfW, coordY - halfH, halfW, halfH, radius);
+  var sd = this.p5(coordX - halfW, coordY - halfH, halfW, halfH, radius);
   if (-sd >= refractionHeight)
     return 0.0;
   // Inline function 'kotlin.math.min' call
   var clampedSd = Math.min(sd, 0.0);
-  return this.c5(1.0 - -clampedSd / refractionHeight) * refractionAmount;
+  return this.r5(1.0 - -clampedSd / refractionHeight) * refractionAmount;
 };
 var ReferenceMathAdapters_instance;
 function ReferenceMathAdapters_getInstance() {
@@ -365,53 +429,53 @@ function minkoiNativeManifestJson() {
 }
 function miuixFolmeStiffness(damping, response) {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().o4(damping, response);
+  return DirectMavenBridge_getInstance().d5(damping, response);
 }
 function miuixFolmeStepValue(value, target, velocity, dt, damping, response) {
   _init_properties_JsExports_kt__s0j324();
-  DirectMavenBridge_getInstance().p4(value, target, velocity, dt, damping, response, get_scratchPair());
+  DirectMavenBridge_getInstance().e5(value, target, velocity, dt, damping, response, get_scratchPair());
   return get_scratchPair()[0];
 }
 function couiSpringEasing(fraction, response, bounce) {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().q4(fraction, response, bounce);
+  return DirectMavenBridge_getInstance().f5(fraction, response, bounce);
 }
 function couiBezierEasing(kind, fraction) {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().r4(kind, fraction);
+  return DirectMavenBridge_getInstance().g5(kind, fraction);
 }
 function couiStiffnessFromResponse(response) {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().s4(response);
+  return DirectMavenBridge_getInstance().h5(response);
 }
 function couiDampingFromBounce(bounce) {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().t4(bounce);
+  return DirectMavenBridge_getInstance().i5(bounce);
 }
 function couiSpringStepValue(value, target, velocity, dt, response, bounce) {
   _init_properties_JsExports_kt__s0j324();
-  DirectMavenBridge_getInstance().u4(value, target, velocity, dt, response, bounce, get_scratchPair());
+  DirectMavenBridge_getInstance().j5(value, target, velocity, dt, response, bounce, get_scratchPair());
   return get_scratchPair()[0];
 }
 function couiDefaultSinkAmount() {
   _init_properties_JsExports_kt__s0j324();
-  return DirectMavenBridge_getInstance().v4();
+  return DirectMavenBridge_getInstance().k5();
 }
 function miuixObtainDampingDistance(inputDistance, range) {
   _init_properties_JsExports_kt__s0j324();
-  return ReferenceMathAdapters_instance.w4(inputDistance, range);
+  return ReferenceMathAdapters_instance.l5(inputDistance, range);
 }
 function miuixObtainTouchDistance(currentPixelOffset, range) {
   _init_properties_JsExports_kt__s0j324();
-  return ReferenceMathAdapters_instance.x4(currentPixelOffset, range);
+  return ReferenceMathAdapters_instance.m5(currentPixelOffset, range);
 }
 function miuixPressStrength(widthPx, heightPx, density) {
   _init_properties_JsExports_kt__s0j324();
-  return ReferenceMathAdapters_instance.y4(widthPx, heightPx, density);
+  return ReferenceMathAdapters_instance.n5(widthPx, heightPx, density);
 }
 function springStepValue(value, target, velocity, dt, dampingRatio, stiffness, mass) {
   _init_properties_JsExports_kt__s0j324();
-  ReferenceMathAdapters_instance.z4(value, target, velocity, dt, dampingRatio, stiffness, mass, get_scratchPair());
+  ReferenceMathAdapters_instance.o5(value, target, velocity, dt, dampingRatio, stiffness, mass, get_scratchPair());
   return get_scratchPair()[0];
 }
 function springStepLastVelocity() {
@@ -420,11 +484,11 @@ function springStepLastVelocity() {
 }
 function backdropHighlightIntensity(coordX, coordY, width, height, radius, angleRad, falloff) {
   _init_properties_JsExports_kt__s0j324();
-  return ReferenceMathAdapters_instance.d5(coordX, coordY, width, height, radius, angleRad, falloff);
+  return ReferenceMathAdapters_instance.s5(coordX, coordY, width, height, radius, angleRad, falloff);
 }
 function backdropRefractionMagnitude(coordX, coordY, width, height, radius, refractionHeight, refractionAmount) {
   _init_properties_JsExports_kt__s0j324();
-  return ReferenceMathAdapters_instance.e5(coordX, coordY, width, height, radius, refractionHeight, refractionAmount);
+  return ReferenceMathAdapters_instance.t5(coordX, coordY, width, height, radius, refractionHeight, refractionAmount);
 }
 function main() {
   _init_properties_JsExports_kt__s0j324();

@@ -172,15 +172,21 @@
         const zenLyrics = document.getElementById('zen-ambient-lyric');
         const zenSurfaces = [mainCard, header, dock].filter(Boolean);
         const spring = window.MinkoiSpring;
-        const easeOutQuad = t => t * (2 - t);
+        const easeZen = t => {
+            const c = Math.max(0, Math.min(1, t));
+            if (window.MinkoiNativeBridge && typeof window.MinkoiNativeBridge.couiBezierEasing === 'function') {
+                return window.MinkoiNativeBridge.couiBezierEasing(2, c);
+            }
+            return c * (2 - c);
+        };
         const clamp01 = v => Math.max(0, Math.min(1, v));
-        // V5.5 Living Soundstage: 3-phase choreographed Player <-> Zen spatial morph
-        // driven by one shared MinkoiSpring (100% interruptible, zero wallpaper cloning).
+        // V5.6 Living Soundstage: 3-phase choreographed Player <-> Zen spatial morph
+        // driven by MinkoiSpring (Direct Maven Folme) + COUI MoveEase curve.
         const renderZen = value => {
             const f = clamp01(value);
-            const cardFade = easeOutQuad(1 - clamp01(f / 0.56));
+            const cardFade = easeZen(1 - clamp01(f / 0.56));
             const dockProgress = clamp01((f - 0.32) / 0.68);
-            const dockAlpha = easeOutQuad(dockProgress);
+            const dockAlpha = easeZen(dockProgress);
             if (mainCard) {
                 mainCard.style.opacity = cardFade.toFixed(4);
                 mainCard.style.transform = `translate3d(0,${(18 * f).toFixed(2)}px,0) scale(${(1 - 0.034 * f).toFixed(4)})`;

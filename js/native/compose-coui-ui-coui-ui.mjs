@@ -8,12 +8,16 @@ import {
   VOID3gxj6tk5isa35 as VOID,
   isNaNymqb93xtq8w8 as isNaN_0,
   coerceAtLeast1b3m6f7g22ivr as coerceAtLeast,
+  getNumberHashCode2l4nbdcihl25f as getNumberHashCode,
   initMetadataForClassbxx6q50dy2s7 as initMetadataForClass,
   toString1pkumu07cwy4m as toString,
+  hashCodeq5arwsb9dgti as hashCode,
+  equals2au1ep9vhcato as equals,
 } from './kotlin-kotlin-stdlib.mjs';
 //region block: imports
 var sinh = Math.sinh;
 var cosh = Math.cosh;
+var imul = Math.imul;
 //endregion
 //region block: pre-declaration
 initMetadataForCompanion(Companion);
@@ -54,29 +58,29 @@ function _init_properties_COUIEaseInterpolators_kt__jjs9pw() {
 var io_github_suqi8_coui_kmp_anim_COUISpringEasing$stable;
 function raw($this, t) {
   // Inline function 'kotlin.math.exp' call
-  var x = -$this.g4_1 * $this.f4_1 * t;
+  var x = -$this.r4_1 * $this.q4_1 * t;
   var decay = Math.exp(x);
   var tmp;
-  if ($this.g4_1 < 1.0) {
+  if ($this.r4_1 < 1.0) {
     // Inline function 'kotlin.math.cos' call
-    var x_0 = $this.h4_1 * t;
+    var x_0 = $this.s4_1 * t;
     var tmp_0 = Math.cos(x_0);
     // Inline function 'kotlin.math.sin' call
-    var x_1 = $this.h4_1 * t;
+    var x_1 = $this.s4_1 * t;
     var tmp$ret$2 = Math.sin(x_1);
-    tmp = 1.0 - decay * (tmp_0 + $this.i4_1 * tmp$ret$2);
-  } else if ($this.g4_1 === 1.0) {
-    var tmp_1 = $this.i4_1 * t + 1.0;
+    tmp = 1.0 - decay * (tmp_0 + $this.t4_1 * tmp$ret$2);
+  } else if ($this.r4_1 === 1.0) {
+    var tmp_1 = $this.t4_1 * t + 1.0;
     // Inline function 'kotlin.math.exp' call
-    var x_2 = -$this.f4_1 * t;
+    var x_2 = -$this.q4_1 * t;
     tmp = 1.0 - tmp_1 * Math.exp(x_2);
   } else {
     // Inline function 'kotlin.math.sqrt' call
-    var x_3 = $this.g4_1 * $this.g4_1 - 1.0;
+    var x_3 = $this.r4_1 * $this.r4_1 - 1.0;
     var tmp$ret$4 = Math.sqrt(x_3);
-    var s = $this.f4_1 * tmp$ret$4;
+    var s = $this.q4_1 * tmp$ret$4;
     var tmp_2 = decay / s;
-    var tmp_3 = $this.g4_1 * $this.f4_1;
+    var tmp_3 = $this.r4_1 * $this.q4_1;
     // Inline function 'kotlin.math.sinh' call
     var x_4 = s * t;
     var tmp_4 = tmp_3 * sinh(x_4);
@@ -87,7 +91,7 @@ function raw($this, t) {
   return tmp;
 }
 function Companion() {
-  this.k4_1 = 1.15;
+  this.v4_1 = 1.15;
 }
 var Companion_instance;
 function Companion_getInstance() {
@@ -95,34 +99,44 @@ function Companion_getInstance() {
 }
 function COUISpringEasing(response, bounce) {
   bounce = bounce === VOID ? 0.0 : bounce;
-  this.d4_1 = response;
-  this.e4_1 = bounce;
-  this.f4_1 = 2.0 * 3.141592653589793 / (this.d4_1 === 0.0 ? 1.0 : this.d4_1);
+  this.o4_1 = response;
+  this.p4_1 = bounce;
+  this.q4_1 = 2.0 * 3.141592653589793 / (this.o4_1 === 0.0 ? 1.0 : this.o4_1);
   var tmp = this;
   // Inline function 'kotlin.let' call
-  var it = 1.0 - this.e4_1;
-  tmp.g4_1 = it <= 0.0 ? 1.15 : it;
+  var it = 1.0 - this.p4_1;
+  tmp.r4_1 = it <= 0.0 ? 1.15 : it;
   var tmp_0 = this;
   var tmp_1;
-  if (this.g4_1 < 1.0) {
+  if (this.r4_1 < 1.0) {
     // Inline function 'kotlin.math.sqrt' call
-    var x = 1.0 - this.g4_1 * this.g4_1;
-    tmp_1 = Math.sqrt(x) * this.f4_1;
+    var x = 1.0 - this.r4_1 * this.r4_1;
+    tmp_1 = Math.sqrt(x) * this.q4_1;
   } else {
     tmp_1 = 0.0;
   }
-  tmp_0.h4_1 = tmp_1;
-  this.i4_1 = this.g4_1 < 1.0 ? this.g4_1 * this.f4_1 / this.h4_1 : this.g4_1 === 1.0 ? this.f4_1 : this.g4_1 * this.f4_1;
+  tmp_0.s4_1 = tmp_1;
+  this.t4_1 = this.r4_1 < 1.0 ? this.r4_1 * this.q4_1 / this.s4_1 : this.r4_1 === 1.0 ? this.q4_1 : this.r4_1 * this.q4_1;
   var tmp_2 = this;
   // Inline function 'kotlin.let' call
   var it_0 = raw(this, 1.0);
-  tmp_2.j4_1 = it_0 === 0.0 || isNaN_0(it_0) ? 1.0 : it_0;
+  tmp_2.u4_1 = it_0 === 0.0 || isNaN_0(it_0) ? 1.0 : it_0;
 }
-protoOf(COUISpringEasing).b3 = function (fraction) {
-  return raw(this, coerceAtLeast(fraction, 0.0)) / this.j4_1;
+protoOf(COUISpringEasing).a4 = function (fraction) {
+  return raw(this, coerceAtLeast(fraction, 0.0)) / this.u4_1;
+};
+protoOf(COUISpringEasing).equals = function (other) {
+  if (this === other)
+    return true;
+  if (!(other instanceof COUISpringEasing))
+    return false;
+  return this.o4_1 === other.o4_1 && this.p4_1 === other.p4_1;
+};
+protoOf(COUISpringEasing).hashCode = function () {
+  return imul(31, getNumberHashCode(this.o4_1)) + getNumberHashCode(this.p4_1) | 0;
 };
 protoOf(COUISpringEasing).toString = function () {
-  return 'COUISpringEasing(response=' + this.d4_1 + ', bounce=' + this.e4_1 + ')';
+  return 'COUISpringEasing(response=' + this.o4_1 + ', bounce=' + this.p4_1 + ')';
 };
 function couiSpring(response, bounce, visibilityThreshold) {
   bounce = bounce === VOID ? 0.0 : bounce;
@@ -266,11 +280,27 @@ var io_github_suqi8_coui_kmp_utils_TiltFeedback$stable;
 function SinkFeedback(sinkAmount, animationSpec) {
   sinkAmount = sinkAmount === VOID ? 0.94 : sinkAmount;
   animationSpec = animationSpec === VOID ? spring(0.8, 600.0) : animationSpec;
-  this.l4_1 = sinkAmount;
-  this.m4_1 = animationSpec;
+  this.w4_1 = sinkAmount;
+  this.x4_1 = animationSpec;
 }
 protoOf(SinkFeedback).toString = function () {
-  return 'SinkFeedback(sinkAmount=' + this.l4_1 + ', animationSpec=' + toString(this.m4_1) + ')';
+  return 'SinkFeedback(sinkAmount=' + this.w4_1 + ', animationSpec=' + toString(this.x4_1) + ')';
+};
+protoOf(SinkFeedback).hashCode = function () {
+  var result = getNumberHashCode(this.w4_1);
+  result = imul(result, 31) + hashCode(this.x4_1) | 0;
+  return result;
+};
+protoOf(SinkFeedback).equals = function (other) {
+  if (this === other)
+    return true;
+  if (!(other instanceof SinkFeedback))
+    return false;
+  if (!equals(this.w4_1, other.w4_1))
+    return false;
+  if (!equals(this.x4_1, other.x4_1))
+    return false;
+  return true;
 };
 var io_github_suqi8_coui_kmp_utils_PressableNode$stable;
 var io_github_suqi8_coui_kmp_utils_AbstractPressableNode$stable;

@@ -296,6 +296,7 @@
             const seen = recentMasters.get(pick.key) || [];
             recentMasters.set(pick.key, [masterOf(src), ...seen].slice(0, 3));
             notifyZenArtwork(src);
+            window.MinkoiMaterialManager?.syncBannerTexture?.();
         }
 
         if (immediate) {
@@ -407,13 +408,15 @@
         const reduceMotion = Boolean(reducedMotionMQ && reducedMotionMQ.matches);
         if (animate && !reduceMotion && typeof avatarImg.animate === 'function') {
             try {
+                // Use independent CSS `scale` (never `transform`) so persona-specific
+                // horizontal/vertical translate offsets in layout-studio.css stay centered!
                 avatarAnim = avatarImg.animate(
                     [
-                        { opacity: 0.48 },
-                        { opacity: 1 }
+                        { opacity: 0.48, scale: '0.965' },
+                        { opacity: 1, scale: '1' }
                     ],
                     {
-                        duration: 180,
+                        duration: 240,
                         easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
                         fill: 'none'
                     }

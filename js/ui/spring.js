@@ -14,8 +14,29 @@
             ? global.MinkoiNativeBridge.miuixFolmeStiffness(safeDamping, safeResponse)
             : ((2 * Math.PI) / safeResponse) * ((2 * Math.PI) / safeResponse);
         return {
+            engine: 'miuix-folme',
             dampingRatio: safeDamping,
+            response: safeResponse,
             stiffness
+        };
+    }
+
+    function couiSpring(responseSeconds, bounce) {
+        const safeResponse = Number.isFinite(responseSeconds) ? Math.max(0.05, responseSeconds) : 0.35;
+        const safeBounce = Number.isFinite(bounce) ? Math.max(-0.5, Math.min(0.95, bounce)) : 0.15;
+        const bridge = global.MinkoiNativeBridge;
+        const stiffness = (bridge && typeof bridge.couiStiffnessFromResponse === 'function')
+            ? bridge.couiStiffnessFromResponse(safeResponse)
+            : ((2 * Math.PI) / safeResponse) * ((2 * Math.PI) / safeResponse);
+        const dampingRatio = (bridge && typeof bridge.couiDampingFromBounce === 'function')
+            ? Math.max(0.05, bridge.couiDampingFromBounce(safeBounce))
+            : Math.max(0.05, 1 - safeBounce);
+        return {
+            engine: 'coui-spring',
+            dampingRatio,
+            stiffness,
+            response: safeResponse,
+            bounce: safeBounce
         };
     }
 
@@ -43,8 +64,14 @@
         HERO_BUTTON: Object.freeze(folmeSpring(0.76, 0.30)),
         TACTILE_PRESS: Object.freeze(folmeSpring(0.86, 0.22)),
         ZEN_ENTER: Object.freeze(folmeSpring(0.96, 0.42)),
-        ZEN_EXIT: Object.freeze(folmeSpring(0.98, 0.38))
+        ZEN_EXIT: Object.freeze(folmeSpring(0.98, 0.38)),
+        // V5.6 Direct Maven COUI Spring Presets (coui-ui 2.1.0 FloatSpringSpec)
+        SEGMENTED_PILL: Object.freeze(couiSpring(0.28, 0.12)),
+        COUI_SNAPPY: Object.freeze(couiSpring(0.30, 0.14)),
+        COUI_GENTLE: Object.freeze(couiSpring(0.42, 0.04))
     });
+
+    const stepStats = { miuixFolme: 0, couiSpring: 0, closedForm: 0 };
 
     const activeSprings = new Set();
     let rafId = 0;
@@ -61,6 +88,36 @@
 
     function advance(spring, dt) {
         const bridge = global.MinkoiNativeBridge;
+        if (bridge && spring.mass === 1) {
+            if (spring.engine === 'miuix-folme' && Number.isFinite(spring.response) && typeof bridge.stepMiuixFolme === 'function') {
+                const next = bridge.stepMiuixFolme(
+                    spring.value,
+                    spring.target,
+                    spring.velocity,
+                    dt,
+                    spring.dampingRatio,
+                    spring.response
+                );
+                spring.value = next.value;
+                spring.velocity = next.velocity;
+                stepStats.miuixFolme++;
+                return;
+            }
+            if (spring.engine === 'coui-spring' && Number.isFinite(spring.response) && Number.isFinite(spring.bounce) && typeof bridge.stepCouiSpring === 'function') {
+                const next = bridge.stepCouiSpring(
+                    spring.value,
+                    spring.target,
+                    spring.velocity,
+                    dt,
+                    spring.response,
+                    spring.bounce
+                );
+                spring.value = next.value;
+                spring.velocity = next.velocity;
+                stepStats.couiSpring++;
+                return;
+            }
+        }
         if (bridge && typeof bridge.stepSpring === 'function') {
             const next = bridge.stepSpring(
                 spring.value,
@@ -73,6 +130,7 @@
             );
             spring.value = next.value;
             spring.velocity = next.velocity;
+            stepStats.closedForm++;
             return;
         }
         const omega = Math.sqrt(spring.stiffness / spring.mass);
@@ -314,6 +372,7 @@
         const preset = opts.preset || PRESETS.LIST_POPUP;
         const initVal = Number.isFinite(opts.initial) ? opts.initial : 0;
         const initTarget = Number.isFinite(opts.target) ? opts.target : initVal;
+        const hasManualStiffness = Number.isFinite(opts.stiffness);
         const spring = {
             el: opts.el || null,
             value: initVal,
@@ -321,7 +380,10 @@
             velocity: 0,
             mass: Number.isFinite(opts.mass) ? Math.max(0.001, opts.mass) : 1,
             dampingRatio: Number.isFinite(opts.dampingRatio) ? Math.max(0.05, opts.dampingRatio) : preset.dampingRatio,
-            stiffness: Number.isFinite(opts.stiffness) ? Math.max(1, opts.stiffness) : preset.stiffness,
+            stiffness: hasManualStiffness ? Math.max(1, opts.stiffness) : preset.stiffness,
+            engine: opts.engine || (hasManualStiffness ? 'closed-form' : (preset.engine || 'closed-form')),
+            response: opts.response !== undefined ? opts.response : preset.response,
+            bounce: opts.bounce !== undefined ? opts.bounce : preset.bounce,
             precision: Number.isFinite(opts.precision) ? Math.max(1e-5, opts.precision) : 0.001,
             velocityPrecision: Number.isFinite(opts.velocityPrecision) ? Math.max(1e-4, opts.velocityPrecision) : 0.01,
             running: false,
@@ -331,6 +393,13 @@
             setTarget(nextTarget, override) {
                 if (!Number.isFinite(nextTarget)) return;
                 if (override) {
+                    if (override.engine) {
+                        this.engine = override.engine;
+                        if (Number.isFinite(override.response)) this.response = override.response;
+                        if (Number.isFinite(override.bounce)) this.bounce = override.bounce;
+                    } else if (Number.isFinite(override.stiffness)) {
+                        this.engine = 'closed-form';
+                    }
                     if (Number.isFinite(override.dampingRatio)) this.dampingRatio = Math.max(0.05, override.dampingRatio);
                     if (Number.isFinite(override.stiffness)) this.stiffness = Math.max(1, override.stiffness);
                     if (Number.isFinite(override.mass)) this.mass = Math.max(0.001, override.mass);
@@ -551,6 +620,7 @@
     global.MinkoiSpring = Object.freeze({
         PRESETS: PRESETS,
         folmeSpring: folmeSpring,
+        couiSpring: couiSpring,
         createSpring: createSpring,
         createSpringGroup: createSpringGroup,
         createVelocityTracker: createVelocityTracker,
@@ -560,6 +630,7 @@
         couiDefaultSinkAmount: couiDefaultSinkAmount,
         isReducedMotion: shouldInstantSnap,
         isAccessibilityReducedMotion: isAccessibilityReducedMotion,
-        getActiveCount: () => activeSprings.size
+        getActiveCount: () => activeSprings.size,
+        getStats: () => ({ ...stepStats })
     });
 })(window);

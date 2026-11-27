@@ -1,0 +1,286 @@
+/* ==========================================================================
+   MINKOI 5.6 · DESIGN TOKENS (SINGLE SOURCE OF TRUTH)
+   Dark Mode (Obsidian Studio) · Light Mode (Alabaster Editorial)
+   Concentric Squircle Radii · Optical Lighting · Typography · Motion · Z-Index
+   ========================================================================== */
+
+@property --color-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #38bdf8;
+}
+
+@property --color-accent-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(56, 189, 248, 0.28);
+}
+
+@property --nav-persona {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #38bdf8;
+}
+
+:root {
+    color-scheme: dark;
+
+    /* Dynamic Persona Accent Tokens (updated by js/avatar.js) */
+    --color-accent: #38bdf8;
+    --color-accent-secondary: #f43f5e;
+    --color-accent-glow: rgba(56, 189, 248, 0.28);
+
+    /* Surface Hierarchy — Dark Mode */
+    --surface-0: #101217;
+    --surface-base: rgba(25, 28, 35, 0.68);
+    --surface-1: rgba(25, 28, 35, 0.72);
+    --surface-2: rgba(35, 39, 48, 0.62);
+    --surface-3: rgba(44, 48, 58, 0.94);
+    --surface-popup: rgba(28, 32, 42, 0.96);
+    --surface-pill: rgba(255, 255, 255, 0.065);
+    --surface-hover: rgba(255, 255, 255, 0.11);
+    --surface-scrim: rgba(5, 7, 12, 0.28);
+    --track-bg: rgba(255, 255, 255, 0.12);
+
+    /* Liquid Mode Crystal Shell Surfaces (clearer optical transmittance) */
+    --liquid-shell-bg: rgba(18, 22, 32, 0.54);
+    --liquid-header-bg: rgba(18, 22, 32, 0.58);
+    --liquid-blur-shell: blur(13px) saturate(142%);
+    --liquid-blur-header: blur(10px) saturate(138%);
+
+    /* Typography & Semantic Ink */
+    --color-text: #f1f2f5;
+    --color-text-secondary: #c9cdd5;
+    --color-text-muted: #a3aab7;
+    --ui-focus: #9bceef;
+    --ui-accent-ink: var(--color-accent);
+    --ui-positive-ink: #9de6c7;
+    --ui-caution-ink: #f5d397;
+    --glass-favorite: #ff94ac;
+
+    /* Borders & Dividers */
+    --color-border: rgba(255, 255, 255, 0.12);
+    --color-border-subtle: rgba(255, 255, 255, 0.07);
+    --color-border-active: rgba(255, 255, 255, 0.22);
+    --aether-divider: rgba(255, 255, 255, 0.09);
+
+    /* Concentric Squircle Radii */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 24px;
+    --radius-full: 9999px;
+    --v3-radius-card: 32px;
+    --v3-radius-island: 24px;
+    --v3-radius-popup: 20px;
+    --v3-radius-control: 16px;
+    --v3-radius-pill: 9999px;
+    --ui-radius-inset: 12px;
+    --aether-radius-shell: 32px;
+    --aether-radius-bar: 22px;
+    --aether-radius-stage: 22px;
+    --aether-radius-chip: 14px;
+    --aether-radius-popup: 24px;
+    --aether-radius-sheet: 28px;
+
+    /* Ergonomic Sizing & Spacing */
+    --ui-gap-tight: 0.375rem;
+    --ui-gap: 0.625rem;
+    --ui-pad: 0.875rem;
+    --ui-control: 2.25rem;
+    --ui-touch: 2.75rem;
+    --ui-label: 0.75rem;
+    --ui-caption: 0.6875rem;
+
+    /* Frosted Glass Material Roles */
+    --glass-floating: var(--surface-1);
+    --glass-overlay: var(--surface-popup);
+    --glass-edge: var(--color-border);
+    --glass-active-edge: var(--color-border-active);
+    --glass-control-active: var(--surface-hover);
+    --glass-thumb-fill: #f8f6f0;
+    --glass-thumb-shadow: inset 0 1px 0 #ffffff, 0 1px 4px rgba(8, 11, 20, 0.36);
+    --v3-blur-base: blur(20px) saturate(125%);
+    --v3-blur-card: blur(12px) saturate(120%);
+    --v3-blur-stage: blur(8px) saturate(115%);
+    --v3-blur-popup: blur(18px) saturate(120%);
+
+    /* Optical Lighting, Rims, Shadows & Troughs */
+    --v3-specular-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --v3-specular-soft: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --glass-contact-shadow: var(--v3-specular-soft), 0 1px 3px rgba(12, 15, 21, 0.14);
+    --v3-shadow-card: 0 14px 36px -18px rgba(0, 0, 0, 0.32);
+    --v3-shadow-island: 0 8px 24px -12px rgba(0, 0, 0, 0.3);
+    --v3-shadow-popup: 0 18px 48px -12px rgba(0, 0, 0, 0.5);
+    --shadow-soft: 0 8px 24px -4px rgba(0, 0, 0, 0.45);
+    --shadow-deep: 0 24px 64px -12px rgba(0, 0, 0, 0.82);
+    --shadow-accent: 0 8px 24px var(--color-accent-glow);
+
+    --aether-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    --aether-rim-soft: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --aether-rim-bottom: inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+    --aether-shadow-shell: 0 28px 64px -22px rgba(0, 0, 0, 0.56), 0 8px 24px -12px rgba(0, 0, 0, 0.36);
+    --aether-shadow-bar: 0 14px 34px -14px rgba(0, 0, 0, 0.44), 0 2px 8px -2px rgba(0, 0, 0, 0.24);
+    --aether-trough-bg: rgba(8, 10, 16, 0.34);
+    --aether-trough-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.05);
+    --aether-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.015) 38%, transparent 65%);
+    --aether-press-spot: rgba(255, 255, 255, 0.11);
+    --aether-press-rim: inset 0 1px 2px rgba(0, 0, 0, 0.26), inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+    --aether-rail-active-bg: rgba(255, 255, 255, 0.13);
+    --aether-tip-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.48), 0 2px 6px -2px rgba(0, 0, 0, 0.28);
+
+    /* Optical Slider Pearl & Component Containers */
+    --aether-pearl-fill: radial-gradient(circle at 34% 28%, #ffffff 0%, #eef2f8 54%, #ccd5e3 100%);
+    --aether-pearl-rim: rgba(255, 255, 255, 0.78);
+    --aether-pearl-shadow:
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.94),
+        inset 0 -1.5px 2px rgba(18, 24, 38, 0.24),
+        0 2px 6px rgba(0, 0, 0, 0.36),
+        0 1px 2px rgba(0, 0, 0, 0.24);
+    --aether-pearl-active-shadow:
+        inset 0 1px 2px #ffffff,
+        inset 0 -1.5px 2px rgba(18, 24, 38, 0.22),
+        0 4px 11px -2px rgba(0, 0, 0, 0.44),
+        0 0 0 1px rgba(255, 255, 255, 0.45);
+
+    --v56-hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    --v56-hairline-bottom: inset 0 -1px 0 rgba(0, 0, 0, 0.28);
+    --v56-dock-bg: rgba(12, 15, 22, 0.44);
+    --v56-dock-border: rgba(255, 255, 255, 0.11);
+    --v56-superlist-bg: rgba(255, 255, 255, 0.032);
+    --v56-superlist-border: rgba(255, 255, 255, 0.085);
+    --v56-switch-track: rgba(255, 255, 255, 0.16);
+    --v56-slider-track: rgba(255, 255, 255, 0.12);
+
+    /* Hero Accent Gradient */
+    --v3-hero-gradient: linear-gradient(135deg, var(--color-accent), #6385b0);
+    --v3-hero-glow: 0 4px 18px var(--color-accent-glow);
+    --v3-hero-glow-hover: 0 6px 22px var(--color-accent-glow);
+    --v3-soundstage-glow: 0 0 20px -6px var(--color-accent-glow);
+
+    /* Font Stacks */
+    --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, monospace;
+
+    /* Motion Curves & Timings */
+    --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+    --v3-spring-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --v3-fluid-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --transition-fast: 150ms var(--ease-out-quint);
+    --transition-normal: 260ms var(--ease-out-quint);
+    --transition-smooth: 400ms var(--ease-out-quint);
+}
+
+@supports (background: color-mix(in srgb, red, blue)) {
+    :root {
+        --v3-hero-gradient: linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 65%, #6385b0));
+        --ui-accent-ink: color-mix(in srgb, var(--color-accent) 75%, #ffffff);
+    }
+
+    :is(.dropdown-flyout, .lyrics-drawer-modal, .top-more-dropdown, .viz-menu, .lyrics-display-menu) {
+        --glass-overlay: color-mix(in srgb, var(--color-accent) 3%, var(--surface-popup));
+    }
+
+    :is(.play-hero-btn, .playlist-row.active, .volume-slider-dock, .viz-menu-item[aria-checked="true"],
+        .top-action-btn[aria-expanded="true"], .ctrl-btn.active, .ctrl-btn.is-morph-active,
+        .ctrl-btn[aria-expanded="true"], .speed-toggle-btn.active,
+        .fx-preset-btn.active, .nav-material-switch button[aria-pressed="true"],
+        .top-more-item[aria-checked="true"], .lyrics-display-menu button[aria-pressed="true"]) {
+        --glass-active-edge: color-mix(in srgb, var(--color-accent) 22%, var(--color-border-active));
+        --glass-control-active: color-mix(in srgb, var(--color-accent) 10%, var(--surface-hover));
+    }
+}
+
+/* Light Mode — Warm Alabaster Editorial System */
+html[data-theme="light"] {
+    color-scheme: light;
+    background-color: #eae7df;
+}
+
+body.light-mode {
+    --surface-0: #eae7df;
+    --surface-base: rgba(245, 242, 234, 0.74);
+    --surface-1: rgba(245, 242, 234, 0.76);
+    --surface-2: rgba(250, 247, 240, 0.68);
+    --surface-3: rgba(248, 245, 238, 0.96);
+    --surface-popup: rgba(250, 248, 242, 0.97);
+    --surface-pill: rgba(70, 65, 55, 0.055);
+    --surface-hover: rgba(70, 65, 55, 0.095);
+    --surface-scrim: rgba(31, 29, 25, 0.18);
+    --track-bg: rgba(50, 48, 43, 0.14);
+
+    --liquid-shell-bg: rgba(247, 244, 238, 0.60);
+    --liquid-header-bg: rgba(247, 244, 238, 0.64);
+
+    --color-text: #262b33;
+    --color-text-secondary: #454e5c;
+    --color-text-muted: #5d6876;
+    --ui-focus: #235780;
+    --ui-accent-ink: #1a6285;
+    --ui-positive-ink: #205a46;
+    --ui-caution-ink: #745013;
+    --glass-favorite: #9e254b;
+
+    --color-border: rgba(50, 48, 43, 0.13);
+    --color-border-subtle: rgba(50, 48, 43, 0.075);
+    --color-border-active: rgba(50, 48, 43, 0.22);
+    --aether-divider: rgba(50, 45, 35, 0.11);
+
+    --glass-edge: var(--color-border);
+    --glass-floating: var(--surface-1);
+    --glass-overlay: var(--surface-popup);
+    --glass-active-edge: var(--color-border-active);
+    --glass-control-active: var(--surface-hover);
+
+    --v3-shadow-card: 0 20px 50px -18px rgba(51, 45, 35, 0.2);
+    --v3-shadow-island: 0 8px 24px -12px rgba(51, 45, 35, 0.12);
+    --v3-shadow-popup: 0 18px 44px -12px rgba(51, 45, 35, 0.23);
+    --shadow-soft: 0 6px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+    --shadow-deep: 0 24px 64px -12px rgba(15, 23, 42, 0.16), 0 8px 24px -4px rgba(15, 23, 42, 0.08);
+
+    --aether-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --aether-rim-soft: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    --aether-rim-bottom: inset 0 -1px 0 rgba(50, 45, 35, 0.08);
+    --aether-shadow-shell: 0 26px 60px -20px rgba(42, 36, 28, 0.2), 0 8px 22px -10px rgba(42, 36, 28, 0.1);
+    --aether-shadow-bar: 0 12px 30px -12px rgba(42, 36, 28, 0.16), 0 2px 8px -2px rgba(42, 36, 28, 0.08);
+    --aether-trough-bg: rgba(58, 52, 42, 0.065);
+    --aether-trough-shadow: inset 0 1px 2px rgba(42, 36, 28, 0.09), 0 1px 0 rgba(255, 255, 255, 0.65);
+    --aether-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 38%, transparent 65%);
+    --aether-press-spot: rgba(42, 36, 28, 0.065);
+    --aether-press-rim: inset 0 1px 2px rgba(42, 36, 28, 0.12), inset 0 -1px 0 rgba(255, 255, 255, 0.72);
+    --aether-rail-active-bg: rgba(58, 52, 42, 0.11);
+    --aether-tip-shadow: 0 10px 24px -10px rgba(42, 36, 28, 0.22), 0 2px 6px -2px rgba(42, 36, 28, 0.12);
+
+    --aether-pearl-fill: radial-gradient(circle at 34% 28%, #ffffff 0%, #faf8f4 58%, #e5dfd3 100%);
+    --aether-pearl-rim: rgba(42, 36, 28, 0.18);
+    --aether-pearl-shadow:
+        inset 0 1px 1.5px #ffffff,
+        inset 0 -1px 2px rgba(42, 36, 28, 0.12),
+        0 2px 6px rgba(42, 36, 28, 0.2),
+        0 1px 2px rgba(42, 36, 28, 0.14);
+    --aether-pearl-active-shadow:
+        inset 0 1px 2px #ffffff,
+        inset 0 -1px 2px rgba(42, 36, 28, 0.14),
+        0 4px 10px -2px rgba(42, 36, 28, 0.24),
+        0 0 0 1px rgba(42, 36, 28, 0.15);
+
+    --v56-hairline-top: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+    --v56-hairline-bottom: inset 0 -1px 0 rgba(48, 42, 34, 0.08);
+    --v56-dock-bg: rgba(54, 48, 40, 0.055);
+    --v56-dock-border: rgba(48, 42, 34, 0.11);
+    --v56-superlist-bg: rgba(48, 42, 34, 0.035);
+    --v56-superlist-border: rgba(48, 42, 34, 0.10);
+    --v56-switch-track: rgba(48, 42, 34, 0.16);
+    --v56-slider-track: rgba(48, 42, 34, 0.13);
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+    body.light-mode {
+        --ui-accent-ink: color-mix(in srgb, var(--color-accent) 48%, #101826);
+    }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root { --surface-base: rgba(25, 28, 35, 0.94); }
+    body.light-mode { --surface-base: rgba(245, 242, 234, 0.96); }
+}

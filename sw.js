@@ -8,16 +8,24 @@
    ========================================================================== */
 'use strict';
 
-const CACHE_VERSION = 'minkoi-v5-6-shell-v1';
+const CACHE_VERSION = 'minkoi-v5-6-shell-v3';
 const MEDIA_CACHE = 'minkoi-v5-6-artwork-v1';
 const MAX_ARTWORK_CACHE = 24;
 
 const CORE_SHELL = [
     './',
     './index.html',
-    './css/style.css',
-    './css/v5-aether.css',
-    './js/config.js'
+    './css/tokens.css',
+    './css/base.css',
+    './css/components.css',
+    './css/layout-studio.css',
+    './css/materials.css',
+    './css/responsive.css',
+    './js/config.js',
+    './js/ui/foundation.js',
+    './js/ui/materials/frosted-renderer.js',
+    './js/ui/materials/liquid-renderer.js',
+    './js/ui/materials/material-manager.js'
 ];
 
 self.addEventListener('install', (event) => {

@@ -29,17 +29,22 @@
         directMaven: Object.freeze([
             'top.yukonga.miuix.kmp:miuix-ui:0.9.5-rc01 (Apache-2.0: folmeSpring)',
             'io.github.suqi8.coui.kmp:coui-ui:2.1.0 (Apache-2.0: COUISpringEasing, COUIEase/In/Move/Out, couiSpring, SinkFeedback)',
-            'org.jetbrains.compose.animation:animation-core:1.13.0-rc01 (Apache-2.0: SpringSpec.vectorize)'
+            'org.jetbrains.compose.animation:animation-core:1.13.0-rc01 (Apache-2.0: FloatSpringSpec cached zero-alloc)'
+        ]),
+        webgl2ShaderPorts: Object.freeze([
+            'io.github.kyant0:backdrop:2.0.1 Shaders.kt -> js/ui/materials/liquid-renderer.js (sdRoundedRect, circleMap, RoundedRectRefractionWithDispersion, DefaultHighlight)',
+            'top.yukonga.miuix.kmp:miuix-material:0.9.5-rc01 EdgeStrokeShader.kt -> js/ui/materials/liquid-renderer.js (light-only dual-light EdgeStroke, GlassRim, GlassMask)',
+            'io.github.suqi8.coui.kmp:coui-squircle:2.1.0 SoftCapsule -> js/ui/materials/liquid-renderer.js (SoftCapsule + matched Superellipse Squircle SDF)'
         ]),
         referenceAdapters: Object.freeze([
             'Miuix SpringUtils.kt internal SpringMath (obtainDampingDistance, obtainTouchDistance)',
-            'Miuix PressFeedback.kt private pressFeedbackStrength (2 / (1 + max(1, maxSideDp / 160)))',
-            'Backdrop Shaders.kt internal SDF/refraction/highlight math (Apache-2.0 reference; Backdrop rendering requires Skiko)'
+            'Miuix PressFeedback.kt private pressFeedbackStrength (2 / (1 + max(1, maxSideDp / 160))) via js/ui/foundation.js',
+            'Backdrop Shaders.kt internal SDF/refraction/highlight math (CPU query helpers mirroring GPU shader)'
         ]),
         incompatibleDirect: Object.freeze([
-            'miuix-blur / miuix-glass / miuix-squircle (requires Skiko canvas)',
-            'coui-blur / coui-shader / COUIMaterialEffect / TiltLight (requires Skiko / Android sensors)',
-            'io.github.kyant0:backdrop:2.0.1 (requires Compose UI + Skiko RuntimeEffect; cannot refract HTML DOM)'
+            'miuix-blur / miuix-glass / miuix-squircle Compose widgets (requires Skiko canvas)',
+            'coui-blur / coui-shader / COUIMaterialEffect / TiltLight Compose widgets (requires Skiko / Android sensors)',
+            'io.github.kyant0:backdrop:2.0.1 RuntimeEffect Composable (requires Compose UI + Skiko; ported to WebGL2 GLSL ES 3.00 in js/ui/materials/liquid-renderer.js)'
         ])
     });
 

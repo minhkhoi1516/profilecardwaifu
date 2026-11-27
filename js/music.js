@@ -18,6 +18,7 @@
     const seekContainer = document.getElementById('seek-container');
     const seekTip = document.getElementById('seek-tip');
     const volumeCtrl = document.getElementById('volume-control');
+    const volumeValuePill = document.getElementById('volume-value-pill');
     const muteBtn = document.getElementById('mute-btn');
     const currentTimeEl = document.getElementById('current-time');
     const totalTimeEl = document.getElementById('total-time');
@@ -327,7 +328,27 @@
                 filter.gain.linearRampToValueAtTime(eqBandGains[bandIdx], now + 0.08);
             }
         }
-        renderFxMenu();
+        // Update preset highlight & slider readout in-place so dragging an EQ slider never tears down the DOM
+        if (audioFxMenu) {
+            audioFxMenu.querySelectorAll('.fx-option.active').forEach(btn => {
+                btn.classList.remove('active');
+                btn.querySelector('.fx-check')?.remove();
+            });
+            const slider = audioFxMenu.querySelector(`.eq-slider[data-band="${bandIdx}"]`);
+            if (slider) {
+                if (window.MinkoiFoundation?.syncRangeFill) {
+                    window.MinkoiFoundation.syncRangeFill(slider, '--eq-pct');
+                } else {
+                    const pct = ((eqBandGains[bandIdx] + 12) / 24) * 100;
+                    slider.style.setProperty('--eq-pct', `${pct.toFixed(1)}%`);
+                }
+            }
+            const valEl = document.getElementById(`eq-val-${bandIdx}`);
+            if (valEl) {
+                const v = eqBandGains[bandIdx];
+                valEl.textContent = `${v > 0 ? '+' : ''}${v}dB`;
+            }
+        }
     }
 
     function formatTime(seconds) {
@@ -815,6 +836,9 @@
             volumeCtrl.setAttribute('aria-valuenow', clamped.toString());
         }
         isMuted = clamped === 0;
+        if (volumeValuePill) {
+            volumeValuePill.textContent = isMuted ? 'MUTE' : `${clamped}%`;
+        }
         if (volumeDockEl) volumeDockEl.classList.toggle('is-muted', isMuted);
 
         if (!isMuted) {
@@ -1959,22 +1983,26 @@
 
             <!-- 5-Band Interactive Sliders -->
             <div class="eq-bands-wrapper" title="Kéo thanh trượt để tinh chỉnh dải tần tùy thích">
-                ${EQ_BAND_NAMES.map((name, idx) => `
+                ${EQ_BAND_NAMES.map((name, idx) => {
+                    const gain = eqBandGains[idx] || 0;
+                    const eqPct = (((gain + 12) / 24) * 100).toFixed(1);
+                    return `
                     <div class="eq-band-col">
-                        <span class="eq-band-val" id="eq-val-${idx}">${eqBandGains[idx] > 0 ? '+' : ''}${eqBandGains[idx]}dB</span>
+                        <span class="eq-band-val" id="eq-val-${idx}">${gain > 0 ? '+' : ''}${gain}dB</span>
                         <div class="eq-band">
-                            <input type="range" class="eq-slider" min="-12" max="12" step="1" value="${eqBandGains[idx]}" data-band="${idx}" aria-label="Band ${name}">
+                            <input type="range" class="eq-slider" min="-12" max="12" step="1" value="${gain}" style="--eq-pct:${eqPct}%" data-band="${idx}" aria-label="Band ${name}">
                         </div>
                         <span class="eq-band-label">${name}</span>
                     </div>
-                `).join('')}
+                `;
+                }).join('')}
             </div>
 
             <!-- Presets Grid -->
             <div class="menu-header" style="margin-top: 0.4rem; font-size: 0.65rem;">
                 <span>CÁC BỘ LỌC TỐI ƯU SẴN (PRESETS)</span>
             </div>
-            <div class="menu-items" style="max-height: 180px; overflow-y: auto;">
+            <div class="menu-items eq-presets-list">
                 ${CONFIG.audioFx.presets.map(p => `
                     <button class="fx-option ${p.id === currentAudioFx ? 'active' : ''}" data-fx="${p.id}" type="button">
                         <i class="fas ${p.icon}"></i>

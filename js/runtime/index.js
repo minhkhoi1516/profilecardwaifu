@@ -217,6 +217,8 @@
             gpu: global.MinkoiGpuManager?.getState?.() || null,
             cache: global.MinkoiCache?.getStats?.() || null,
             perf: global.MinkoiPerf?.getState?.() || null,
+            foundation: global.MinkoiFoundation?.getInfo?.() || null,
+            materials: global.MinkoiMaterialManager?.getStats?.() || null,
             telemetry: getTelemetrySummary(),
             recoveryCount: recoveryLog.length,
             recentRecoveries: recoveryLog.slice(-6)

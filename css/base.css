@@ -1,0 +1,306 @@
+/* ==========================================================================
+   MINKOI 5.6 · BASE RESET, ACCESSIBILITY & AMBIENT BACKGROUND STAGE
+   Authoritative owner of document reset, focus ring, scrollbars, banner
+   crossfade stage, WebGL fluid canvas, particle canvas, and reduced motion.
+   ========================================================================== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    background-color: var(--surface-0);
+}
+
+body {
+    min-height: 100vh;
+    min-height: 100dvh;
+    font-family: var(--font-body);
+    color: var(--color-text);
+    background-color: var(--surface-0);
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding:
+        max(1.25rem, env(safe-area-inset-top))
+        max(1.25rem, env(safe-area-inset-right))
+        max(1.25rem, env(safe-area-inset-bottom))
+        max(1.25rem, env(safe-area-inset-left));
+    line-height: 1.5;
+    position: relative;
+}
+
+@media (max-height: 760px) {
+    body {
+        justify-content: flex-start;
+        padding-top: max(0.75rem, env(safe-area-inset-top));
+    }
+}
+
+/* Light mode accent readability polish */
+body.light-mode .creator-tagline,
+body.light-mode .track-category-tag,
+body.light-mode .micro-title,
+body.light-mode .suite-title,
+body.light-mode .time-display span:first-child {
+    filter: brightness(0.74) saturate(1.45);
+}
+
+/* Unified Keyboard Focus-Visible Contract (Zero !important collisions) */
+:is(button, a, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: 2px;
+}
+
+/* Accessibility: Skip Link */
+.skip-link {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 99999;
+    padding: 0.6rem 1rem;
+    background: var(--surface-3);
+    color: var(--color-text);
+    border: 1px solid var(--color-accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transform: translateY(-200%);
+    transition: transform var(--transition-fast);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+}
+
+.noscript-banner {
+    position: fixed;
+    inset: auto 1rem 1rem 1rem;
+    z-index: 9999;
+    padding: 0.85rem 1.2rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-3);
+    border: 1px solid var(--color-border-active);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Minimal Scrollbars */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-border-active);
+}
+
+/* ==========================================================================
+   CINEMATIC BANNER CROSSFADE STAGE & AMBIENT CANVASES
+   ========================================================================== */
+.banner-stage,
+.banner-layer,
+.starry-bg,
+.fluid-bg-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    width: 100dvw;
+    height: 100vh;
+    height: 100dvh;
+    pointer-events: none;
+}
+
+.banner-stage {
+    z-index: 0;
+    overflow: hidden;
+    background-color: #030408;
+}
+
+body.zen-mode .banner-stage {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.banner-layer {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center 22%;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transform: translateZ(0);
+    transition: opacity 0.85s var(--ease-out-quint);
+}
+
+.banner-layer.active {
+    opacity: 1;
+    z-index: 1;
+    transform: translateZ(0);
+}
+
+/* Restrained persona atmospheric aura wash (pure GPU gradient, zero CPU SVG filter) */
+.banner-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(
+        ellipse at 25% 20%,
+        var(--color-accent-glow, rgba(56, 189, 248, 0.14)) 0%,
+        transparent 60%
+    );
+    opacity: 0.56;
+    mix-blend-mode: normal;
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.7s ease;
+}
+
+/* Controlled cinematic vignette preserving artwork & glass contrast */
+.banner-stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(3, 5, 12, 0.28) 0%, rgba(3, 5, 12, 0.84) 100%),
+        linear-gradient(180deg, rgba(5, 7, 14, 0.18) 0%, transparent 25%, rgba(5, 7, 14, 0.55) 100%);
+    pointer-events: none;
+    z-index: 3;
+    transition: opacity 0.6s ease, background 0.6s ease;
+}
+
+body.light-mode .banner-stage::after {
+    background: linear-gradient(135deg, rgba(233, 228, 215, 0.32), rgba(226, 224, 216, 0.2));
+}
+
+body.zen-mode .banner-stage::before {
+    display: block;
+    background-image:
+        radial-gradient(ellipse at 28% 22%, var(--color-accent-glow, rgba(56, 189, 248, 0.14)), transparent 64%),
+        radial-gradient(ellipse at 76% 78%, rgba(255, 255, 255, 0.08), transparent 62%);
+    opacity: 0.38;
+}
+
+body.zen-mode .banner-stage::after {
+    background:
+        radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.08) 0%, rgba(3, 5, 12, 0.52) 100%),
+        linear-gradient(180deg, rgba(5, 7, 14, 0.12) 0%, transparent 30%, rgba(5, 7, 14, 0.45) 100%);
+}
+
+body.light-mode.zen-mode .banner-stage::after {
+    background: radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.05), rgba(3, 5, 12, 0.4));
+}
+
+body.zen-mode .fluid-bg-canvas {
+    display: none;
+}
+
+@keyframes zenCinematicDrift {
+    from { transform: translate3d(0, 0, 0) scale(1.018); }
+    to { transform: translate3d(-0.3%, -0.25%, 0) scale(1.038); }
+}
+
+@keyframes zenLightBreathing {
+    from { opacity: 0.24; }
+    to { opacity: 0.48; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    body.zen-mode .banner-layer.active {
+        animation: zenCinematicDrift 24s ease-in-out infinite alternate;
+    }
+
+    body.zen-mode .banner-stage::before {
+        animation: zenLightBreathing 10s ease-in-out infinite alternate;
+    }
+}
+
+body.zen-mode.zen-morphing .banner-layer.active {
+    animation: none;
+}
+
+.fluid-bg-canvas {
+    z-index: 1;
+    mix-blend-mode: screen;
+    opacity: 0.42;
+    transition: opacity 0.8s var(--ease-out-quint);
+}
+
+body.light-mode .fluid-bg-canvas {
+    opacity: 0.18;
+    mix-blend-mode: multiply;
+}
+
+.starry-bg {
+    z-index: 2;
+    mix-blend-mode: screen;
+}
+
+body.light-mode .starry-bg {
+    opacity: 0.82;
+    mix-blend-mode: normal;
+}
+
+/* ==========================================================================
+   GLOBAL ACCESSIBILITY: REDUCED MOTION
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .status-pulse-dot,
+    .lyric-interlude-row.active .interlude-dots span {
+        animation: none;
+    }
+
+    .social-link-pill:hover .pill-arrow,
+    .lyric-line.active {
+        transform: none;
+    }
+
+    .now-playing-stage::after,
+    .avatar-backdrop-disc::after {
+        opacity: 0.2;
+    }
+
+    .seek-bar-track:hover:not(.is-scrubbing),
+    .seek-bar-track:focus-visible:not(.is-scrubbing) {
+        --seek-thumb-scale: 0.88;
+    }
+
+    .play-hero-btn.is-playing::after {
+        animation: none;
+        opacity: 0.35;
+    }
+
+    .lyric-word.is-active-word,
+    .lyric-word.is-sustained.is-active-word {
+        filter: none;
+    }
+}
