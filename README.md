@@ -87,6 +87,7 @@ Vercel: preset **Other**, không install/build command, output `.`. `vercel.json
 
 - [COUI](https://github.com/suqi8/coui): tham khảo nguyên lý tương tác (press feedback, spring ngắt được, sheet/popup enter–exit) và cách chọn lọc hiệu ứng; MinKoi tự triển khai bằng `js/ui/spring.js`, không dùng runtime Kotlin/Compose.
 - [Miuix](https://github.com/compose-miuix-ui/miuix) / [Blur guide](https://compose-miuix-ui.github.io/miuix/guide/blur): tham khảo nguyên lý chuyển động và vật liệu; không đưa Kotlin/Compose vào JavaScript. Miuix dùng Apache-2.0.
+- [Glasmio](https://github.com/NEORUAA/Glasmio): tham khảo tương tác/vật liệu.
 - [MIT](LICENSE) áp dụng cho mã nguồn phù hợp của MinKoi, **không cấp quyền MIT đối với MP3, sáng tác, lyrics, bản dịch, artwork hoặc nhân vật bên thứ ba**. Các quyền đó thuộc chủ sở hữu tương ứng; việc sở hữu file, làm fan project hay không kinh doanh không tự tạo quyền phân phối hoặc bảo đảm fair use.
 - MinKoi là bộ sưu tập cá nhân độc lập, không phải nền tảng streaming thương mại và không đại diện cho các studio, nghệ sĩ hay thương hiệu được nhắc tới.
 

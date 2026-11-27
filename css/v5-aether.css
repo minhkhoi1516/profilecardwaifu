@@ -1,0 +1,1065 @@
+/* ==========================================================================
+   MINKOI V5 ULTIMATE · MINKOI AETHER UI
+   Unified COUI × Miuix × HyperOS × MinKoi Visual Layer
+   Extends existing css/materials.css tokens — zero competing token systems,
+   zero nested backdrop-filter passes, zero animation/GPU downgrades.
+   ========================================================================== */
+
+:root {
+    /* Concentric Aether Corner Geometry */
+    --aether-radius-shell: 32px;
+    --aether-radius-bar: 22px;
+    --aether-radius-stage: 22px;
+    --aether-radius-chip: 14px;
+    --aether-radius-popup: 24px;
+    --aether-radius-sheet: 28px;
+
+    /* Aether Optical Lighting & Surface Depth */
+    --aether-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    --aether-rim-soft: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --aether-rim-bottom: inset 0 -1px 0 rgba(0, 0, 0, 0.24);
+    --aether-shadow-shell:
+        0 28px 64px -22px rgba(0, 0, 0, 0.56),
+        0 8px 24px -12px rgba(0, 0, 0, 0.36);
+    --aether-shadow-bar:
+        0 14px 34px -14px rgba(0, 0, 0, 0.44),
+        0 2px 8px -2px rgba(0, 0, 0, 0.24);
+    --aether-trough-bg: rgba(8, 10, 16, 0.34);
+    --aether-trough-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.28),
+        0 1px 0 rgba(255, 255, 255, 0.05);
+    --aether-divider: rgba(255, 255, 255, 0.09);
+    --aether-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.065) 0%, rgba(255, 255, 255, 0.015) 38%, transparent 65%);
+    /* COUI-inspired Local Press Illumination & Pressed Rim */
+    --aether-press-spot: rgba(255, 255, 255, 0.11);
+    --aether-press-rim: inset 0 1px 2px rgba(0, 0, 0, 0.26), inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+    /* V5.3 Liquid Audio Glass Pearl & Rail Tokens */
+    --aether-pearl-fill: radial-gradient(circle at 34% 28%, #ffffff 0%, #eef2f8 54%, #ccd5e3 100%);
+    --aether-pearl-rim: rgba(255, 255, 255, 0.78);
+    --aether-pearl-shadow:
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.94),
+        inset 0 -1.5px 2px rgba(18, 24, 38, 0.24),
+        0 2px 6px rgba(0, 0, 0, 0.36),
+        0 1px 2px rgba(0, 0, 0, 0.24);
+    --aether-pearl-active-shadow:
+        inset 0 1px 2px #ffffff,
+        inset 0 -1.5px 2px rgba(18, 24, 38, 0.22),
+        0 4px 11px -2px rgba(0, 0, 0, 0.44),
+        0 0 0 1px rgba(255, 255, 255, 0.45);
+    --aether-rail-active-bg: rgba(255, 255, 255, 0.13);
+    --aether-tip-shadow:
+        0 10px 26px -10px rgba(0, 0, 0, 0.48),
+        0 2px 6px -2px rgba(0, 0, 0, 0.28);
+}
+
+body.light-mode {
+    --aether-rim-top: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    --aether-rim-soft: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    --aether-rim-bottom: inset 0 -1px 0 rgba(50, 45, 35, 0.08);
+    --aether-shadow-shell:
+        0 26px 60px -20px rgba(42, 36, 28, 0.2),
+        0 8px 22px -10px rgba(42, 36, 28, 0.1);
+    --aether-shadow-bar:
+        0 12px 30px -12px rgba(42, 36, 28, 0.16),
+        0 2px 8px -2px rgba(42, 36, 28, 0.08);
+    --aether-trough-bg: rgba(58, 52, 42, 0.065);
+    --aether-trough-shadow:
+        inset 0 1px 2px rgba(42, 36, 28, 0.09),
+        0 1px 0 rgba(255, 255, 255, 0.65);
+    --aether-divider: rgba(50, 45, 35, 0.11);
+    --aether-sheen: linear-gradient(155deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.18) 38%, transparent 65%);
+    --aether-press-spot: rgba(42, 36, 28, 0.065);
+    --aether-press-rim: inset 0 1px 2px rgba(42, 36, 28, 0.12), inset 0 -1px 0 rgba(255, 255, 255, 0.72);
+    --aether-pearl-fill: radial-gradient(circle at 34% 28%, #ffffff 0%, #faf8f4 58%, #e5dfd3 100%);
+    --aether-pearl-rim: rgba(42, 36, 28, 0.18);
+    --aether-pearl-shadow:
+        inset 0 1px 1.5px #ffffff,
+        inset 0 -1px 2px rgba(42, 36, 28, 0.12),
+        0 2px 6px rgba(42, 36, 28, 0.2),
+        0 1px 2px rgba(42, 36, 28, 0.14);
+    --aether-pearl-active-shadow:
+        inset 0 1px 2px #ffffff,
+        inset 0 -1px 2px rgba(42, 36, 28, 0.14),
+        0 4px 10px -2px rgba(42, 36, 28, 0.24),
+        0 0 0 1px rgba(42, 36, 28, 0.15);
+    --aether-rail-active-bg: rgba(58, 52, 42, 0.11);
+    --aether-tip-shadow:
+        0 10px 24px -10px rgba(42, 36, 28, 0.22),
+        0 2px 6px -2px rgba(42, 36, 28, 0.12);
+}
+
+/* ==========================================================================
+   1.2 · HEADER REDESIGN (AETHER FLOATING BAR)
+   ========================================================================== */
+.site-brand-header {
+    border-radius: var(--aether-radius-bar);
+    background-image: var(--aether-sheen);
+    border-color: var(--glass-edge);
+    box-shadow: var(--aether-rim-top), var(--aether-rim-bottom), var(--aether-shadow-bar);
+    padding: 0.72rem 1.25rem;
+}
+
+/* Scroll-aware floating elevation (COUI GlassTopAppBar discipline: never
+   recreates or animates backdrop-filter; only sharpens edge & shadow). */
+.site-brand-header.is-scrolled {
+    border-color: var(--glass-active-edge);
+    box-shadow:
+        var(--aether-rim-top),
+        var(--aether-rim-bottom),
+        0 18px 40px -14px rgba(0, 0, 0, 0.54);
+}
+
+body.light-mode .site-brand-header.is-scrolled {
+    box-shadow:
+        var(--aether-rim-top),
+        var(--aether-rim-bottom),
+        0 14px 32px -12px rgba(42, 36, 28, 0.22);
+}
+
+/* Keep the always-visible blurred header neutral through persona switches
+   so the GPU never re-rasterizes its backdrop-filter on --color-accent commits. */
+.monogram-symbol {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.03) 55%, transparent 100%),
+        var(--surface-2);
+    border-color: var(--glass-active-edge);
+    box-shadow:
+        var(--aether-rim-top),
+        0 6px 14px -6px rgba(0, 0, 0, 0.4);
+}
+
+body.light-mode .monogram-symbol {
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 255, 255, 0.55) 55%, transparent 100%),
+        var(--surface-2);
+    box-shadow:
+        var(--aether-rim-top),
+        0 4px 12px -4px rgba(42, 36, 28, 0.14);
+}
+
+.brand-name-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    min-width: 0;
+}
+
+.brand-version-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.44rem;
+    border-radius: 999px;
+    font: 700 0.56rem/1.2 var(--font-mono);
+    letter-spacing: 0.08em;
+    color: var(--color-text);
+    background: var(--surface-hover);
+    border: 1px solid var(--glass-active-edge);
+    box-shadow: var(--aether-rim-soft);
+    flex: none;
+}
+
+.brand-sub {
+    opacity: 0.88;
+}
+
+.top-action-btn {
+    border-radius: 13px;
+    box-shadow: var(--aether-rim-soft);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast),
+        color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.top-action-btn:hover {
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--aether-rim-top), 0 4px 12px -4px rgba(0, 0, 0, 0.25);
+}
+
+/* ==========================================================================
+   1.1 · MAIN AETHER SHELL & SPATIAL CONTINUITY
+   Keep the large backdrop-filter shell neutral across persona switches so
+   the GPU never re-rasterizes the full card blur; persona aura lives on
+   compact non-blur layers (.avatar-zone::before, ::before crest, stage).
+   ========================================================================== */
+.card-container {
+    border-radius: var(--aether-radius-shell);
+    background-image: var(--aether-sheen);
+    border-color: var(--glass-edge);
+    box-shadow: var(--aether-rim-top), var(--aether-rim-bottom), var(--aether-shadow-shell);
+}
+
+body.light-mode .card-container {
+    background-image: var(--aether-sheen);
+}
+
+/* Subtle neutral specular crest line along the top edge (GPU-cheap) */
+.card-container::before {
+    left: 14%;
+    right: 14%;
+    opacity: 0.52;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.24) 30%,
+        rgba(255, 255, 255, 0.52) 50%,
+        rgba(255, 255, 255, 0.24) 70%,
+        transparent 100%
+    );
+}
+
+/* Luminous organic column divider on desktop + balanced vertical rhythm */
+.col-left {
+    position: relative;
+    border-right: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0%, transparent 55%);
+}
+
+@media (min-width: 861px) {
+    .col-left {
+        padding: 1.75rem 1.85rem;
+        gap: 1.2rem;
+    }
+
+    .col-right {
+        padding: 1.75rem 1.85rem;
+    }
+
+    .col-left::after {
+        content: '';
+        position: absolute;
+        top: 1.5rem;
+        bottom: 1.5rem;
+        right: 0;
+        width: 1px;
+        background: linear-gradient(180deg, transparent 0%, var(--aether-divider) 18%, var(--aether-divider) 82%, transparent 100%);
+        pointer-events: none;
+    }
+}
+
+/* ==========================================================================
+   1.3 · WAIFU PROFILE EXPERIENCE (ARTWORK-FIRST FRAMING)
+   ========================================================================== */
+.avatar-zone {
+    position: relative;
+}
+
+/* Soft studio spotlight bloom behind the unclipped artwork (neutral so
+   --color-accent transitions never re-rasterize a 300px radial gradient;
+   the avatar pedestal & halos already carry the persona accent aura). */
+.avatar-zone::before {
+    content: '';
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 50% 48%,
+        rgba(255, 255, 255, 0.13) 0%,
+        transparent 66%
+    );
+    transform: translateZ(0);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.light-mode .avatar-zone::before {
+    background: radial-gradient(
+        circle at 50% 48%,
+        rgba(255, 255, 255, 0.65) 0%,
+        transparent 66%
+    );
+}
+
+/* V5.4.1 Desktop Compositing Discipline (proven via 1366x768 multi-trial ablation):
+   1. Keep Level-1 Glass (.card-container blur(20px), .site-brand-header blur(12px),
+      popups blur(18px), Zen dock blur(12px)) 100% intact, while removing ONLY
+      redundant nested backdrop-filter passes inside .card-container.
+   2. Drop full-screen CPU SVG <feTurbulence> + soft-light blend and .banner-layer
+      software filter so original anime artwork renders crisp without CPU re-raster.
+   3. Replace animated dual drop-shadow(var(--color-accent-glow)) CPU blur transitions
+      on chibi artwork with a clean neutral contact shadow (aura stays on pedestal/halos/viz). */
+.banner-layer {
+    filter: none;
+}
+
+.banner-stage::before {
+    background-image: radial-gradient(
+        ellipse at 25% 20%,
+        var(--color-accent-glow, rgba(56, 189, 248, 0.14)) 0%,
+        transparent 60%
+    );
+    opacity: 0.56;
+    mix-blend-mode: normal;
+}
+
+.now-playing-stage,
+.audio-category-nav,
+body.light-mode .audio-category-nav {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.avatar-img,
+.avatar-portrait {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.54));
+    transition: transform 0.35s var(--ease-out-quint), opacity 0.25s ease;
+}
+
+.vinyl-art {
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.62));
+}
+
+.lyrics-drawer-modal {
+    will-change: auto;
+}
+
+/* V5.4 Compositor Discipline: keep rippleGlow strictly on GPU transform/opacity
+   (moves static box-shadow off @keyframes so idle desktop avoids ~60/s main-thread style/paint). */
+.ripple-ground span {
+    box-shadow: 0 0 12px var(--color-accent);
+}
+
+@keyframes rippleGlow {
+    0% { transform: scale(0.92); opacity: 0.75; }
+    100% { transform: scale(1.38); opacity: 0; }
+}
+
+.soundstage-caption {
+    bottom: 6px;
+    left: 4px;
+    padding: 0.22rem 0.56rem;
+    border-radius: 999px;
+    background: var(--surface-pill);
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-secondary);
+    font: 600 0.55rem/1.2 var(--font-mono);
+    letter-spacing: 0.09em;
+    box-shadow: var(--aether-rim-soft);
+}
+
+.viz-menu-btn {
+    border-radius: 999px;
+    box-shadow: var(--aether-rim-soft);
+}
+
+.creator-name {
+    letter-spacing: -0.025em;
+}
+
+.creator-handle {
+    display: inline-block;
+    align-self: center;
+    width: fit-content;
+    padding: 0.08rem 0.58rem;
+    border-radius: 999px;
+    background: var(--surface-pill);
+    border: 1px solid var(--color-border-subtle);
+    margin-top: 0.25rem;
+}
+
+.creator-bio {
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--aether-radius-chip);
+    background: color-mix(in srgb, var(--surface-2) 65%, transparent);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: var(--aether-rim-soft);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.social-link-pill {
+    border-radius: var(--aether-radius-chip);
+    box-shadow: var(--aether-rim-soft);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast),
+        color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.social-link-pill:hover {
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--aether-rim-top), 0 5px 14px -8px rgba(0, 0, 0, 0.34);
+}
+
+body.light-mode .social-link-pill:hover {
+    box-shadow: var(--aether-rim-top), 0 5px 12px -6px rgba(42, 36, 28, 0.14);
+}
+
+.social-link-pill .pill-arrow {
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+}
+
+.social-link-pill:hover .pill-arrow {
+    transform: translate(2px, -2px);
+}
+
+/* Persona Collection Cards — crisp directional rim, zero diffuse neon aura */
+.persona-chip {
+    border-radius: var(--aether-radius-chip);
+    box-shadow: var(--aether-rim-soft);
+}
+
+.persona-chip:hover {
+    border-color: var(--glass-active-edge);
+}
+
+.persona-chip.active {
+    border-color: color-mix(in srgb, var(--color-accent) 76%, var(--glass-active-edge));
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-2));
+    box-shadow:
+        var(--aether-rim-top),
+        0 4px 12px -6px rgba(0, 0, 0, 0.38);
+}
+
+body.light-mode .persona-chip.active {
+    border-color: color-mix(in srgb, var(--color-accent) 72%, rgba(42, 36, 28, 0.2));
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-2));
+    box-shadow:
+        var(--aether-rim-top),
+        0 3px 10px -4px rgba(42, 36, 28, 0.12);
+}
+
+/* Instant frame-0 interaction highlight while cold avatar artwork prepares (zero layout shift) */
+.persona-chip.is-pending {
+    border-color: var(--glass-active-edge);
+    background: var(--surface-hover);
+    box-shadow: var(--aether-rim-top);
+}
+
+body.light-mode .persona-chip.is-pending {
+    border-color: var(--color-border-active);
+    background: var(--surface-hover);
+    box-shadow: var(--aether-rim-top);
+}
+
+.persona-avatar-preview {
+    background: var(--surface-pill);
+    border: 1px solid var(--glass-edge);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.persona-chip.active .persona-avatar-preview {
+    border-color: color-mix(in srgb, var(--color-accent) 72%, #ffffff);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--color-accent) 26%, transparent);
+}
+
+/* ==========================================================================
+   1.3b · COUI LOCAL PRESS ILLUMINATION (TIER 4: PRESSED SURFACE)
+   Driven by existing MinkoiUI initPressFeedback (--press-x / --press-y set
+   once on pointerdown; zero extra RAF, zero backdrop captures).
+   ========================================================================== */
+:is(.persona-chip, .social-link-pill, .top-action-btn, .ctrl-btn, .playlist-row, .fx-option, .viz-menu-item).is-pressed {
+    background-image: radial-gradient(
+        110px circle at var(--press-x, 50%) var(--press-y, 50%),
+        var(--aether-press-spot) 0%,
+        transparent 68%
+    );
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--aether-press-rim);
+}
+
+/* ==========================================================================
+   1.4 · LIQUID CAPSULE TROUGH DEPTH (SET C IN materials.css OWNS LENS OPTICS)
+   Preserves Set C's 160/160 AA adaptive ground (--nav-ground) and 2D
+   directional .capsule-light reflection without competing neon rules.
+   ========================================================================== */
+#audio-category-nav {
+    box-shadow: var(--aether-trough-shadow);
+}
+
+/* ==========================================================================
+   2.1 · NOW PLAYING V5 & LIVING SOUNDSTAGE (SOFT AUDIO-REACTIVE MATERIAL)
+   ========================================================================== */
+.now-playing-stage {
+    position: relative;
+    border-radius: var(--aether-radius-stage);
+    background-image: var(--aether-sheen);
+    border-color: var(--glass-edge);
+    box-shadow:
+        var(--aether-rim-top),
+        var(--aether-rim-bottom),
+        0 14px 34px -14px rgba(0, 0, 0, 0.42);
+}
+
+/* Soft Audio-Reactive Top Specular Filament (pure compositor opacity, zero blur/flash) */
+.now-playing-stage::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 16%;
+    right: 16%;
+    height: 1px;
+    border-radius: 999px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-accent) 42%, rgba(255, 255, 255, 0.72)) 50%,
+        transparent 100%
+    );
+    opacity: calc(0.18 + var(--soundstage-breath, 0) * 0.34);
+    pointer-events: none;
+}
+
+body.light-mode .now-playing-stage::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-accent) 46%, #ffffff) 50%,
+        transparent 100%
+    );
+    opacity: calc(0.2 + var(--soundstage-breath, 0) * 0.32);
+}
+
+/* Subtle inner optical rim on the artwork pedestal driven by low-frequency audio breath */
+.avatar-backdrop-disc::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--color-accent) 48%, rgba(255, 255, 255, 0.62));
+    opacity: calc(0.16 + var(--soundstage-breath, 0) * 0.36);
+    pointer-events: none;
+}
+
+body.light-mode .now-playing-stage {
+    background-image: var(--aether-sheen);
+    border-color: var(--color-border);
+    box-shadow:
+        var(--aether-rim-top),
+        0 10px 26px -12px rgba(42, 36, 28, 0.14);
+}
+
+.track-title {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+}
+
+.track-actions-bar {
+    padding: 0.2rem 0;
+}
+
+.track-actions-bar .ctrl-btn {
+    border-radius: 13px;
+    box-shadow: var(--aether-rim-soft);
+}
+
+.track-actions-bar .ctrl-btn:hover {
+    border-color: var(--glass-active-edge);
+}
+
+/* Sculptural Aether Play Hero Button — weighted elevation, restrained contact light */
+.play-hero-btn {
+    position: relative;
+    border-radius: 20px;
+    background: var(--v3-hero-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.34),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        0 8px 18px -8px rgba(0, 0, 0, 0.48),
+        0 4px 12px -6px var(--color-accent-glow);
+    transition: box-shadow var(--transition-fast), filter var(--transition-fast);
+}
+
+.play-hero-btn:hover {
+    filter: brightness(1.04);
+    box-shadow:
+        inset 0 1px 0.5px rgba(255, 255, 255, 0.4),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+        0 10px 22px -8px rgba(0, 0, 0, 0.5),
+        0 5px 14px -6px var(--color-accent-glow);
+}
+
+.play-hero-btn.is-pressed {
+    filter: brightness(0.97);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        0 4px 10px -4px rgba(0, 0, 0, 0.44);
+}
+
+/* Calm, restrained alive rim while audio plays (pure opacity, never flashy) */
+.play-hero-btn::after {
+    content: '';
+    position: absolute;
+    inset: -3.5px;
+    border-radius: 23px;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+}
+
+.play-hero-btn.is-playing::after {
+    animation: aetherPlayPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes aetherPlayPulse {
+    0%, 100% { opacity: 0.1; }
+    50% { opacity: 0.34; }
+}
+
+/* Playlist V5 search clear action */
+.playlist-search-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    flex: none;
+    border: none;
+    border-radius: 999px;
+    background: var(--surface-hover);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: 0.72rem;
+    transition: background-color var(--transition-fast), color var(--transition-fast), opacity var(--transition-fast);
+}
+
+.playlist-search-clear:hover,
+.playlist-search-clear:focus-visible {
+    background: var(--glass-active-edge);
+    color: var(--color-text);
+}
+
+.playlist-search-clear.is-hidden {
+    display: none;
+}
+
+/* ==========================================================================
+   V5.3 · LIQUID SEEK BAR, LYRIC PEEK & GLASS VOLUME CONTROL
+   COUI Optical Materials × Miuix Natural Motion
+   - Rail height stays fixed (zero layout reflow); 44px touch target preserved.
+   - MinkoiSpring exclusively owns thumb scale (--seek-thumb-scale, --volume-thumb-scale).
+   - Zero moving backdrop-filter captures, zero WebGL, zero infinite will-change.
+   ========================================================================== */
+.seek-bar-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--aether-trough-bg);
+    box-shadow: var(--aether-trough-shadow);
+    transition: background-color 140ms var(--ease-out-quint);
+}
+
+.seek-bar-track::before {
+    inset: -19px 0;
+}
+
+.seek-bar-track:hover,
+.seek-bar-track.is-scrubbing {
+    height: 6px;
+    background: var(--aether-rail-active-bg);
+}
+
+.seek-bar-track:hover:not(.is-scrubbing),
+.seek-bar-track:focus-visible:not(.is-scrubbing) {
+    --seek-thumb-scale: 1;
+}
+
+.seek-fill-bar {
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.04) 52%, rgba(0, 0, 0, 0.1) 100%),
+        var(--color-accent);
+    box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.36);
+}
+
+/* Liquid Glass Pearl Thumb — MinkoiSpring exclusively owns scale */
+.seek-thumb-dot {
+    left: calc(var(--seek-progress, 0) * 100%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--aether-pearl-fill);
+    border: 1px solid var(--aether-pearl-rim);
+    box-shadow: var(--aether-pearl-shadow);
+    transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.88));
+    opacity: 1;
+    transition: border-color 140ms var(--ease-out-quint), box-shadow 140ms var(--ease-out-quint);
+}
+
+/* Subtle top-left optical crescent reflection inside the glass pearl */
+.seek-thumb-dot::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 3px;
+    width: 5px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    transform: rotate(-22deg);
+    pointer-events: none;
+}
+
+.seek-bar-track:hover .seek-thumb-dot,
+.seek-bar-track.is-scrubbing .seek-thumb-dot {
+    transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.88));
+    opacity: 1;
+    box-shadow: var(--aether-pearl-active-shadow);
+}
+
+/* Fade static time row slightly while scrubbing so Lyric Peek never clashes on mobile */
+.playback-progress-wrap .time-display {
+    transition: opacity 140ms var(--ease-out-quint);
+}
+
+.playback-progress-wrap.is-scrubbing .time-display {
+    opacity: 0.14;
+}
+
+/* Timestamp + Optional Lyric Peek Bubble (solid-tinted glass, 0ms finger tracking, zero moving backdrop-filter) */
+.seek-hover-tooltip {
+    top: auto;
+    bottom: calc(100% + 12px);
+    left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    max-width: min(268px, calc(100vw - 32px));
+    padding: 0.28rem 0.64rem;
+    border-radius: 999px;
+    background: var(--surface-popup);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid var(--glass-active-edge);
+    box-shadow: var(--aether-rim-top), var(--aether-tip-shadow);
+    color: var(--color-text);
+    opacity: 0;
+    transform: translate3d(var(--tip-x, 0px), 0, 0) translateX(-50%);
+    transition: opacity 140ms var(--ease-out-quint);
+    will-change: auto;
+}
+
+.seek-hover-tooltip.visible,
+.seek-bar-track.is-scrubbing .seek-hover-tooltip {
+    opacity: 1;
+    transform: translate3d(var(--tip-x, 0px), 0, 0) translateX(-50%);
+}
+
+.seek-tip-time {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    color: var(--color-text);
+    flex: none;
+}
+
+.seek-tip-lyric {
+    display: none;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    padding-left: 0.45rem;
+    border-left: 1px solid var(--aether-divider);
+}
+
+.seek-hover-tooltip.has-lyric .seek-tip-lyric {
+    display: block;
+}
+
+@media (max-width: 430px) {
+    .seek-hover-tooltip {
+        max-width: min(224px, calc(100vw - 28px));
+        padding: 0.24rem 0.54rem;
+    }
+
+    .seek-tip-lyric {
+        font-size: 0.69rem;
+    }
+}
+
+/* Glass Volume Control (Preserves native <input type="range"> & iOS Web Audio gain) */
+.volume-slider-dock {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+    border-color: var(--glass-edge);
+    box-shadow: var(--aether-rim-soft);
+}
+
+.volume-slider-dock.is-scrubbing {
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--aether-rim-top), var(--glass-contact-shadow);
+}
+
+.volume-slider-dock .mute-btn {
+    transition: color 150ms var(--ease-out-quint), opacity 150ms var(--ease-out-quint),
+        background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.volume-slider-dock.is-muted .mute-btn {
+    color: var(--color-text-muted);
+    opacity: 0.78;
+}
+
+/* Native range input holds the generous touch hit box; runnable-track owns crisp 6px pill caps */
+.volume-slider-dock .volume-slider {
+    height: 34px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    background-clip: border-box;
+    box-sizing: border-box;
+}
+
+.volume-slider-dock .volume-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.03) 54%, rgba(0, 0, 0, 0.09) 100%),
+        linear-gradient(
+            to right,
+            var(--color-accent) 0%,
+            var(--color-accent) var(--volume-percent, 45%),
+            var(--aether-trough-bg) var(--volume-percent, 45%),
+            var(--aether-trough-bg) 100%
+        );
+    box-shadow: var(--aether-trough-shadow);
+}
+
+.volume-slider-dock.is-muted .volume-slider::-webkit-slider-runnable-track {
+    background: var(--aether-trough-bg);
+}
+
+.volume-slider-dock .volume-slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--aether-pearl-fill);
+    border: 1px solid var(--aether-pearl-rim);
+    box-shadow: var(--aether-pearl-shadow);
+    transform: scale(var(--volume-thumb-scale, 1));
+    transition: box-shadow 140ms var(--ease-out-quint), opacity 140ms var(--ease-out-quint);
+}
+
+.volume-slider-dock.is-scrubbing .volume-slider::-webkit-slider-thumb {
+    box-shadow: var(--aether-pearl-active-shadow);
+}
+
+.volume-slider-dock.is-muted .volume-slider::-webkit-slider-thumb {
+    opacity: 0.8;
+}
+
+.volume-slider-dock .volume-slider::-moz-range-track {
+    height: 6px;
+    border-radius: 999px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.03) 54%, rgba(0, 0, 0, 0.09) 100%),
+        linear-gradient(
+            to right,
+            var(--color-accent) 0%,
+            var(--color-accent) var(--volume-percent, 45%),
+            var(--aether-trough-bg) var(--volume-percent, 45%),
+            var(--aether-trough-bg) 100%
+        );
+    box-shadow: var(--aether-trough-shadow);
+    border: none;
+}
+
+.volume-slider-dock.is-muted .volume-slider::-moz-range-track {
+    background: var(--aether-trough-bg);
+}
+
+.volume-slider-dock .volume-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--aether-pearl-fill);
+    border: 1px solid var(--aether-pearl-rim);
+    box-shadow: var(--aether-pearl-shadow);
+    transform: scale(var(--volume-thumb-scale, 1));
+    transition: box-shadow 140ms var(--ease-out-quint), opacity 140ms var(--ease-out-quint);
+}
+
+.volume-slider-dock.is-scrubbing .volume-slider::-moz-range-thumb {
+    box-shadow: var(--aether-pearl-active-shadow);
+}
+
+.volume-slider-dock.is-muted .volume-slider::-moz-range-thumb {
+    opacity: 0.8;
+}
+
+@media (pointer: coarse) {
+    .volume-slider-dock .volume-slider {
+        height: 44px;
+        padding: 0;
+    }
+}
+
+/* ==========================================================================
+   2.3 · PLAYLIST V5 & POPUPS
+   ========================================================================== */
+.dropdown-flyout,
+.lyrics-drawer-modal,
+.top-more-dropdown,
+.viz-menu {
+    border-radius: var(--aether-radius-popup);
+    box-shadow: var(--aether-rim-top), var(--v3-shadow-popup);
+}
+
+.playlist-row {
+    position: relative;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.playlist-row.active {
+    background: color-mix(in srgb, var(--color-accent) 11%, var(--surface-2));
+    border-color: color-mix(in srgb, var(--color-accent) 34%, var(--glass-edge));
+    box-shadow: var(--aether-rim-soft);
+}
+
+.playlist-row.active::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 24%;
+    bottom: 24%;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--color-accent);
+}
+
+/* ==========================================================================
+   2.4 & 2.5 · LYRIC FLOW (MUSIC-AWARE TYPOGRAPHY) & LIVING ZEN V5.5
+   4-tier focus hierarchy (active / ±1 adjacent / ±2 near / distant) with zero
+   per-line blur, zero text glow, and zero DOM churn when line index is steady.
+   ========================================================================== */
+.lyric-line {
+    border-radius: 14px;
+    transition: opacity 240ms var(--v3-fluid-ease), transform 240ms var(--v3-fluid-ease),
+        background-color 240ms var(--v3-fluid-ease), border-color 240ms var(--v3-fluid-ease);
+}
+
+.lyrics-body:not(.full-view) .lyric-line:not(.active),
+.lyrics-body.floating-view .lyric-line:not(.active):not(.is-near):not(.is-adjacent) {
+    opacity: 0.4;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-near:not(.active),
+.lyrics-body.floating-view .lyric-line.is-near:not(.active):not(.is-adjacent) {
+    opacity: 0.58;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-adjacent:not(.active),
+.lyrics-body.floating-view .lyric-line.is-adjacent:not(.active) {
+    opacity: 0.76;
+}
+
+.lyrics-body:not(.full-view) .lyric-line.is-overlapping,
+.lyrics-body.floating-view .lyric-line.is-overlapping {
+    opacity: 0.88;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line:not(.active):not(.is-near):not(.is-adjacent) {
+    opacity: 0.56;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line.is-near:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line.is-near:not(.active):not(.is-adjacent) {
+    opacity: 0.7;
+}
+
+body.light-mode .lyrics-body:not(.full-view) .lyric-line.is-adjacent:not(.active),
+body.light-mode .lyrics-body.floating-view .lyric-line.is-adjacent:not(.active) {
+    opacity: 0.84;
+}
+
+.lyrics-body.full-view .lyric-line,
+body.light-mode .lyrics-body.full-view .lyric-line {
+    opacity: 0.94;
+}
+
+.lyrics-body.floating-view .lyric-line.active,
+.lyrics-body .lyric-line.active,
+.lyric-line.active {
+    opacity: 1;
+    transform: translate3d(2px, 0, 0);
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-hover));
+    border: 1px solid color-mix(in srgb, var(--color-accent) 28%, transparent);
+    border-left: 3px solid var(--color-accent);
+    box-shadow: var(--aether-rim-soft);
+}
+
+.lyric-line.active .lyric-jp {
+    font-weight: 750;
+    letter-spacing: -0.008em;
+}
+
+.lyric-line.active .lyric-romaji,
+.lyric-line.active .lyric-vi {
+    color: color-mix(in srgb, var(--color-text) 82%, var(--color-text-secondary));
+}
+
+.lyrics-body .lyric-line:hover:not(.active),
+.lyrics-body.floating-view .lyric-line:hover:not(.active) {
+    opacity: 0.9;
+    background: color-mix(in srgb, var(--surface-hover) 70%, transparent);
+}
+
+.lyrics-body.full-view .lyric-line.active {
+    transform: none;
+}
+
+body.zen-mode.zen-morphing .banner-layer.active {
+    animation: none;
+}
+
+.zen-mini-dock {
+    border-radius: 999px;
+    box-shadow:
+        var(--aether-rim-top),
+        var(--aether-rim-bottom),
+        0 18px 42px -14px rgba(0, 0, 0, 0.62);
+}
+
+@media (max-width: 860px) {
+    .zen-mini-dock {
+        border-radius: 24px;
+    }
+
+    .card-container {
+        border-radius: 26px;
+    }
+
+    .site-brand-header {
+        border-radius: 20px;
+        padding: 0.6rem 0.9rem;
+    }
+
+    .now-playing-stage {
+        border-radius: 20px;
+        padding: 0.9rem 1rem;
+        gap: 0.85rem;
+    }
+
+    .dropdown-flyout,
+    .track-actions-bar .dropdown-flyout,
+    .lyrics-drawer-modal {
+        border-radius: var(--aether-radius-sheet) var(--aether-radius-sheet) 0 0 !important;
+    }
+}
+
+/* Footer Rhythm */
+.studio-card-footer {
+    border-top-color: var(--aether-divider);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .social-link-pill:hover .pill-arrow { transform: none; }
+    .lyric-line { transition: none; }
+    .lyric-line.active { transform: none; }
+    .now-playing-stage::after { opacity: 0.2; }
+    .avatar-backdrop-disc::after { opacity: 0.2; }
+    .seek-hover-tooltip, .seek-thumb-dot { transition: none; }
+    .seek-bar-track:hover:not(.is-scrubbing),
+    .seek-bar-track:focus-visible:not(.is-scrubbing) { --seek-thumb-scale: 0.88; }
+    .play-hero-btn.is-playing::after { animation: none; opacity: 0.35; }
+}

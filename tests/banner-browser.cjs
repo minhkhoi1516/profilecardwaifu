@@ -47,15 +47,7 @@ const view = (page, key, role, previous = '') => page.waitForFunction(
             const first = await view(page, 'alya', role);
             assert(bootRequests.size <= 3, 'Boot eagerly loaded banner pool');
             const pools = await page.evaluate(async ({ first, role }) => {
-                const personas = CONFIG.personas.filter(p => p.available);
-                if (personas.length !== 8) {
-                    throw new Error(`Expected 8 available personas in CONFIG.personas, got ${personas.length}`);
-                }
-                for (const p of personas) {
-                    if (!Array.isArray(p.banners?.[role]) || p.banners[role].length === 0) {
-                        throw new Error(`Missing ${role} banner pool for persona ${p.key}`);
-                    }
-                }
+                const personas = CONFIG.waifu.list;
                 const histories = new Map(personas.map(p => [p.key, []]));
                 histories.get('alya').push(first);
                 const switchTo = async key => {

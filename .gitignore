@@ -26,11 +26,6 @@ test-results/
 node_modules/
 playwright-report/
 # Local-only QA and AI development artifacts are never release source.
-/qa/
-/native-core/build/
-/native-core/.gradle/
-/native-core/.kotlin/
-/native-core/kotlin-js-store/
 /scripts/qa/
 /tests/*
 !/tests/banner-browser.cjs

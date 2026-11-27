@@ -1,10 +1,11 @@
-/* ==========================================================================
-   MINKOI 5.6 · MASTER STYLESHEET BUNDLE
-   Forwarding bundle for the reconstructed single-owner modular CSS system
-   ========================================================================== */
-@import url('tokens.css');
-@import url('base.css');
-@import url('components.css');
-@import url('layout-studio.css');
+/* ========================================================
+   MINKOI · MASTER STYLESHEET BUNDLE
+   Forwarding bundle for the modular stylesheets and shared materials
+   ======================================================== */
+@import url('style-base.css');
+@import url('style-backgrounds.css');
+@import url('style-card.css');
+@import url('style-left.css');
+@import url('style-right.css');
+@import url('style-responsive.css');
 @import url('materials.css');
-@import url('responsive.css');

@@ -183,7 +183,6 @@
             '.play-hero-btn',
             '#play-pause',
             '.suite-badge-btn',
-            '.suite-material-chip',
             '.cat-tab',
             '.persona-chip',
             '.social-link-pill',
@@ -325,27 +324,20 @@
         }
 
         const hero = el => el.matches('.play-hero-btn');
-        const pressLit = el => el.matches('.persona-chip, .social-link-pill, .top-action-btn, .ctrl-btn, .playlist-row, .fx-option, .viz-menu-item, .suite-material-chip');
+        const pressLit = el => el.matches('.persona-chip, .social-link-pill, .top-action-btn, .ctrl-btn, .playlist-row, .fx-option, .viz-menu-item');
         function press(el, event) {
             el.classList.add('is-pressed');
-            const needRect = (event && Number.isFinite(event.clientX) && pressLit(el)) || !spLib.isAccessibilityReducedMotion();
-            const r = needRect ? el.getBoundingClientRect() : null;
-            if (event && Number.isFinite(event.clientX) && pressLit(el) && r && r.width > 0 && r.height > 0) {
-                el.style.setProperty('--press-x', `${(event.clientX - r.left).toFixed(1)}px`);
-                el.style.setProperty('--press-y', `${(event.clientY - r.top).toFixed(1)}px`);
+            if (event && Number.isFinite(event.clientX) && pressLit(el)) {
+                const r = el.getBoundingClientRect();
+                if (r.width > 0 && r.height > 0) {
+                    el.style.setProperty('--press-x', `${(event.clientX - r.left).toFixed(1)}px`);
+                    el.style.setProperty('--press-y', `${(event.clientY - r.top).toFixed(1)}px`);
+                }
             }
             if (spLib.isAccessibilityReducedMotion()) return;
             const quiet = el.matches('.cat-tab, .social-link-pill, .playlist-row, .row-fav-btn, .top-more-item, .nav-material-switch button, .lyrics-display-menu button, .viz-menu-item, .fx-option');
-            const foundation = global.MinkoiFoundation;
-            let targetScale;
-            if (foundation && typeof foundation.computePressScale === 'function') {
-                const tierName = hero(el) ? 'hero' : (quiet && !el.matches('.cat-tab, .social-link-pill') ? 'quiet' : 'standard');
-                targetScale = foundation.computePressScale(el, r, tierName);
-            } else {
-                targetScale = hero(el) ? 0.945 : (quiet ? 0.98 : 0.968);
-            }
             getScaleSpring(el, hero(el) ? 1 : quiet ? 3 : 2)
-                .setTarget(targetScale);
+                .setTarget(hero(el) ? .95 : quiet && !el.matches('.cat-tab, .social-link-pill') ? .985 : .97);
         }
 
         let activeEl = null;
@@ -472,11 +464,8 @@
     }
 
     // ----------------------------------------------------------------------
-    // Monotonic eased overlay alpha (delegated to shared MinkoiFoundation -> Direct Maven COUI curve)
+    // Monotonic eased overlay alpha (Miuix GlassMotion.kt: never oscillates with spring overshoot)
     function easeOverlayAlpha(f) {
-        if (global.MinkoiFoundation && typeof global.MinkoiFoundation.easeOverlayAlpha === 'function') {
-            return global.MinkoiFoundation.easeOverlayAlpha(f);
-        }
         const t = Math.max(0, Math.min(1, f / 0.72));
         return t * (2 - t);
     }
@@ -598,7 +587,6 @@
             closeAllOverlays('top-more', { instant: true, restoreFocus: false });
             setPopupState('opening');
             computeAnchor();
-            global.MinkoiMaterialManager?.syncSegmentedControl?.(true);
             dropdown.style.visibility = 'visible';
             dropdown.style.pointerEvents = 'auto';
             scrim.classList.add('active');
@@ -684,7 +672,6 @@
 
         dropdown.querySelectorAll('.top-more-item').forEach((item) => {
             item.addEventListener('click', () => {
-                if (item.getAttribute('role') === 'menuitemcheckbox') return;
                 closeMenu({ restoreFocus: false });
             });
         });
@@ -1434,19 +1421,27 @@
 
     // ----------------------------------------------------------------------
     // 7. MINKOI V4 · ORGANIC LIQUID GLASS NAVIGATION REBORN
-    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt
+    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt, Glasmio Physics
     // Directional Trailing-Edge Stretch, Damped Boundary Resistance, Velocity Fling
     // ----------------------------------------------------------------------
     const liquidNavInstances = new WeakMap();
     const NAV_CLICK_SUPPRESS_MS = 260;
 
-    // Directional capsule reflection (palette tokens owned by MinkoiFrostedRenderer).
+    // Set C material only. Model the card over both artwork extremes rather
+    // than re-decoding banners: this also covers crossfades and animated Glass.
     function createWaifuCapsuleMaterial(nav, spring, clamp) {
         const light = doc.createElement('span');
         light.className = 'capsule-light';
         let left = 0, width = 64, base = 64, direction = 0, time = 0;
         let contact = null, queued = false, disposed = false, liquid = false;
+        let cardTheme, cardColor;
         let transform = '', opacity = '';
+        const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+        const rgb = a => a.map(Math.round).join(',');
+        const lum = a => a.reduce((sum, v, i) => {
+            v /= 255;
+            return sum + (v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4) * [.2126, .7152, .0722][i];
+        }, 0);
         function queue() {
             if (queued) return;
             queued = true;
@@ -1459,7 +1454,7 @@
                 const x = clamp(local - 48 + dir * 6, -42, Math.max(-42, width - 54));
                 const strain = clamp(width / base - 1, -.15, .6);
                 const next = `translate(${x.toFixed(2)}px,${(-p * .7).toFixed(2)}px) scaleX(${(1 + strain * .18).toFixed(3)}) skewX(${(-dir * (2 + p * 4)).toFixed(2)}deg)`;
-                const alpha = ((liquid ? .05 : .035) + p * (liquid ? .28 : .23)).toFixed(3);
+                const alpha = ((liquid ? .09 : .035) + p * (liquid ? .42 : .23)).toFixed(3);
                 if (next !== transform) { light.style.transform = next; transform = next; }
                 if (alpha !== opacity) { light.style.opacity = alpha; opacity = alpha; }
             });
@@ -1468,8 +1463,52 @@
             initial: 0, preset: spring.PRESETS.TACTILE_PRESS, precision: .002, onUpdate: queue
         });
         function updatePalette() {
+            const day = doc.body.classList.contains('light-mode');
             liquid = doc.body.dataset.navMaterial === 'liquid';
-            global.MinkoiFrostedRenderer?.syncCategoryStripPalette?.(liquid);
+            const hex = global.getCurrentPersona?.()?.accent;
+            const accent = /^#[0-9a-f]{6}$/i.test(hex || '')
+                ? [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16)) : [56, 189, 248];
+            const neutral = day ? [250, 249, 245] : [14, 18, 25];
+            const energy = lum(accent);
+            // Bright accents need less pigment at night; dark accents need
+            // less on light glass. Use the same amounts in CSS and the model.
+            const strength = day ? .7 + energy * .3 : 1 - energy * .35;
+            const veilTint = Math.round(7 * strength);
+            const lensTint = Math.round((liquid ? 15 : 10) * strength);
+            const ground = mix(neutral, accent, veilTint / 100);
+            const extreme = day ? [0, 0, 0] : [255, 255, 255];
+            // The stationary card tint depends on theme, not the persona;
+            // don't force a style read during the artwork/palette transaction.
+            if (day !== cardTheme) {
+                cardTheme = day;
+                cardColor = getComputedStyle(nav.closest('.card-container') || doc.body)
+                    .backgroundColor.match(/[\d.]+/g)?.map(Number);
+            }
+            const backing = cardColor?.length >= 3 ? mix(extreme, cardColor, cardColor[3] ?? 1) : extreme;
+            const baseInk = mix(day ? [38, 43, 51] : [241, 242, 245], accent, .025);
+            let best = { ratio: 0 };
+            for (const adjustment of [0, .08, .16, .24]) {
+                const ink = mix(baseInk, day ? [0, 0, 0] : [255, 255, 255], adjustment).map(Math.round);
+                const inkLum = lum(ink);
+                for (let step = 32; step <= 64; step++) {
+                    const under = mix(backing, ground, step / 100);
+                    const tint = mix(under, accent, lensTint / 100);
+                    // Include a conservative text-band contribution from the
+                    // capsule and the production strip's top gradient.
+                    const lens = mix(tint, day ? [0, 0, 0] : [255, 255, 255], day ? .08 : .21);
+                    const bg = lum(day ? lens : mix(lens, [255, 255, 255], .045));
+                    const ratio = day ? (bg + .05) / (inkLum + .05) : (inkLum + .05) / (bg + .05);
+                    if (ratio > best.ratio) best = { ratio, ink, step };
+                    if (ratio >= 5.35) break;
+                }
+                if (best.ratio >= 5.35) break;
+            }
+            nav.style.setProperty('--nav-ink', `rgb(${rgb(best.ink)})`);
+            nav.style.setProperty('--nav-ground', `rgba(${rgb(neutral)},${best.step / 100})`);
+            nav.style.setProperty('--nav-veil-opacity', `${best.step}%`);
+            nav.style.setProperty('--nav-persona', `rgb(${rgb(accent)})`);
+            nav.style.setProperty('--nav-veil-tint', `${veilTint}%`);
+            nav.style.setProperty('--nav-lens-tint', `${lensTint}%`);
             queue();
         }
         function release() {
@@ -1669,7 +1708,6 @@
                 lastRenderedRadius = radius;
             }
             material?.geometry(safeLeft, lastRenderedWidth, standardW, state === 'idle');
-            global.MinkoiMaterialManager?.notifySurfaceMotion?.();
         }
 
         function queueLensRender() {
@@ -2421,13 +2459,41 @@
     // Shared navigation material preference: one physics engine, two
     // render-only materials. Switching never touches the capsule geometry.
     // ------------------------------------------------------------------
+    const NAV_MATERIAL_KEY = 'minkoi_nav_material';
+    let navMaterial = 'frosted';
+
     function applyNavMaterial(value, persist) {
-        if (global.MinkoiMaterialManager && typeof global.MinkoiMaterialManager.setMaterial === 'function') {
-            return global.MinkoiMaterialManager.setMaterial(value, persist);
+        navMaterial = value === 'liquid' ? 'liquid' : 'frosted';
+        if (doc.body) doc.body.dataset.navMaterial = navMaterial;
+        doc.querySelectorAll('.nav-material-switch button[data-nav-material]').forEach(btn => {
+            btn.setAttribute('aria-pressed', btn.dataset.navMaterial === navMaterial ? 'true' : 'false');
+        });
+        if (persist) {
+            try { global.localStorage?.setItem(NAV_MATERIAL_KEY, navMaterial); } catch (_) {}
         }
-        const next = value === 'liquid' ? 'liquid' : 'frosted';
-        if (doc.body) doc.body.dataset.navMaterial = next;
-        return next;
+        global.dispatchEvent(new CustomEvent('minkoi:nav-material', { detail: { material: navMaterial } }));
+        return navMaterial;
+    }
+
+    function initNavMaterial() {
+        let saved = 'frosted';
+        try {
+            const stored = global.localStorage?.getItem(NAV_MATERIAL_KEY);
+            if (stored === 'liquid' || stored === 'frosted') saved = stored;
+        } catch (_) {}
+        applyNavMaterial(saved, false);
+
+        doc.querySelectorAll('.nav-material-switch button[data-nav-material]').forEach(btn => {
+            if (btn.dataset.materialBound === '1') return;
+            btn.dataset.materialBound = '1';
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (btn.dataset.navMaterial === navMaterial) return;
+                applyNavMaterial(btn.dataset.navMaterial, true);
+                global.MinkoiFeedback?.selection();
+            });
+        });
     }
 
     function initHeaderScrollElevation() {
@@ -2448,11 +2514,8 @@
     function init() {
         initPressFeedback();
         initTopMorePopup();
+        initNavMaterial();
         initHeaderScrollElevation();
-        const playHero = doc.getElementById('play-pause');
-        if (playHero) {
-            global.MinkoiFoundation?.applyAdaptiveSquircle?.(playHero, 21);
-        }
     }
 
     if (doc.readyState === 'loading') {

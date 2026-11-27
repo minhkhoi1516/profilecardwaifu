@@ -75,10 +75,8 @@
         }
     }
 
-    const initSoftGpu = Boolean(window.MinkoiCapabilities?.isSoftwareGpu?.() || window.__minkoiSoftwareGpu);
-    let dprCap = initSoftGpu ? 1.25 : 2;
-    let maxDesktopPixels = initSoftGpu ? 520000 : 1050000;
-    let particleFpsCap = initSoftGpu ? 30 : 0;
+    let dprCap = 2;
+    let maxDesktopPixels = 1050000;
     let pendingParticleReinit = 0;
 
     function resize(reinit = true) {
@@ -95,93 +93,98 @@
         if (reinit) initParticles();
     }
 
-    window.__setParticleDprCap = function(nextCap, nextMaxPixels, nextFpsCap) {
+    window.__setParticleDprCap = function(nextCap, nextMaxPixels) {
         const clamped = Math.max(1, Math.min(2, Number(nextCap) || 2));
         const clampedPixels = Number.isFinite(Number(nextMaxPixels))
-            ? Math.max(420000, Math.min(1400000, Number(nextMaxPixels)))
-            : (clamped < 1.5 ? 520000 : 1050000);
-        particleFpsCap = (nextFpsCap !== undefined && Number.isFinite(Number(nextFpsCap)))
-            ? Math.max(0, Math.min(60, Number(nextFpsCap)))
-            : (clamped >= 1.5 ? 0 : 30);
+            ? Math.max(520000, Math.min(1400000, Number(nextMaxPixels)))
+            : (clamped < 1.5 ? 640000 : 1050000);
         if (Math.abs(clamped - dprCap) < 0.05 && Math.abs(clampedPixels - maxDesktopPixels) < 20000) return;
         dprCap = clamped;
         maxDesktopPixels = clampedPixels;
         resize(false);
     };
 
-    // Order-independent sync with MinkoiGpuManager & minkoi:gpudetected
-    window.MinkoiGpuManager?.registerConsumer?.('stars', (profile) => {
-        window.__setParticleDprCap(profile.dprCap, profile.particleMaxPixels, profile.particleFpsCap);
-    });
-    window.addEventListener('minkoi:gpudetected', (e) => {
-        if (e?.detail?.software) {
-            window.__setParticleDprCap(1.25, 520000, 30);
-        }
-    });
-
-    function resetParticle(p, mode, randomizeY = false) {
+    function createParticle(mode, randomizeY = false) {
         const depth = Math.random();
         const startY = randomizeY ? Math.random() * height : -20;
         const startX = Math.random() * width;
-        p.type = mode;
-        p.x = startX;
 
         if (mode === 'sakura') {
-            p.y = startY;
-            p.size = depth * 6 + 5;
-            p.speedY = depth * 0.9 + 0.6;
-            p.speedX = (Math.random() - 0.3) * 0.8;
-            p.swaySpeed = 0.015 + Math.random() * 0.02;
-            p.swayAngle = Math.random() * Math.PI * 2;
-            p.rotation = Math.random() * Math.PI * 2;
-            p.rotSpeed = (Math.random() - 0.5) * 0.025;
-            p.flip = Math.random() * Math.PI;
-            p.flipSpeed = 0.02 + Math.random() * 0.03;
-            p.alpha = depth * 0.45 + 0.35;
-            p.color = Math.random() > 0.4 ? 'rgba(255, 183, 197,' : 'rgba(251, 113, 133,';
+            // Fluttering Sakura Blossom Petal
+            return {
+                type: 'sakura',
+                x: startX,
+                y: startY,
+                size: depth * 6 + 5,
+                speedY: depth * 0.9 + 0.6,
+                speedX: (Math.random() - 0.3) * 0.8, // Gentle rightward wind
+                swaySpeed: 0.015 + Math.random() * 0.02,
+                swayAngle: Math.random() * Math.PI * 2,
+                rotation: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.025,
+                flip: Math.random() * Math.PI,
+                flipSpeed: 0.02 + Math.random() * 0.03,
+                alpha: depth * 0.45 + 0.35,
+                color: Math.random() > 0.4 ? 'rgba(255, 183, 197,' : 'rgba(251, 113, 133,'
+            };
         } else if (mode === 'snow') {
-            p.y = startY;
-            p.radius = depth * 2.2 + 0.8;
-            p.speedY = depth * 0.85 + 0.45;
-            p.speedX = (Math.random() - 0.5) * 0.4;
-            p.swaySpeed = 0.01 + Math.random() * 0.015;
-            p.swayAngle = Math.random() * Math.PI * 2;
-            p.alpha = depth * 0.55 + 0.25;
-            p.isCrystal = Math.random() > 0.65;
+            // Crystalline Winter Snowflake (Alya)
+            return {
+                type: 'snow',
+                x: startX,
+                y: startY,
+                radius: depth * 2.2 + 0.8,
+                speedY: depth * 0.85 + 0.45,
+                speedX: (Math.random() - 0.5) * 0.4,
+                swaySpeed: 0.01 + Math.random() * 0.015,
+                swayAngle: Math.random() * Math.PI * 2,
+                alpha: depth * 0.55 + 0.25,
+                isCrystal: Math.random() > 0.65
+            };
         } else if (mode === 'stardust') {
-            p.y = randomizeY ? Math.random() * height : height + 10;
-            p.radius = depth * 1.4 + 0.5;
-            p.speedY = -(depth * 0.25 + 0.1);
-            p.speedX = (Math.random() - 0.5) * 0.08;
-            p.twinkleSpeed = 0.02 + Math.random() * 0.03;
-            p.twinklePhase = Math.random() * Math.PI * 2;
-            p.baseAlpha = depth * 0.4 + 0.2;
-            p.alpha = p.baseAlpha;
+            // Celestial Upward Golden Stardust (Mahiru)
+            return {
+                type: 'stardust',
+                x: startX,
+                y: randomizeY ? Math.random() * height : height + 10,
+                radius: depth * 1.4 + 0.5,
+                speedY: -(depth * 0.25 + 0.1), // Drifting upward
+                speedX: (Math.random() - 0.5) * 0.08,
+                twinkleSpeed: 0.02 + Math.random() * 0.03,
+                twinklePhase: Math.random() * Math.PI * 2,
+                baseAlpha: depth * 0.4 + 0.2,
+                alpha: depth * 0.4 + 0.2
+            };
         } else if (mode === 'ocean') {
-            p.y = randomizeY ? Math.random() * height : height + 15;
-            p.radius = depth * 2.4 + 1.0;
-            p.speedY = -(depth * 0.55 + 0.25);
-            p.speedX = (Math.random() - 0.5) * 0.3;
-            p.swaySpeed = 0.015 + Math.random() * 0.02;
-            p.swayAngle = Math.random() * Math.PI * 2;
-            p.twinkleSpeed = 0.03 + Math.random() * 0.04;
-            p.twinklePhase = Math.random() * Math.PI * 2;
-            p.alpha = depth * 0.5 + 0.3;
+            // Tide of Dawn Aqua Water Bubbles & Sea Sparkles (Asanagi Umi)
+            return {
+                type: 'ocean',
+                x: startX,
+                y: randomizeY ? Math.random() * height : height + 15,
+                radius: depth * 2.4 + 1.0,
+                speedY: -(depth * 0.55 + 0.25),
+                speedX: (Math.random() - 0.5) * 0.3,
+                swaySpeed: 0.015 + Math.random() * 0.02,
+                swayAngle: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.03 + Math.random() * 0.04,
+                twinklePhase: Math.random() * Math.PI * 2,
+                alpha: depth * 0.5 + 0.3
+            };
         } else {
-            p.y = randomizeY ? Math.random() * height : height + 10;
-            p.radius = depth * 1.5 + 0.6;
-            p.speedY = -(depth * 0.35 + 0.15);
-            p.speedX = (Math.random() - 0.5) * 0.1;
-            p.twinkleSpeed = 0.025 + Math.random() * 0.035;
-            p.twinklePhase = Math.random() * Math.PI * 2;
-            p.baseAlpha = depth * 0.45 + 0.25;
-            p.alpha = p.baseAlpha;
+            // Twilight Starlight (Shinobu & Hinako)
+            return {
+                type: 'twilight',
+                x: startX,
+                y: randomizeY ? Math.random() * height : height + 10,
+                radius: depth * 1.5 + 0.6,
+                speedY: -(depth * 0.35 + 0.15),
+                speedX: (Math.random() - 0.5) * 0.1,
+                twinkleSpeed: 0.025 + Math.random() * 0.035,
+                twinklePhase: Math.random() * Math.PI * 2,
+                baseAlpha: depth * 0.45 + 0.25,
+                alpha: depth * 0.45 + 0.25
+            };
         }
-        return p;
-    }
-
-    function createParticle(mode, randomizeY = false) {
-        return resetParticle({}, mode, randomizeY);
     }
 
     function initParticles() {
@@ -255,16 +258,12 @@
             lastParticlePaint = 0;
             return; // Battery & reduced-motion saving: truly pause loop
         }
-        animationId = requestAnimationFrame(render);
         const time = Number.isFinite(now) ? now : performance.now();
-        if (particleFpsCap > 0 && lastParticlePaint) {
-            const minInterval = 1000 / particleFpsCap;
-            if ((time - lastParticlePaint) < minInterval) return;
-        }
-        const dt = lastParticlePaint ? Math.min(80, Math.max(0, time - lastParticlePaint)) : 0;
+        const dt = lastParticlePaint ? Math.min(64, Math.max(0, time - lastParticlePaint)) : 0;
         const step = dt * 0.06;
         lastParticlePaint = time;
         zenEmphasis += ((zenActive ? 1 : 0) - zenEmphasis) * (1 - Math.exp(-dt / 260));
+        animationId = requestAnimationFrame(render);
 
         ctx.clearRect(0, 0, width, height);
         const accentColor = (currentThemeMode === 'stardust') ? (cachedAccentColor || '#fbbf24') : (cachedAccentColor || '#38bdf8');
@@ -281,7 +280,7 @@
                     p.y += p.speedY * step;
 
                     if (p.y > height + 20) {
-                        resetParticle(p, 'sakura', false);
+                        particles[i] = createParticle('sakura', false);
                     }
                     if (p.x > width + 20) p.x = -10;
                     if (p.x < -20) p.x = width + 10;
@@ -291,7 +290,7 @@
                     p.y += p.speedY * step;
 
                     if (p.y > height + 10) {
-                        resetParticle(p, 'snow', false);
+                        particles[i] = createParticle('snow', false);
                     }
                     if (p.x > width + 10) p.x = 0;
                     if (p.x < -10) p.x = width;
@@ -301,7 +300,7 @@
                     p.y += p.speedY * step;
 
                     if (p.y < -15) {
-                        resetParticle(p, 'ocean', false);
+                        particles[i] = createParticle('ocean', false);
                     }
                     if (p.x > width + 15) p.x = 0;
                     if (p.x < -15) p.x = width;
@@ -313,7 +312,7 @@
                     p.y += p.speedY * step;
 
                     if (p.y < -10) {
-                        resetParticle(p, currentThemeMode, false);
+                        particles[i] = createParticle(currentThemeMode, false);
                     }
                     if (p.x > width + 10) p.x = 0;
                     if (p.x < -10) p.x = width;

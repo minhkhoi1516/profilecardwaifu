@@ -38,9 +38,8 @@
 
     function render(value) {
         const f = clamp(value, -0.15, 1.04);
-        const alpha = global.MinkoiFoundation?.easeOverlayAlpha
-            ? global.MinkoiFoundation.easeOverlayAlpha(f)
-            : (clamp(f / 0.72, 0, 1) * (2 - clamp(f / 0.72, 0, 1)));
+        const t = clamp(f / 0.72, 0, 1);
+        const alpha = t * (2 - t);
         menu.style.transformOrigin = `${originX}px ${originY}px`;
         menu.style.transform = sheet
             ? `translateY(${((1 - f) * (height + 16)).toFixed(2)}px)`
@@ -102,17 +101,6 @@
         menu.style.top = top + 'px';
         render(spring.value);
     }
-    function updateSliderFill(input) {
-        if (global.MinkoiFoundation?.syncRangeFill) {
-            global.MinkoiFoundation.syncRangeFill(input, '--viz-pct');
-            return;
-        }
-        const min = Number(input.min || 0);
-        const max = Number(input.max || 100);
-        const val = Number(input.value || min);
-        const pct = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 50;
-        input.style.setProperty('--viz-pct', `${pct.toFixed(1)}%`);
-    }
     function sync() {
         const style = visualizer.getStyle();
         items.forEach(item => {
@@ -124,7 +112,6 @@
         inputs.forEach(input => {
             const value = Math.round(controls[input.dataset.vizControl] * 100);
             input.value = String(value);
-            updateSliderFill(input);
             doc.getElementById(input.id + '-value').textContent = value + '%';
         });
     }
@@ -210,14 +197,10 @@
     inputs.forEach(input => {
         input.addEventListener('input', () => {
             const value = Number(input.value);
-            updateSliderFill(input);
             visualizer.setControl(input.dataset.vizControl, value / 100, { persist: false });
             doc.getElementById(input.id + '-value').textContent = value + '%';
         });
-        input.addEventListener('change', () => {
-            updateSliderFill(input);
-            visualizer.setControl(input.dataset.vizControl, Number(input.value) / 100);
-        });
+        input.addEventListener('change', () => visualizer.setControl(input.dataset.vizControl, Number(input.value) / 100));
     });
     menu.addEventListener('keydown', event => {
         // A radio arrow/Space must never reach the player's global seek/play

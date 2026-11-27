@@ -47,9 +47,6 @@
     }
 
     function canPreloadBanners() {
-        if (window.MinkoiCapabilities && typeof window.MinkoiCapabilities.canPreloadAggressively === 'function') {
-            return window.MinkoiCapabilities.canPreloadAggressively();
-        }
         const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
         if (conn?.saveData) return false;
         if (conn?.effectiveType && /^(slow-2g|2g|3g)$/i.test(conn.effectiveType)) return false;
@@ -59,7 +56,6 @@
 
     function rememberDecodedBanner(src, img) {
         if (!src) return;
-        window.MinkoiCache?.putBanner?.(src, { src, image: img });
         if (decodedBanners.has(src)) decodedBanners.delete(src);
         decodedBanners.set(src, img);
         while (decodedBanners.size > MAX_DECODED_BANNERS) {
@@ -107,7 +103,6 @@
             layer.style.backgroundImage = 'none';
             layer.style.opacity = '0';
         });
-        window.MinkoiCache?.trimOnPersonaSwitch?.(currentBannerSrc);
     }
 
     function beginBannerRequest() {
@@ -141,9 +136,7 @@
             if (pos < 0 || avail.length <= 1) return;
             const nextP = avail[(pos + 1) % avail.length];
             const run = () => warmPersonaBanner(nextP);
-            if (window.MinkoiScheduler?.schedule) {
-                window.MinkoiScheduler.schedule('precompute', run, { key: `warm-banner-${nextP.key}` });
-            } else if ('requestIdleCallback' in window) {
+            if ('requestIdleCallback' in window) {
                 window.requestIdleCallback(run, { timeout: 2000 });
             } else {
                 run();
@@ -292,11 +285,9 @@
         function recordDisplay() {
             if (!pick.bag.commit(pick)) return;
             currentBannerSrc = src;
-            window.MinkoiCache?.setActiveArtwork?.(src);
             const seen = recentMasters.get(pick.key) || [];
             recentMasters.set(pick.key, [masterOf(src), ...seen].slice(0, 3));
             notifyZenArtwork(src);
-            window.MinkoiMaterialManager?.syncBannerTexture?.();
         }
 
         if (immediate) {
@@ -408,15 +399,13 @@
         const reduceMotion = Boolean(reducedMotionMQ && reducedMotionMQ.matches);
         if (animate && !reduceMotion && typeof avatarImg.animate === 'function') {
             try {
-                // Use independent CSS `scale` (never `transform`) so persona-specific
-                // horizontal/vertical translate offsets in layout-studio.css stay centered!
                 avatarAnim = avatarImg.animate(
                     [
-                        { opacity: 0.48, scale: '0.965' },
-                        { opacity: 1, scale: '1' }
+                        { opacity: 0.48 },
+                        { opacity: 1 }
                     ],
                     {
-                        duration: 240,
+                        duration: 180,
                         easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
                         fill: 'none'
                     }
@@ -465,7 +454,6 @@
             return Promise.resolve(null);
         }
         if (kind === 'banner' && decodedBanners.has(src)) {
-            window.MinkoiCache?.getBanner?.(src);
             const cached = decodedBanners.get(src);
             rememberDecodedBanner(src, cached);
             return Promise.resolve(cached);
@@ -474,12 +462,10 @@
             return inflightImages.get(src);
         }
 
-        const decodeStart = performance.now();
         const promise = new Promise((resolve, reject) => {
             const image = new Image();
             image.decoding = 'async';
             const onReady = () => {
-                window.MinkoiCache?.recordDecodeTime?.(performance.now() - decodeStart);
                 if (kind === 'avatar') decodedAvatars.add(src);
                 else rememberDecodedBanner(src, image);
                 resolve(image);
@@ -555,7 +541,6 @@
 
         const seq = ++personaLoadSeq;
         const myBannerSeq = beginBannerRequest();
-        window.MinkoiScheduler?.markInteraction?.(550);
         pendingPersona = true;
         cancelNeighborWarmup();
         const role = viewportRole();

@@ -1,92 +1,583 @@
-/* ==========================================================================
-   MINKOI 5.6 · INDEPENDENT MATERIAL LAYER (FROSTED vs LIQUID GLASS)
-   --------------------------------------------------------------------------
-   Single authoritative owner of surface materials, blur passes, Set C
-   adaptive category capsule optics, and Liquid Glass WebGL2 backing handoff.
-   Both modes share 100% of DOM structure, component geometry & state.
-   ========================================================================== */
-
-/* ==========================================================================
-   A. FROSTED MATERIAL RENDERER (PRIMARY SERENE DEFAULT)
-   Level-1 stable blur on .card-container, .site-brand-header, top-level
-   popups, and .zen-mini-dock. Zero nested blur inside .card-container.
-   ========================================================================== */
+/* MINKOI V4 Refined — shared materials and interaction contracts.
+   Geometry lives in the component stylesheets; physics owns animated transforms.
+   Stable backdrop surfaces; moving geometry never captures a backdrop. */
+@property --color-accent {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #38bdf8;
+}
+/* App-like surfaces: native Android tap highlights read as stray blue rectangles. */
+html { -webkit-tap-highlight-color: transparent; }
+@property --color-accent-glow {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: rgba(56, 189, 248, 0.28);
+}
+:root {
+    color-scheme: dark;
+    --surface-0: #101217;
+    /* Level 1: stable base; Level 2: frosted overlays; Level 3: accent lens. */
+    --surface-base: rgba(25, 28, 35, 0.68);
+    --surface-1: rgba(25, 28, 35, 0.72);
+    --surface-2: rgba(35, 39, 48, 0.62);
+    --surface-3: rgba(44, 48, 58, 0.9);
+    --surface-popup: rgba(32, 36, 44, 0.92);
+    --surface-pill: rgba(255, 255, 255, 0.065);
+    --surface-hover: rgba(255, 255, 255, 0.11);
+    --surface-scrim: rgba(5, 7, 12, 0.28);
+    --track-bg: rgba(255, 255, 255, 0.12);
+    --color-text: #f1f2f5;
+    --color-text-secondary: #c9cdd5;
+    --color-text-muted: #a3aab7;
+    --color-border: rgba(255, 255, 255, 0.12);
+    --color-border-subtle: rgba(255, 255, 255, 0.07);
+    --color-border-active: rgba(255, 255, 255, 0.22);
+    --v3-radius-card: 32px;
+    --v3-radius-island: 24px;
+    --v3-radius-popup: 20px;
+    --v3-radius-control: 16px;
+    --v3-radius-pill: 9999px;
+    --ui-radius-inset: 12px;
+    --ui-gap-tight: .375rem;
+    --ui-gap: .625rem;
+    --ui-pad: .875rem;
+    --ui-control: 2.25rem;
+    --ui-touch: 2.75rem;
+    --ui-label: .75rem;
+    --ui-caption: .6875rem;
+    --ui-focus: #9bceef;
+    --ui-accent-ink: var(--color-accent);
+    --ui-positive-ink: #9de6c7;
+    --ui-caution-ink: #f5d397;
+    --v3-specular-top: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    --v3-specular-soft: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    --v3-shadow-card: 0 14px 36px -18px rgba(0, 0, 0, 0.32);
+    --v3-shadow-island: 0 8px 24px -12px rgba(0, 0, 0, 0.3);
+    --v3-shadow-popup: 0 18px 48px -12px rgba(0, 0, 0, 0.5);
+    --v3-blur-card: blur(12px) saturate(120%);
+    --v3-blur-base: blur(20px) saturate(125%);
+    --v3-blur-stage: blur(8px) saturate(115%);
+    --v3-blur-popup: blur(18px) saturate(120%);
+    /* Floating roles own the existing captures. Nested ink, pigment and
+       specular edges never ask for another backdrop capture. */
+    --glass-floating: var(--surface-1);
+    --glass-overlay: var(--surface-popup);
+    --glass-edge: var(--color-border);
+    --glass-active-edge: var(--color-border-active);
+    --glass-control-active: var(--surface-hover);
+    --glass-thumb-fill: #f8f6f0;
+    --glass-thumb-shadow: inset 0 1px 0 #fff, 0 1px 4px rgba(8, 11, 20, .36);
+    --glass-contact-shadow: var(--v3-specular-soft), 0 1px 3px rgba(12, 15, 21, .14);
+    --glass-favorite: #ff94ac;
+    --v3-spring-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --v3-fluid-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --v3-hero-gradient: linear-gradient(135deg, var(--color-accent), #6385b0);
+    --v3-hero-glow: 0 4px 18px var(--color-accent-glow);
+    --v3-hero-glow-hover: 0 6px 22px var(--color-accent-glow);
+    --v3-soundstage-glow: 0 0 20px -6px var(--color-accent-glow);
+}
+/* Accent-tinted hero gradient only where the colour function exists: a
+   custom property holding an unsupported function would invalidate every
+   `background: var(--v3-hero-gradient)` that consumes it. */
+@supports (background: color-mix(in srgb, red, blue)) {
+    :root {
+        --v3-hero-gradient: linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 65%, #6385b0));
+        --ui-accent-ink: color-mix(in srgb, var(--color-accent) 75%, #ffffff);
+    }
+    /* Keep the wide, always-visible header neutral through persona commits.
+       The palette follows the capsule, dock and open overlays instead. */
+    :is(.dropdown-flyout, .lyrics-drawer-modal, .top-more-dropdown, .viz-menu, .lyrics-display-menu) {
+        --glass-overlay: color-mix(in srgb, var(--color-accent) 3%, var(--surface-popup));
+    }
+    :is(.play-hero-btn, .playlist-row.active, .volume-slider-dock, .viz-menu-item[aria-checked="true"],
+        .top-action-btn[aria-expanded="true"], .ctrl-btn.active, .ctrl-btn.is-morph-active,
+        .ctrl-btn[aria-expanded="true"], .speed-toggle-btn.active,
+        .fx-preset-btn.active, .nav-material-switch button[aria-pressed="true"],
+        .top-more-item[aria-checked="true"], .lyrics-display-menu button[aria-pressed="true"]) {
+        --glass-active-edge: color-mix(in srgb, var(--color-accent) 22%, var(--color-border-active));
+        --glass-control-active: color-mix(in srgb, var(--color-accent) 10%, var(--surface-hover));
+    }
+}
+body.light-mode {
+    --ui-focus: #235780;
+    --ui-accent-ink: #1a6285;
+    --ui-positive-ink: #205a46;
+    --ui-caution-ink: #745013;
+    --surface-0: #eae7df;
+    --surface-base: rgba(245, 242, 234, 0.74);
+    --surface-1: rgba(245, 242, 234, 0.76);
+    --surface-2: rgba(250, 247, 240, 0.68);
+    --surface-3: rgba(248, 245, 238, 0.94);
+    --surface-popup: rgba(248, 245, 237, 0.94);
+    --surface-pill: rgba(70, 65, 55, 0.055);
+    --surface-hover: rgba(70, 65, 55, 0.095);
+    --surface-scrim: rgba(31, 29, 25, 0.18);
+    --track-bg: rgba(50, 48, 43, 0.14);
+    --color-text: #262b33;
+    --color-text-secondary: #454e5c;
+    --color-text-muted: #5d6876;
+    --color-border: rgba(50, 48, 43, 0.13);
+    --color-border-subtle: rgba(50, 48, 43, 0.075);
+    --color-border-active: rgba(50, 48, 43, 0.22);
+    --v3-shadow-card: 0 20px 50px -18px rgba(51, 45, 35, 0.2);
+    --v3-shadow-island: 0 8px 24px -12px rgba(51, 45, 35, 0.12);
+    --v3-shadow-popup: 0 18px 44px -12px rgba(51, 45, 35, 0.23);
+    --glass-edge: var(--color-border);
+    --glass-floating: var(--surface-1);
+    --glass-overlay: var(--surface-popup);
+    --glass-active-edge: var(--color-border-active);
+    --glass-control-active: var(--surface-hover);
+    --glass-favorite: #9e254b;
+}
+/* Light surfaces need a deeper shade of the same persona accent; a fixed blue
+   would fight every pink, amber or cyan theme. */
+@supports (color: color-mix(in srgb, red, blue)) {
+    body.light-mode { --ui-accent-ink: color-mix(in srgb, var(--color-accent) 48%, #101826); }
+}
+html[data-theme="light"] { color-scheme: light; background-color: #eae7df; }
+/* The stationary base diffuses artwork. Small floating surfaces have their own
+   local diffusion; ordinary nested buttons remain tint-only. Never animate the
+   blur radius, and never put a backdrop capture on the moving capsule. */
 .card-container {
+    border: 1px solid var(--color-border);
+    border-radius: var(--v3-radius-card);
     background: var(--surface-base);
-    background-image: var(--aether-sheen);
-    border: 1px solid var(--glass-edge);
     backdrop-filter: var(--v3-blur-base);
     -webkit-backdrop-filter: var(--v3-blur-base);
-    box-shadow: var(--aether-rim-top), var(--aether-rim-bottom), var(--aether-shadow-shell);
+    box-shadow: var(--v3-specular-top), var(--v3-shadow-card);
 }
-
 .site-brand-header {
+    position: relative;
+    z-index: 1100;
+    border: 1px solid var(--color-border);
     background: var(--glass-floating);
-    background-image: var(--aether-sheen);
-    border: 1px solid var(--glass-edge);
     backdrop-filter: var(--v3-blur-card);
     -webkit-backdrop-filter: var(--v3-blur-card);
-    box-shadow: var(--v56-hairline-top), var(--v56-hairline-bottom), var(--aether-shadow-bar);
+    box-shadow: var(--v3-specular-top), var(--v3-shadow-island);
 }
-
-.dropdown-flyout,
-.lyrics-drawer-modal,
-.top-more-dropdown,
-.viz-menu {
-    border-radius: var(--aether-radius-popup);
+/* The player container uses tint, not another large-area capture. */
+.music-player-card {
+    border-radius: var(--v3-radius-island);
+    background: var(--surface-2);
+    border: 1px solid var(--color-border-subtle);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: var(--v3-shadow-island);
+}
+.now-playing-stage {
+    backdrop-filter: var(--v3-blur-stage);
+    -webkit-backdrop-filter: var(--v3-blur-stage);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    :root { --surface-base: rgba(25, 28, 35, 0.94); }
+    body.light-mode { --surface-base: rgba(245, 242, 234, 0.96); }
+}
+.dropdown-flyout, .lyrics-drawer-modal, .top-more-dropdown, .viz-menu,
+body.light-mode :is(.dropdown-flyout, .lyrics-drawer-modal, .top-more-dropdown, .viz-menu) {
+    border-radius: var(--v3-radius-popup);
     background: var(--glass-overlay);
     border: 1px solid var(--glass-edge);
     backdrop-filter: var(--v3-blur-popup);
     -webkit-backdrop-filter: var(--v3-blur-popup);
-    box-shadow: var(--aether-rim-top), var(--v3-shadow-popup);
+    box-shadow: var(--v3-specular-top), var(--v3-shadow-popup);
 }
-
-/* Desktop flyouts live inside .card-container (already Level-1 blurred); avoid redundant double-blur */
-.card-container .dropdown-flyout {
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-/* Now Playing Soundstage — Serene Frosted Surface */
-.now-playing-stage {
-    background: var(--surface-2);
-    background-image: var(--aether-sheen);
-    border: 1px solid var(--glass-edge);
-    box-shadow: var(--aether-rim-top), var(--aether-rim-bottom), 0 14px 34px -14px rgba(0, 0, 0, 0.42);
-}
-
-body.light-mode .now-playing-stage {
+.top-action-btn, .ctrl-btn, .suite-badge-btn, .live-clock-pill,
+.status-indicator-pill, .track-indicator, .social-link-pill {
+    background: var(--surface-pill);
     border-color: var(--color-border);
-    box-shadow: var(--aether-rim-top), 0 10px 26px -12px rgba(42, 36, 28, 0.14);
+    color: var(--color-text-secondary);
+    touch-action: manipulation;
 }
-
-.now-playing-stage::before {
+.top-action-btn:hover, .ctrl-btn:hover, .suite-badge-btn:hover, .social-link-pill:hover {
+    background: var(--surface-hover);
+    color: var(--color-text);
+}
+.top-action-btn[aria-expanded="true"], .ctrl-btn[aria-expanded="true"] {
+    background: var(--glass-control-active);
+    color: var(--color-text);
+    border-color: var(--glass-active-edge);
+    box-shadow: var(--glass-contact-shadow);
+}
+/* Nested selections are pigment and an edge on the parent surface, not cards. */
+.playlist-row.active, body.light-mode .playlist-row.active,
+.viz-menu-item[aria-checked="true"], .fx-preset-btn.active, body.light-mode .fx-preset-btn.active,
+.nav-material-switch button[aria-pressed="true"], body.light-mode .nav-material-switch button[aria-pressed="true"],
+.lyrics-display-menu button[aria-pressed="true"] {
+    background: var(--glass-control-active);
+    border-color: var(--glass-active-edge);
+    color: var(--color-text);
+    box-shadow: var(--v3-specular-soft);
+}
+.playlist-row.active .row-title { color: var(--color-text); }
+.row-fav-btn:is(:hover, .active) { color: var(--glass-favorite); }
+.lyrics-display-menu {
+    /* This menu is already inside the lyrics drawer's capture. */
+    background: var(--glass-overlay);
+    border-color: var(--glass-edge);
+    box-shadow: var(--v3-specular-top), var(--v3-shadow-island);
+}
+[data-panel-state="closed"], .top-more-dropdown[data-popup-state="closed"] { display: none; }
+:is(button, a, input, [tabindex]):focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: 2px;
+}
+.miuix-popup-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 950;
+    background: var(--surface-scrim);
+    opacity: 0;
+    pointer-events: none;
+}
+.miuix-popup-scrim.active { pointer-events: auto; }
+.top-more-dropdown { z-index: 1200; }
+.top-more-dropdown:is([data-popup-state="opening"], [data-popup-state="closing"]) { will-change: transform, opacity; }
+.top-more-divider { height: 1px; margin: 0.3rem 0.4rem; background: var(--color-border-subtle); }
+.haptic-feedback-state { margin-left: auto; font-size: 0.65rem; color: var(--color-text-muted); }
+.top-more-item[aria-checked="true"] .haptic-feedback-state { color: var(--color-text); }
+.top-more-item:disabled { opacity: 0.55; cursor: default; }
+/* Compact material preference inside the existing overflow menu. */
+.top-more-material {
+    display: flex;
+    flex-direction: column;
+    gap: 0.32rem;
+    padding: 0.3rem 0.45rem 0.4rem;
+}
+.top-more-material-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font: 600 0.6rem var(--font-mono);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+.top-more-material-label i { color: var(--color-accent); font-size: 0.68rem; }
+.nav-material-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.22rem;
+    padding: 2px;
+    border-radius: 12px;
+    background: var(--surface-pill);
+    border: 1px solid var(--color-border-subtle);
+}
+.nav-material-switch button {
+    border: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: 600 0.68rem var(--font-body);
+    padding: 0.36rem 0.3rem;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background 180ms ease, color 180ms ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.nav-material-switch button[aria-pressed="true"] {
+    background: var(--glass-control-active);
+    color: var(--color-text);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+body.light-mode .nav-material-switch button[aria-pressed="true"] {
+    box-shadow: var(--v3-specular-top);
+}
+.sheet-drag-handle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 36px;
+    touch-action: none;
+    cursor: grab;
+    flex-shrink: 0;
+}
+.sheet-drag-handle::before {
+    content: '';
+    width: 38px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--color-text-muted);
+    opacity: 0.45;
+    pointer-events: none;
+}
+/* Edge tint approximates a progressive material fade, not optical progressive blur. */
+.flyout-header {
+    background: linear-gradient(var(--surface-popup), transparent);
+}
+.crossfade-toggle {
+    width: 49px;
+    height: 28px;
+    min-width: 49px;
+    min-height: 28px;
+    border-radius: 999px;
+    background: var(--track-bg);
+    border: 1px solid var(--color-border);
+    padding: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 240ms ease;
+}
+.crossfade-toggle.active { background: var(--color-accent); }
+.crossfade-toggle .toggle-knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f8f6f0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transform: translateX(calc(var(--switch-progress, 0) * 21px)) scale(var(--thumb-scale, 1));
+}
+.crossfade-toggle.active .toggle-knob { --switch-progress: 1; }
+/* The sole liquid object: Studio category selection. Text is a sibling layer. */
+.audio-category-nav, body.light-mode .audio-category-nav {
+    position: relative;
+    padding: 4px 6px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)), var(--surface-pill);
+    border: 1px solid var(--color-border-subtle);
+    box-shadow: none;
+    /* One stationary backdrop. The moving selection never samples the backdrop. */
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(120%);
+    overscroll-behavior-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y pinch-zoom;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .audio-category-nav, body.light-mode .audio-category-nav { background: var(--surface-2); }
+}
+.liquid-glass-indicator {
+    position: absolute;
+    inset: 4px auto 4px 0;
+    border-radius: 999px;
+    pointer-events: none;
+    z-index: 1;
+    transform-origin: left center;
+    background: linear-gradient(155deg, var(--lens-top, rgba(255,255,255,.18)), transparent),
+        var(--color-accent-glow, rgba(56,189,248,.24));
+    border: 1px solid var(--lens-rim, rgba(255,255,255,.24));
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.2), 0 3px 9px -6px rgba(0,0,0,.35);
+    transition: background-color 220ms ease, border-color 220ms ease;
+}
+.liquid-glass-indicator::before,
+.liquid-glass-indicator::after {
     content: '';
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%, rgba(255, 255, 255, 0.02) 100%);
     pointer-events: none;
-    z-index: 1;
+    opacity: 0;
+    transition: opacity 220ms ease;
 }
-
-body.light-mode .now-playing-stage::before {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), transparent 60%);
+.liquid-glass-indicator::before {
+    background: radial-gradient(100% 90% at 22% 0%, rgba(255,255,255,.42), transparent 62%);
 }
+.liquid-glass-indicator::after {
+    background: linear-gradient(120deg, transparent 48%, var(--color-accent-glow) 100%);
+    box-shadow: inset 0 -1px 0 rgba(255,255,255,.16);
+}
+body.light-mode .liquid-glass-indicator {
+    --lens-top: rgba(255,255,255,.62);
+    --lens-rim: rgba(50,48,43,.22);
+}
+body[data-nav-material="liquid"] .liquid-glass-indicator {
+    background: linear-gradient(160deg, var(--lens-top, rgba(255,255,255,.30)), transparent 48%, var(--color-accent-glow)),
+        var(--surface-pill);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -7px 12px -10px var(--color-accent), 0 4px 12px -7px rgba(0,0,0,.4);
+}
+body[data-nav-material="liquid"] .liquid-glass-indicator::before,
+body[data-nav-material="liquid"] .liquid-glass-indicator::after { opacity: 1; }
+.audio-category-nav .cat-tab,
+body.light-mode .audio-category-nav .cat-tab:is(.active, :hover) {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--color-text-muted);
+    text-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.audio-category-nav .cat-tab:is(.active, :hover, .drag-candidate),
+body.light-mode .audio-category-nav .cat-tab:is(.active, :hover) { color: var(--color-text); }
+.audio-category-nav .cat-tab.active { font-weight: 700; }
 
-/* Zen Mini Dock — Frosted Dark Glass over Full-Bleed Artwork */
+/* Set C is scoped to the live Waifu strip, not the historical lab samples. */
+@property --nav-persona {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #38bdf8;
+}
+#audio-category-nav {
+    --nav-neutral: #0e1219;
+    --nav-rim: rgba(255, 255, 255, .19);
+    --nav-crown: rgba(255, 255, 255, .15);
+    --nav-return: rgba(255, 255, 255, .025);
+    --nav-lens-rim: rgba(255, 255, 255, .31);
+    --nav-edge: rgba(255, 255, 255, .56);
+    --nav-lower-edge: rgba(255, 255, 255, .13);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .012)),
+        var(--nav-ground, rgba(14, 18, 25, .64));
+    border-color: var(--nav-rim);
+    transition: --nav-persona 320ms ease;
+}
+body.light-mode #audio-category-nav {
+    --nav-neutral: #faf9f5;
+    --nav-rim: rgba(26, 31, 39, .18);
+    --nav-crown: rgba(255, 255, 255, .3);
+    --nav-return: rgba(255, 255, 255, .10);
+    --nav-lens-rim: rgba(29, 34, 42, .25);
+    --nav-edge: rgba(255, 255, 255, .75);
+    --nav-lower-edge: rgba(25, 30, 38, .12);
+    background-color: var(--nav-ground, rgba(250, 249, 245, .64));
+}
+#audio-category-nav .liquid-glass-indicator {
+    background: linear-gradient(174deg, var(--nav-crown, rgba(255, 255, 255, 0.18)), transparent 40%, var(--nav-return, rgba(255, 255, 255, 0.03))),
+        var(--nav-body, rgba(127, 127, 127, .035));
+    border: 1px solid var(--nav-lens-rim, rgba(255, 255, 255, 0.24));
+    overflow: hidden;
+    box-shadow: inset 0 1px 0 var(--nav-edge, rgba(255, 255, 255, 0.2)),
+        inset 0 -1px 0 var(--nav-lower-edge, rgba(255, 255, 255, 0.13)),
+        0 4px 8px -6px rgba(0, 0, 0, 0.48);
+    transition: none;
+}
+#audio-category-nav .liquid-glass-indicator::before,
+#audio-category-nav .liquid-glass-indicator::after {
+    transition: none;
+}
+#audio-category-nav .liquid-glass-indicator::before {
+    background: radial-gradient(110% 54% at 38% -4%, rgba(255, 255, 255, 0.45), transparent 70%);
+    opacity: 0.65;
+}
+#audio-category-nav .liquid-glass-indicator::after {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.06), transparent 34%);
+    box-shadow: none;
+    opacity: 1;
+}
+body:not([data-nav-material="liquid"]) #audio-category-nav .liquid-glass-indicator::before { opacity: 0.25; }
+/* Directional leading-edge reflection. Position, skew and opacity follow the
+   rendered capsule and the shared TACTILE_PRESS spring; geometry is never
+   re-solved here and no extra animation frame is scheduled. */
+.liquid-glass-indicator .capsule-light {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 96px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transform-origin: 50% 20%;
+    background: radial-gradient(ellipse at 34% -8%, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.15) 31%, transparent 64%),
+        linear-gradient(155deg, transparent 52%, rgba(255, 255, 255, 0.1) 67%, transparent 82%);
+}
+body[data-nav-material="frosted"] .liquid-glass-indicator .capsule-light {
+    background: radial-gradient(ellipse at 45% -8%, rgba(255, 255, 255, 0.7), transparent 64%);
+}
+@supports (background: color-mix(in srgb, red, blue)) {
+    #audio-category-nav, body.light-mode #audio-category-nav {
+        /* Mix pigment before setting alpha; never add another surface. */
+        background-color: color-mix(in srgb,
+            color-mix(in srgb, var(--nav-persona) var(--nav-veil-tint, 5%), var(--nav-neutral))
+            var(--nav-veil-opacity, 64%), transparent);
+        --nav-body: color-mix(in srgb, var(--nav-persona) var(--nav-lens-tint, 10%), transparent);
+    }
+    #audio-category-nav .liquid-glass-indicator {
+        --nav-specular: color-mix(in srgb, white 85%, var(--nav-persona));
+        border-color: color-mix(in srgb, var(--nav-lens-rim) 83%, var(--nav-persona));
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--nav-edge) 89%, var(--nav-specular)),
+            inset 0 -1px 0 var(--nav-lower-edge), 0 4px 8px -6px rgba(0, 0, 0, .48);
+    }
+    #audio-category-nav .liquid-glass-indicator::before {
+        background: radial-gradient(110% 54% at 38% -4%,
+            color-mix(in srgb, var(--nav-specular) 45%, transparent), transparent 70%);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    #audio-category-nav { transition: none; }
+}
+/* One adaptive ink for every label and count in the strip. Active, hover and
+   the drag candidate share it, so no state falls back to a hard-coded colour. */
+#audio-category-nav .cat-tab {
+    color: var(--nav-ink, var(--color-text));
+    transition: none;
+}
+#audio-category-nav .cat-count {
+    color: inherit;
+    background: rgba(127, 127, 127, 0.14);
+}
+.audio-category-nav:not(.has-liquid-nav) .cat-tab.active { background: var(--surface-hover); }
+.audio-category-nav.is-liquid-dragging { scroll-behavior: auto; }
+.seek-bar-track { height: 6px; position: relative; padding: 0; touch-action: none; }
+.seek-bar-track::before { content: ''; position: absolute; inset: -18px 0; cursor: pointer; }
+.seek-fill-bar {
+    width: 100%;
+    height: 100%;
+    transform-origin: left center;
+    transform: scaleX(var(--seek-progress, 0));
+    transition: none;
+}
+.seek-fill-bar::after { display: none; }
+.seek-thumb-dot {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--glass-thumb-fill);
+    box-shadow: var(--glass-thumb-shadow);
+    transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.85));
+    pointer-events: none;
+    transition: none;
+}
+.viz-bar { transform-origin: bottom center; height: 18px; transform: scaleY(var(--bar-scale, 0.22)); transition: opacity 200ms ease; }
+.avatar-img, .avatar-portrait, .vinyl-art, .persona-thumb { opacity: 1; }
+.zen-fab { display: none; }
+body.zen-mode .banner-stage { pointer-events: auto; cursor: pointer; }
+.card-container[data-zen-motion], .site-brand-header[data-zen-motion], .zen-mini-dock[data-zen-motion],
+body.zen-mode .card-container[data-zen-motion], body.zen-mode .site-brand-header[data-zen-motion] {
+    /* The shared spring alone owns opacity/transform while transitioning Zen. */
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+/* Pause only invisible main-card/header decoration, not the visible Zen scene. */
+body.zen-mode :is(.card-container, .site-brand-header) *,
+body.zen-mode :is(.card-container, .site-brand-header) *::before,
+body.zen-mode :is(.card-container, .site-brand-header) *::after,
+body.zen-mode .card-container .vinyl-disc-wrap.spinning :is(.vinyl-platter, .vinyl-art) { animation-play-state: paused; }
 .zen-mini-dock {
+    background: rgba(24, 27, 34, 0.76);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.4);
+}
+
+/* Zen Dock 2.0 · frosted surface tinted by the active persona accent.
+   Blur radius stays constant so theme changes never animate a filter. */
+.zen-mini-dock {
+    /* Dark floating glass in both themes: the dock owns the Zen capture;
+       the adaptive lyrics remain on the artwork, not in this surface. */
     background:
         linear-gradient(135deg,
             color-mix(in srgb, var(--color-accent) 12%, transparent),
             color-mix(in srgb, var(--color-accent-secondary) 7%, transparent)),
         rgba(14, 17, 24, 0.72);
-    border: 1px solid color-mix(in srgb, var(--color-accent) 20%, rgba(255, 255, 255, 0.22));
-    backdrop-filter: blur(12px) saturate(120%);
-    -webkit-backdrop-filter: blur(12px) saturate(120%);
-    box-shadow: var(--aether-rim-top), var(--aether-rim-bottom), 0 18px 42px -14px rgba(0, 0, 0, 0.62);
+    border-color: color-mix(in srgb, var(--color-accent) 20%, rgba(255, 255, 255, .22));
+    box-shadow:
+        var(--v3-specular-top), 0 12px 28px -13px rgba(0, 0, 0, .56);
+    /* The dock is always dark glass over artwork; keep light text tokens even
+       when the page itself is in Light Mode. */
+    --color-text: #f4f6fa;
+    --color-text-secondary: #cbd0da;
+    --color-border: rgba(255, 255, 255, 0.2);
+    --surface-2: rgba(255, 255, 255, 0.1);
+    --surface-hover: rgba(255, 255, 255, 0.18);
 }
 
+/* More opaque fallback when the browser cannot blur the wallpaper behind it. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .zen-mini-dock {
         background:
@@ -97,249 +588,199 @@ body.light-mode .now-playing-stage::before {
     }
 }
 
-/* Category Navigation Strip (Set C Adaptive AA Ground & Frosted Lens Pill) */
-#audio-category-nav {
-    --nav-neutral: #0e1219;
-    --nav-rim: rgba(255, 255, 255, 0.19);
-    --nav-crown: rgba(255, 255, 255, 0.15);
-    --nav-return: rgba(255, 255, 255, 0.025);
-    --nav-lens-rim: rgba(255, 255, 255, 0.31);
-    --nav-edge: rgba(255, 255, 255, 0.56);
-    --nav-lower-edge: rgba(255, 255, 255, 0.13);
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
-        var(--nav-ground, rgba(14, 18, 25, 0.64));
-    border: 1px solid var(--nav-rim);
-    box-shadow: var(--aether-trough-shadow);
-    transition: --nav-persona 320ms ease;
+.zen-lyrics-btn[aria-pressed="true"] {
+    color: var(--color-text);
+    border-color: color-mix(in srgb, var(--color-accent) 31%, var(--color-border));
+    background: color-mix(in srgb, var(--color-accent) 10%, var(--surface-2));
 }
 
-body.light-mode #audio-category-nav {
-    --nav-neutral: #faf9f5;
-    --nav-rim: rgba(26, 31, 39, 0.18);
-    --nav-crown: rgba(255, 255, 255, 0.3);
-    --nav-return: rgba(255, 255, 255, 0.1);
-    --nav-lens-rim: rgba(29, 34, 42, 0.25);
-    --nav-edge: rgba(255, 255, 255, 0.75);
-    --nav-lower-edge: rgba(25, 30, 38, 0.12);
-    background-color: var(--nav-ground, rgba(250, 249, 245, 0.64));
+.zen-lyrics-btn[aria-pressed="false"] {
+    color: var(--color-text-secondary);
+    opacity: 0.78;
+}
+body.light-mode .banner-stage::after { background: linear-gradient(135deg, rgba(233, 228, 215, 0.32), rgba(226, 224, 216, 0.2)); }
+body.light-mode.zen-mode .banner-stage::after {
+    background: radial-gradient(circle at 50% 45%, rgba(3, 5, 12, 0.05), rgba(3, 5, 12, 0.4));
+}
+@media (max-width: 768px) {
+    .top-action-btn, .ctrl-btn, .mute-btn, .zen-ctrl-btn, .lyrics-close-btn, .lyrics-mode-btn, .offset-nudge-btn, .audio-iqoo-close { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+    #zen-mode-toggle, #top-more-btn, #theme-toggle { width: 44px; height: 44px; border-radius: 14px; }
+    .mobile-flyout-backdrop { background: var(--surface-scrim); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+    .dropdown-flyout, .track-actions-bar .dropdown-flyout { border-radius: 26px 26px 22px 22px; padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 400px) {
+    .site-brand-header { padding: 0.4rem 0.5rem; gap: 0.35rem; }
+    .brand-name { font-size: 0.78rem; letter-spacing: 0.08em; }
+    .brand-text-block .brand-sub, .live-clock-pill { display: none; }
+    .top-bar-controls { gap: 0.25rem; flex-shrink: 0; }
+    .suite-header-row { gap: 0.35rem; flex-wrap: nowrap; }
+    .suite-title { font-size: 0.64rem; letter-spacing: 0.08em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .suite-header-actions { flex-shrink: 0; gap: 0.3rem; }
+    .track-indicator { white-space: nowrap; padding: 0.2rem 0.45rem; font-size: 0.68rem; }
+}
+@media (pointer: coarse) and (min-width: 769px) {
+    /* Touch tablets keep the same 44px targets as phones, including the
+       Zen dock controls that otherwise use a 34px mouse-sized button. */
+    .ctrl-btn, .top-action-btn, .mute-btn, .suite-badge-btn, .zen-ctrl-btn { min-width: 44px; min-height: 44px; }
+    .zen-ctrl-btn { flex-shrink: 0; }
+    .volume-slider { height: 28px; }
+    .dropdown-flyout { max-width: min(360px, calc(100vw - 32px)); }
+}
+@media (prefers-reduced-motion: reduce) {
+    :root { transition: none; }
+    .status-pulse-dot { animation: none; }
 }
 
-#audio-category-nav .cat-tab {
-    color: var(--nav-ink, var(--color-text));
-    transition: none;
+/* Finish the existing Full Fusion roles without introducing new capture
+   surfaces. Capsule and gesture controllers still own their geometry. */
+.site-brand-header {
+    gap: var(--ui-gap);
+    border-radius: var(--v3-radius-popup);
 }
-
-#audio-category-nav .cat-count {
-    color: inherit;
-    background: rgba(127, 127, 127, 0.14);
+.brand-monogram-wrap { min-width: 0; gap: var(--ui-gap); }
+.monogram-symbol {
+    flex: none;
+    inline-size: var(--ui-control);
+    block-size: var(--ui-control);
+    border-radius: var(--ui-radius-inset);
+    letter-spacing: -.025em;
+    box-shadow: var(--glass-contact-shadow);
 }
+.brand-text-block { min-width: 0; gap: 2px; }
+.brand-name { letter-spacing: .14em; }
+.brand-sub { letter-spacing: .075em; color: var(--color-text-secondary); }
+.top-bar-controls { flex: none; gap: var(--ui-gap-tight); }
+.top-action-btn { border-radius: var(--ui-radius-inset); }
+.status-label { color: var(--ui-positive-ink); }
+.top-more-item {
+    gap: var(--ui-gap);
+    min-height: var(--ui-touch);
+    border-radius: var(--ui-radius-inset);
+    white-space: normal;
+}
+.top-more-item > i { flex: 0 0 18px; color: var(--color-text-secondary); }
+.top-more-item:focus-visible { outline-color: var(--ui-focus); outline-offset: -2px; }
+.top-more-item:disabled { opacity: .67; }
 
-.audio-category-nav:not(.has-liquid-nav) .cat-tab.active {
+.creator-bio { max-inline-size: 38ch; align-self: center; }
+.creator-tagline { color: var(--color-text-secondary); letter-spacing: .045em; }
+.social-link-pill, .persona-chip { border-radius: var(--ui-radius-inset); }
+:is(.persona-chip, .social-link-pill):focus-visible { outline-color: var(--ui-focus); }
+.persona-chip.active {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-2));
+    box-shadow: var(--v3-specular-soft), 0 0 14px var(--color-accent-glow);
+}
+body.light-mode .persona-chip.active {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 9%, var(--surface-2));
+    box-shadow: var(--v3-specular-soft), 0 4px 14px -4px var(--color-accent-glow);
+}
+.persona-name { color: var(--color-text); }
+.persona-chip.active .persona-name { color: var(--color-accent); }
+body.light-mode .persona-chip.active .persona-name { color: var(--color-text); }
+.persona-tag { color: var(--color-text-secondary); }
+.section-micro-header { align-items: baseline; gap: var(--ui-gap-tight) var(--ui-gap); flex-wrap: wrap; }
+.micro-title { color: var(--color-text); font-size: var(--ui-label); letter-spacing: .065em; }
+.micro-meta { font-size: var(--ui-caption); }
+
+.now-playing-stage { border-radius: var(--v3-radius-control); }
+.suite-title { color: var(--color-text); }
+.track-artist { line-height: 1.4; }
+.track-meta-row { gap: var(--ui-gap); min-width: 0; }
+.track-meta-row .live-visualizer-bars { flex: none; }
+.track-meta-row .track-category-tag,
+body.light-mode .track-meta-row .track-category-tag {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    background: var(--surface-pill);
+    border-color: var(--glass-edge);
+    letter-spacing: .025em;
+}
+.track-meta-row .track-category-tag:hover, body.light-mode .track-meta-row .track-category-tag:hover {
+    color: var(--color-text);
     background: var(--surface-hover);
 }
+.track-actions-bar { gap: var(--ui-gap); }
+.time-display { font-variant-numeric: tabular-nums; }
+.time-display #current-time { color: var(--color-text); }
+.time-display :is(#total-time, .time-sep) { color: var(--color-text-secondary); }
+.volume-slider-dock { border-radius: var(--v3-radius-control); }
+:is(.ctrl-btn, .seek-bar-track, .volume-slider, .suite-badge-btn, .play-hero-btn):focus-visible { outline-color: var(--ui-focus); }
 
-#audio-category-nav .liquid-glass-indicator {
-    position: absolute;
-    inset: 4px auto 4px 0;
-    border-radius: var(--radius-full);
-    pointer-events: none;
-    z-index: 1;
-    isolation: isolate;
-    transform-origin: left center;
-    overflow: hidden;
-    background:
-        linear-gradient(174deg, var(--nav-crown), transparent 40%, var(--nav-return)),
-        var(--nav-body, rgba(127, 127, 127, 0.05));
-    border: 1px solid var(--nav-lens-rim);
-    box-shadow:
-        inset 0 1px 0 var(--nav-edge),
-        inset 0 -1px 0 var(--nav-lower-edge),
-        0 4px 8px -6px rgba(0, 0, 0, 0.48);
+.playlist-row, .search-wrap, .fx-preset-btn, .viz-menu-item { border-radius: var(--ui-radius-inset); }
+.playlist-row { min-height: var(--ui-touch); }
+.playlist-row:focus-visible, .viz-menu-item:focus-visible { outline-color: var(--ui-focus); outline-offset: -2px; }
+.row-title { font-size: .825rem; line-height: 1.3; }
+.row-artist, .row-duration { color: var(--color-text-secondary); }
+.row-duration { font-variant-numeric: tabular-nums; }
+.row-fav-btn { flex: none; min-inline-size: 2rem; min-block-size: 2rem; }
+.playlist-morph-nowplaying { border-radius: var(--ui-radius-inset); transition: background-color var(--transition-fast), border-color var(--transition-fast); }
+.playlist-morph-nowplaying .morph-playing-badge { color: var(--color-text-secondary); }
+.search-wrap:focus-within { border-color: var(--ui-focus); }
+.no-tracks { background: var(--surface-pill); border-radius: var(--ui-radius-inset); color: var(--color-text-secondary); }
+.menu-header, .playlist-header-top { min-height: var(--ui-control); gap: var(--ui-gap); }
+.flyout-close-btn, .viz-menu-close { flex: none; border-radius: var(--ui-radius-inset); }
+.viz-menu-head p, .viz-menu-note { color: var(--color-text-secondary); }
+.viz-menu-btn[aria-expanded="true"] { color: var(--color-text); }
+
+.zen-dock-info :is(.zen-track-title, .zen-track-sub) { line-height: 1.35; }
+.studio-card-footer { gap: var(--ui-gap-tight) var(--ui-pad); align-items: baseline; }
+.footer-copy, .footer-meta { line-height: 1.45; letter-spacing: .025em; font-size: var(--ui-caption); }
+.footer-copy strong { font-family: var(--font-display); color: var(--color-text-secondary); letter-spacing: .11em; }
+
+/* Equalizer sheet: one inset material, accent only where it reads as ink. */
+.audio-fx-menu .menu-header { color: var(--color-text); }
+.eq-bands-wrapper {
+    background: var(--surface-2);
+    border-color: var(--glass-edge);
+    border-radius: var(--ui-radius-inset);
 }
-
-#audio-category-nav .liquid-glass-indicator::before,
-#audio-category-nav .liquid-glass-indicator::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
+.eq-band-label { color: var(--color-text-secondary); }
+.eq-band-val { color: var(--ui-accent-ink); font-variant-numeric: tabular-nums; }
+.menu-items { gap: var(--ui-gap-tight); }
+.fx-option {
+    min-block-size: var(--ui-touch);
+    border-radius: var(--ui-radius-inset);
+    color: var(--color-text);
+    transition-property: color, background-color, border-color;
 }
-
-#audio-category-nav .liquid-glass-indicator::before {
-    background: radial-gradient(110% 54% at 38% -4%, rgba(255, 255, 255, 0.42), transparent 70%);
-    opacity: 0.26;
+.fx-option:focus-visible { outline-color: var(--ui-focus); outline-offset: -2px; }
+.fx-option.active, body.light-mode .fx-option.active {
+    background: color-mix(in srgb, var(--color-accent) 8%, var(--surface-2));
+    border-color: var(--color-accent);
 }
+.fx-option.active strong { color: var(--ui-accent-ink); }
+.fx-meta small { color: var(--color-text-secondary); }
+.crossfade-row { gap: var(--ui-gap); }
+.crossfade-desc { color: var(--color-text-secondary); }
+.crossfade-toggle:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
 
-#audio-category-nav .liquid-glass-indicator::after {
-    background: linear-gradient(0deg, rgba(0, 0, 0, 0.06), transparent 34%);
-    opacity: 1;
+/* Toasts share the popup material and move only their own compositor layer. */
+.luxury-toast {
+    border-radius: var(--ui-radius-inset);
+    max-inline-size: min(26rem, calc(100vw - 2rem));
+    transition-property: opacity, transform;
 }
-
-.liquid-glass-indicator .capsule-light {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 96px;
-    border-radius: inherit;
-    pointer-events: none;
-    z-index: 1;
-    opacity: 0;
-    transform-origin: 50% 20%;
-    background: radial-gradient(ellipse at 45% -8%, rgba(255, 255, 255, 0.7), transparent 64%);
-}
-
-@supports (background: color-mix(in srgb, red, blue)) {
-    #audio-category-nav,
-    body.light-mode #audio-category-nav {
-        background-color: color-mix(in srgb,
-            color-mix(in srgb, var(--nav-persona) var(--nav-veil-tint, 5%), var(--nav-neutral))
-            var(--nav-veil-opacity, 64%), transparent);
-        --nav-body: color-mix(in srgb, var(--nav-persona) var(--nav-lens-tint, 10%), transparent);
+.luxury-toast i { color: var(--ui-accent-ink); }
+@media (max-width: 600px) {
+    .toast-region {
+        left: 1rem;
+        right: 1rem;
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        align-items: center;
     }
-
-    #audio-category-nav .liquid-glass-indicator {
-        --nav-specular: color-mix(in srgb, white 85%, var(--nav-persona));
-        border-color: color-mix(in srgb, var(--nav-lens-rim) 83%, var(--nav-persona));
-        box-shadow:
-            inset 0 1px 0 color-mix(in srgb, var(--nav-edge) 89%, var(--nav-specular)),
-            inset 0 -1px 0 var(--nav-lower-edge),
-            0 4px 8px -6px rgba(0, 0, 0, 0.48);
-    }
-
-    #audio-category-nav .liquid-glass-indicator::before {
-        background: radial-gradient(110% 54% at 38% -4%,
-            color-mix(in srgb, var(--nav-specular) 45%, transparent), transparent 70%);
-    }
+    body.zen-mode .toast-region { bottom: auto; }
 }
 
-/* ==========================================================================
-   B. LIQUID GLASS MATERIAL RENDERER (RECONSTRUCTED CRYSTAL OPTICS)
-   - Visibly clearer & more transparent than Frosted (never an opaque slab!)
-   - Exact squircle/pill clipping via dedicated `.liquid-glass-backing` child
-     (while `.now-playing-stage` retains `overflow: visible` for chibi pop-out!)
-   - Single unified glass border (`[data-liquid-ready="true"]` removes CSS
-     duplicate borders & sheens so WebGL2 Backdrop×Miuix owns 100% of glass!)
-   ========================================================================== */
-.liquid-glass-backing {
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    corner-shape: inherit;
-    overflow: hidden;
-    pointer-events: none;
-    z-index: 0;
-    display: none;
+@media (max-width: 860px) {
+    .site-brand-header { padding-inline: clamp(.55rem, 2.5vw, var(--ui-pad)); }
+    .top-action-btn { min-inline-size: var(--ui-touch); min-block-size: var(--ui-touch); }
 }
-
-.minkoi-liquid-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-/* Keep interactive & artwork children crisply above the refracted optical layer */
-.now-playing-stage > :not(.liquid-glass-backing) {
-    position: relative;
-    z-index: 3;
-}
-
-.zen-mini-dock > :not(.liquid-glass-backing):not(.zen-dock-progress-bar) {
-    position: relative;
-    z-index: 3;
-}
-
-/* Liquid Mode Shell: clearer optical crystal transmittance than matte Frosted */
-body[data-nav-material="liquid"] .card-container {
-    background: var(--liquid-shell-bg);
-    backdrop-filter: var(--liquid-blur-shell);
-    -webkit-backdrop-filter: var(--liquid-blur-shell);
-    border-color: color-mix(in srgb, var(--color-accent) 16%, var(--glass-edge));
-}
-
-body[data-nav-material="liquid"] .site-brand-header {
-    background: var(--liquid-header-bg);
-    backdrop-filter: var(--liquid-blur-header);
-    -webkit-backdrop-filter: var(--liquid-blur-header);
-    border-color: color-mix(in srgb, var(--color-accent) 16%, var(--glass-edge));
-}
-
-/* Liquid Mode Category Trough: clearer optical channel so refracted lens pill shines */
-body[data-nav-material="liquid"] #audio-category-nav {
-    border-color: color-mix(in srgb, var(--color-accent) 22%, rgba(255, 255, 255, 0.24));
-    box-shadow:
-        inset 0 1px 2px rgba(0, 0, 0, 0.26),
-        inset 0 -1px 0 rgba(255, 255, 255, 0.12),
-        0 6px 16px -10px rgba(0, 0, 0, 0.36);
-}
-
-body.light-mode[data-nav-material="liquid"] #audio-category-nav {
-    border-color: color-mix(in srgb, var(--color-accent) 22%, rgba(42, 36, 28, 0.16));
-    box-shadow:
-        inset 0 1px 2px rgba(42, 36, 28, 0.10),
-        0 1px 0 rgba(255, 255, 255, 0.85),
-        0 6px 14px -10px rgba(42, 36, 28, 0.14);
-}
-
-body[data-nav-material="liquid"] .liquid-glass-indicator .capsule-light {
-    background: radial-gradient(ellipse at 34% -8%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.12) 34%, transparent 64%);
-}
-
-/* SINGLE UNIFIED GEOMETRY HANDOFF (WebGL2 Liquid Renderer active):
-   Yield CSS background, sheen, and inner border so ZERO double borders or corner gaps appear! */
-body[data-nav-material="liquid"] .now-playing-stage[data-liquid-ready="true"] {
-    background: transparent;
-    background-image: none;
-    border-color: transparent;
-    transition: none;
-    box-shadow: 0 16px 36px -16px rgba(0, 0, 0, 0.44);
-}
-
-body.light-mode[data-nav-material="liquid"] .now-playing-stage[data-liquid-ready="true"] {
-    box-shadow: 0 14px 30px -14px rgba(42, 36, 28, 0.16);
-}
-
-body[data-nav-material="liquid"] .now-playing-stage[data-liquid-ready="true"]::before {
-    opacity: 0;
-}
-
-body[data-nav-material="liquid"] #audio-category-nav .liquid-glass-indicator[data-liquid-ready="true"] {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: 0 4px 12px -6px rgba(0, 0, 0, 0.36);
-}
-
-body[data-nav-material="liquid"] #audio-category-nav .liquid-glass-indicator[data-liquid-ready="true"]::before,
-body[data-nav-material="liquid"] #audio-category-nav .liquid-glass-indicator[data-liquid-ready="true"]::after {
-    opacity: 0;
-}
-
-body[data-nav-material="liquid"] .zen-mini-dock[data-liquid-ready="true"] {
-    background: transparent;
-    border-color: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: 0 20px 44px -14px rgba(0, 0, 0, 0.62);
-}
-
-/* Clean Translucent Optical Fallback (when WebGL2 is unavailable or context lost) */
-body[data-nav-material="liquid"] .now-playing-stage[data-liquid-fallback="true"] {
-    background: rgba(20, 24, 34, 0.34);
-    background-image: linear-gradient(145deg, rgba(255, 255, 255, 0.14) 0%, transparent 48%, rgba(255, 255, 255, 0.04) 100%);
-    border-color: rgba(255, 255, 255, 0.24);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 14px 32px -14px rgba(0, 0, 0, 0.44);
-}
-
-body.light-mode[data-nav-material="liquid"] .now-playing-stage[data-liquid-fallback="true"] {
-    background: rgba(255, 255, 255, 0.44);
-    border-color: rgba(255, 255, 255, 0.82);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 12px 28px -12px rgba(42, 36, 28, 0.14);
-}
-
-body[data-nav-material="liquid"] #audio-category-nav .liquid-glass-indicator[data-liquid-fallback="true"] {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.24), transparent 52%, color-mix(in srgb, var(--color-accent) 16%, transparent));
-    border-color: rgba(255, 255, 255, 0.42);
+@media (max-width: 430px) {
+    .track-meta-row { gap: var(--ui-gap-tight); }
 }
