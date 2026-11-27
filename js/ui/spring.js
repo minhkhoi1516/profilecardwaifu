@@ -10,10 +10,12 @@
     function folmeSpring(dampingRatio, responseSeconds) {
         const safeDamping = Number.isFinite(dampingRatio) ? Math.max(0.05, dampingRatio) : 0.85;
         const safeResponse = Number.isFinite(responseSeconds) ? Math.max(0.05, responseSeconds) : 0.35;
-        const omega = (2 * Math.PI) / safeResponse;
+        const stiffness = (global.MinkoiNativeBridge && typeof global.MinkoiNativeBridge.miuixFolmeStiffness === 'function')
+            ? global.MinkoiNativeBridge.miuixFolmeStiffness(safeDamping, safeResponse)
+            : ((2 * Math.PI) / safeResponse) * ((2 * Math.PI) / safeResponse);
         return {
             dampingRatio: safeDamping,
-            stiffness: omega * omega
+            stiffness
         };
     }
 
@@ -58,6 +60,21 @@
     }
 
     function advance(spring, dt) {
+        const bridge = global.MinkoiNativeBridge;
+        if (bridge && typeof bridge.stepSpring === 'function') {
+            const next = bridge.stepSpring(
+                spring.value,
+                spring.target,
+                spring.velocity,
+                dt,
+                spring.dampingRatio,
+                spring.stiffness,
+                spring.mass
+            );
+            spring.value = next.value;
+            spring.velocity = next.velocity;
+            return;
+        }
         const omega = Math.sqrt(spring.stiffness / spring.mass);
         const zeta = spring.dampingRatio;
         const x = spring.value - spring.target;
@@ -257,15 +274,39 @@
 
     /**
      * Miuix rubberband damping curve: obtainDampingDistance(delta, maxRange)
-     * Mirrors Miuix SpringUtils.kt (x - x^2 + x^3/3) * range
+     * Mirrors Miuix SpringUtils.kt (x - x^2 + x^3/3) * range via MinkoiNativeBridge (Kotlin/Wasm -> Kotlin/JS -> JS).
      */
     function obtainDampingDistance(touchDelta, maxRange) {
         if (!Number.isFinite(touchDelta)) return 0;
         const range = Number.isFinite(maxRange) ? Math.max(1, maxRange) : 160;
+        if (global.MinkoiNativeBridge && typeof global.MinkoiNativeBridge.obtainDampingDistance === 'function') {
+            return global.MinkoiNativeBridge.obtainDampingDistance(touchDelta, range);
+        }
         const sign = touchDelta < 0 ? -1 : 1;
         const clampedX = Math.min(1, Math.abs(touchDelta) / range);
         const damped = (clampedX - clampedX * clampedX + (clampedX * clampedX * clampedX) / 3) * range;
         return sign * damped;
+    }
+
+    function couiSpringEasing(fraction, response, bounce) {
+        if (global.MinkoiNativeBridge && typeof global.MinkoiNativeBridge.couiSpringEasing === 'function') {
+            return global.MinkoiNativeBridge.couiSpringEasing(fraction, response, bounce);
+        }
+        return Math.max(0, Math.min(1, fraction));
+    }
+
+    function couiBezierEasing(kind, fraction) {
+        if (global.MinkoiNativeBridge && typeof global.MinkoiNativeBridge.couiBezierEasing === 'function') {
+            return global.MinkoiNativeBridge.couiBezierEasing(kind, fraction);
+        }
+        return Math.max(0, Math.min(1, fraction));
+    }
+
+    function couiDefaultSinkAmount() {
+        if (global.MinkoiNativeBridge && typeof global.MinkoiNativeBridge.couiDefaultSinkAmount === 'function') {
+            return global.MinkoiNativeBridge.couiDefaultSinkAmount();
+        }
+        return 0.94;
     }
 
     function createSpring(options) {
@@ -514,6 +555,9 @@
         createSpringGroup: createSpringGroup,
         createVelocityTracker: createVelocityTracker,
         obtainDampingDistance: obtainDampingDistance,
+        couiSpringEasing: couiSpringEasing,
+        couiBezierEasing: couiBezierEasing,
+        couiDefaultSinkAmount: couiDefaultSinkAmount,
         isReducedMotion: shouldInstantSnap,
         isAccessibilityReducedMotion: isAccessibilityReducedMotion,
         getActiveCount: () => activeSprings.size

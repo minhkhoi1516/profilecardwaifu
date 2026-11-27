@@ -663,16 +663,24 @@ body.light-mode .now-playing-stage {
     box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.36);
 }
 
-/* Liquid Glass Pearl Thumb — MinkoiSpring exclusively owns scale */
+/* Compositor-only rail moves the glass pearl via transform (zero left-layout thrash during scrub/timeupdate) */
+.seek-thumb-rail {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transform: translate3d(calc(var(--seek-progress, 0) * 100% + var(--seek-rubber-x, 0px)), 0, 0);
+}
+
+/* Liquid Glass Pearl Thumb — MinkoiSpring exclusively owns scale & boundary rubber-band */
 .seek-thumb-dot {
-    left: calc(var(--seek-progress, 0) * 100%);
+    left: 0;
     width: 16px;
     height: 16px;
     border-radius: 50%;
     background: var(--aether-pearl-fill);
     border: 1px solid var(--aether-pearl-rim);
     box-shadow: var(--aether-pearl-shadow);
-    transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.88));
+    transform: translate3d(-50%, -50%, 0) scale(var(--seek-thumb-scale, 0.88));
     opacity: 1;
     transition: border-color 140ms var(--ease-out-quint), box-shadow 140ms var(--ease-out-quint);
 }
@@ -693,7 +701,7 @@ body.light-mode .now-playing-stage {
 
 .seek-bar-track:hover .seek-thumb-dot,
 .seek-bar-track.is-scrubbing .seek-thumb-dot {
-    transform: translate(-50%, -50%) scale(var(--seek-thumb-scale, 0.88));
+    transform: translate3d(-50%, -50%, 0) scale(var(--seek-thumb-scale, 0.88));
     opacity: 1;
     box-shadow: var(--aether-pearl-active-shadow);
 }
@@ -902,6 +910,19 @@ body.light-mode .now-playing-stage {
 .viz-menu {
     border-radius: var(--aether-radius-popup);
     box-shadow: var(--aether-rim-top), var(--v3-shadow-popup);
+}
+
+/* Desktop flyouts live inside .card-container which already owns the Level-1 blur(20px).
+   Avoiding a nested blur(18px) over 92%-opaque --surface-popup removes a 177k px² double-blur
+   pass while mobile bottom sheets (mounted on document.body) keep their full blur(18px). */
+.card-container .dropdown-flyout,
+body.light-mode .card-container .dropdown-flyout {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.dropdown-flyout:not([data-popup-state="opening"]):not([data-popup-state="closing"]):not(.sheet-swiping) {
+    will-change: auto;
 }
 
 .playlist-row {

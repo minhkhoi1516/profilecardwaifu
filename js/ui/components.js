@@ -1421,7 +1421,7 @@
 
     // ----------------------------------------------------------------------
     // 7. MINKOI V4 · ORGANIC LIQUID GLASS NAVIGATION REBORN
-    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt, Glasmio Physics
+    // Reference: Miuix IosLiquidGlassNavigationBar.kt, Lens.kt
     // Directional Trailing-Edge Stretch, Damped Boundary Resistance, Velocity Fling
     // ----------------------------------------------------------------------
     const liquidNavInstances = new WeakMap();

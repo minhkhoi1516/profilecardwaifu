@@ -9,10 +9,92 @@
     const canvas = document.getElementById('fluid-bg-canvas');
     if (!canvas) return;
 
-    const gl = canvas.getContext('webgl', { alpha: true, antialias: false, depth: false }) ||
-               canvas.getContext('experimental-webgl', { alpha: true, antialias: false, depth: false });
+    const gpuMgr = window.MinkoiGpuManager || null;
+    const caps = window.MinkoiCapabilities || null;
 
-    if (!gl) return;
+    // Adaptive GPU backend selection: WebGL2 -> WebGL1 -> Canvas 2D fallback,
+    // plus async WebGPU pipeline probe when hardware adapter is available.
+    let backendKind = 'none';
+    let gl = null;
+    let ctx2d = null;
+    let fallbackCanvas2d = null;
+    let contextFallbackTimer = 0;
+    let gpuRenderer = null;
+    let contextLost = false;
+    let isSoftwareGpu = Boolean(caps?.isSoftwareGpu?.());
+
+    function activateCanvas2dFallback(reason) {
+        if (ctx2d) return;
+        // A canvas bound to WebGL cannot return a 2D context; mount an inert sibling
+        // fallback canvas behind the same slot if the WebGL context does not restore.
+        try {
+            const sib = document.createElement('canvas');
+            sib.className = canvas.className;
+            sib.setAttribute('aria-hidden', 'true');
+            sib.style.cssText = canvas.style.cssText;
+            sib.style.position = 'fixed';
+            sib.style.inset = '0';
+            sib.style.width = '100%';
+            sib.style.height = '100%';
+            sib.style.pointerEvents = 'none';
+            sib.style.zIndex = getComputedStyle(canvas).zIndex || '0';
+            const c2 = sib.getContext('2d', { alpha: true });
+            if (!c2) return;
+            canvas.parentElement?.insertBefore(sib, canvas);
+            canvas.style.visibility = 'hidden';
+            fallbackCanvas2d = sib;
+            ctx2d = c2;
+            backendKind = 'canvas2d-recovered';
+            gpuMgr?.setSubsystemBackend?.('fluid', backendKind);
+            window.MinkoiRuntime?.recordRecovery?.('gpu', 'canvas2d-fallback', reason || 'unrecovered-webgl-loss');
+            resizeCanvas();
+            startLoop();
+        } catch (_) {}
+    }
+
+    function teardownCanvas2dFallback() {
+        if (contextFallbackTimer) {
+            clearTimeout(contextFallbackTimer);
+            contextFallbackTimer = 0;
+        }
+        if (fallbackCanvas2d) {
+            try { fallbackCanvas2d.remove(); } catch (_) {}
+            fallbackCanvas2d = null;
+            ctx2d = null;
+            canvas.style.visibility = '';
+        }
+    }
+
+    function initWebGLContext() {
+        gl = canvas.getContext('webgl2', { alpha: true, antialias: false, depth: false });
+        if (gl) {
+            backendKind = 'webgl2';
+        } else {
+            gl = canvas.getContext('webgl', { alpha: true, antialias: false, depth: false }) ||
+                 canvas.getContext('experimental-webgl', { alpha: true, antialias: false, depth: false });
+            if (gl) backendKind = 'webgl1';
+        }
+        if (!gl) {
+            ctx2d = canvas.getContext('2d', { alpha: true });
+            if (ctx2d) backendKind = 'canvas2d';
+            return false;
+        }
+        try {
+            const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+            const rendererStr = String(
+                (dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : '') ||
+                gl.getParameter(gl.RENDERER) || ''
+            );
+            isSoftwareGpu = /swiftshader|llvmpipe|software|basic render driver|mesa offscreen|subzero/i.test(rendererStr);
+        } catch (_) {}
+        window.__minkoiSoftwareGpu = isSoftwareGpu;
+        caps?.reportWebGLContext?.(gl, backendKind === 'webgl2');
+        gpuMgr?.setSubsystemBackend?.('fluid', backendKind);
+        return true;
+    }
+
+    initWebGLContext();
+    if (!gl && !ctx2d) return;
 
     // Vertex Shader: Fullscreen Clip Quad
     const vsSource = `
@@ -113,42 +195,71 @@
         return shader;
     }
 
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
-    if (!vertexShader || !fragmentShader) return;
+    let program = null;
+    let positionBuffer = null;
+    let uResLoc = null;
+    let uTimeLoc = null;
+    let uBassLoc = null;
+    let uAccentLoc = null;
 
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
+    function buildWebGLPipeline() {
+        if (!gl) return false;
+        const t0 = performance.now();
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vsSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+        if (!vertexShader || !fragmentShader) return false;
 
-    gl.useProgram(program);
+        program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            gl.deleteProgram(program);
+            program = null;
+            return false;
+        }
 
-    // Fullscreen quad buffer
-    const positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(
-        gl.ARRAY_BUFFER,
-        new Float32Array([
-            -1.0, -1.0,
-             1.0, -1.0,
-            -1.0,  1.0,
-            -1.0,  1.0,
-             1.0, -1.0,
-             1.0,  1.0
-        ]),
-        gl.STATIC_DRAW
-    );
+        gl.useProgram(program);
 
-    const aPosLoc = gl.getAttribLocation(program, 'a_pos');
-    gl.enableVertexAttribArray(aPosLoc);
-    gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+        // Fullscreen quad buffer
+        positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(
+            gl.ARRAY_BUFFER,
+            new Float32Array([
+                -1.0, -1.0,
+                 1.0, -1.0,
+                -1.0,  1.0,
+                -1.0,  1.0,
+                 1.0, -1.0,
+                 1.0,  1.0
+            ]),
+            gl.STATIC_DRAW
+        );
 
-    const uResLoc = gl.getUniformLocation(program, 'u_resolution');
-    const uTimeLoc = gl.getUniformLocation(program, 'u_time');
-    const uBassLoc = gl.getUniformLocation(program, 'u_bass');
-    const uAccentLoc = gl.getUniformLocation(program, 'u_accent');
+        const aPosLoc = gl.getAttribLocation(program, 'a_pos');
+        gl.enableVertexAttribArray(aPosLoc);
+        gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+
+        uResLoc = gl.getUniformLocation(program, 'u_resolution');
+        uTimeLoc = gl.getUniformLocation(program, 'u_time');
+        uBassLoc = gl.getUniformLocation(program, 'u_bass');
+        uAccentLoc = gl.getUniformLocation(program, 'u_accent');
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gpuMgr?.recordShaderCompile?.(performance.now() - t0);
+        return true;
+    }
+
+    if (gl && !buildWebGLPipeline()) {
+        // Fallback to Canvas 2D atmospheric gradient if shader compilation fails
+        gl = null;
+        ctx2d = canvas.getContext('2d', { alpha: true });
+        backendKind = ctx2d ? 'canvas2d' : 'none';
+        gpuMgr?.setSubsystemBackend?.('fluid', backendKind);
+        if (!ctx2d) return;
+    }
 
     // Accent color cache (default Mahiru soft amber/rose)
     let currentAccent = [0.93, 0.45, 0.65]; // RGB 0..1
@@ -192,13 +303,15 @@
     // <=2/255 channel differences; this is not a universal device guarantee.
     // Fragment work at DPR 3 drops by ~4x. No feature is disabled and the
     // animation still runs at the display refresh rate.
-    let renderScale = 0.75;
+    let renderScale = isSoftwareGpu ? 0.45 : 0.75;
     // Aspect-preserving pixel budget keeps desktop fragment work proportional
-    // to mobile (untouched 293x633 at 390x844; ~653x367 at 1080p) since low-frequency
-    // atmospheric fog carries zero high-frequency detail above ~650px wide.
-    let maxFluidPixels = 240000;
+    // to mobile (untouched 293x633 at 390x844; ~653x367 at 1080p on hardware GPUs).
+    // On software-rasterized GPUs (SwiftShader), keep the exact same shader live at a
+    // soft low-frequency mist budget (~52k px, aligned with MinkoiPerf balanced tier) so CPU stays free for UI.
+    let maxFluidPixels = isSoftwareGpu ? 52000 : 240000;
+    let fluidFpsCap = isSoftwareGpu ? 16 : 0;
 
-    // Adaptive bounded render resolution (always stays live at display refresh rate).
+    // Adaptive bounded render resolution (always stays live).
     function resizeCanvas() {
         const vw = Math.max(1, window.innerWidth);
         const vh = Math.max(1, window.innerHeight);
@@ -209,20 +322,65 @@
         if (canvas.width !== w || canvas.height !== h) {
             canvas.width = w;
             canvas.height = h;
-            gl.viewport(0, 0, w, h);
+            if (gl && !contextLost) gl.viewport(0, 0, w, h);
+        }
+        if (fallbackCanvas2d && (fallbackCanvas2d.width !== w || fallbackCanvas2d.height !== h)) {
+            fallbackCanvas2d.width = w;
+            fallbackCanvas2d.height = h;
         }
     }
 
-    window.__setFluidRenderScale = function(nextScale, nextMaxPixels) {
-        const clampedScale = Math.max(0.45, Math.min(0.75, Number(nextScale) || 0.75));
+    window.__setFluidRenderScale = function(nextScale, nextMaxPixels, nextFpsCap) {
+        const clampedScale = Math.max(0.32, Math.min(0.75, Number(nextScale) || 0.75));
         const clampedPixels = Number.isFinite(Number(nextMaxPixels))
-            ? Math.max(110000, Math.min(280000, Number(nextMaxPixels)))
-            : (clampedScale < 0.65 ? 135000 : 240000);
-        if (Math.abs(clampedScale - renderScale) < 0.04 && Math.abs(clampedPixels - maxFluidPixels) < 8000) return;
+            ? Math.max(36000, Math.min(280000, Number(nextMaxPixels)))
+            : (clampedScale < 0.65 ? 52000 : 240000);
+        fluidFpsCap = (nextFpsCap !== undefined && Number.isFinite(Number(nextFpsCap)))
+            ? Math.max(0, Math.min(60, Number(nextFpsCap)))
+            : (clampedScale >= 0.7 ? 0 : 16);
+        if (Math.abs(clampedScale - renderScale) < 0.04 && Math.abs(clampedPixels - maxFluidPixels) < 6000) return;
         renderScale = clampedScale;
         maxFluidPixels = clampedPixels;
         resizeCanvas();
     };
+
+    // Register with central MinkoiGpuManager & dispatch gpu event AFTER __setFluidRenderScale exists
+    gpuMgr?.registerConsumer?.('fluid-bg', (profile) => {
+        window.__setFluidRenderScale(profile.fluidScale, profile.fluidMaxPixels, profile.fluidFpsCap);
+    });
+    gpuMgr?.attachWebGLContextRecovery?.(
+        canvas,
+        () => {
+            contextLost = true;
+            stopLoop();
+            if (contextFallbackTimer) clearTimeout(contextFallbackTimer);
+            // If driver does not restore WebGL within 2.5s, fall back cleanly to Canvas 2D
+            contextFallbackTimer = setTimeout(() => {
+                contextFallbackTimer = 0;
+                if (contextLost) activateCanvas2dFallback('webgl-unrecovered-2500ms');
+            }, 2500);
+        },
+        () => {
+            contextLost = false;
+            teardownCanvas2dFallback();
+            if (gl && buildWebGLPipeline()) {
+                backendKind = (typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext) ? 'webgl2' : 'webgl1';
+                gpuMgr?.setSubsystemBackend?.('fluid', backendKind);
+                resizeCanvas();
+                startLoop();
+            } else {
+                activateCanvas2dFallback('webgl-rebuild-failed');
+            }
+        }
+    );
+    window.__getFluidRuntimeInfo = () => ({
+        backend: backendKind,
+        contextLost,
+        fallback2dActive: Boolean(fallbackCanvas2d),
+        width: fallbackCanvas2d ? fallbackCanvas2d.width : canvas.width,
+        height: fallbackCanvas2d ? fallbackCanvas2d.height : canvas.height
+    });
+    window.dispatchEvent(new CustomEvent('minkoi:gpudetected', { detail: { software: isSoftwareGpu, backend: backendKind } }));
 
     window.addEventListener('resize', () => {
         resizeCanvas();
@@ -245,18 +403,34 @@
         return false;
     }
 
+    const audioPlayerEl = document.getElementById('audio-player');
+    const seekTrackEl = document.getElementById('seek-container');
+
     function render(now) {
         if (shouldPauseFluid()) {
             animationFrameId = null;
             lastBackgroundPaint = 0;
             return;
         }
+        animationFrameId = requestAnimationFrame(render);
+
+        // On software-rasterized or balanced-tier GPUs, pace low-frequency mist redraws
+        // (slower drift when paused, yield during active scrubbing) so UI stays responsive.
+        const effectiveCap = fluidFpsCap > 0
+            ? (audioPlayerEl && !audioPlayerEl.paused ? Math.max(fluidFpsCap, 20) : Math.min(fluidFpsCap, 12))
+            : 0;
+        if (effectiveCap > 0) {
+            if (seekTrackEl && seekTrackEl.classList.contains('is-scrubbing')) return;
+            const minInterval = 1000 / effectiveCap;
+            if (lastBackgroundPaint && (now - lastBackgroundPaint) < minInterval) return;
+        }
+
         const elapsed = (now - startTime) * 0.001;
 
         // Frequency-based mapping survives changes to the shared FFT size.
         let targetBass = 0.0;
         const analyser = window.__minkoiAnalyser;
-        if (analyser) {
+        if (analyser && (!audioPlayerEl || !audioPlayerEl.paused)) {
             try {
                 // Reuse the soundstage's per-frame spectrum when available;
                 // otherwise read directly. This avoids a second spectrum read.
@@ -281,18 +455,41 @@
         }
 
         // Exponential smoothing (lerp)
-        const dt = lastBackgroundPaint ? Math.min(64, now - lastBackgroundPaint) : 16.67;
+        const dt = lastBackgroundPaint ? Math.min(120, now - lastBackgroundPaint) : 16.67;
         smoothBass += (targetBass - smoothBass) * (1 - Math.exp(-dt / 110));
         lastBackgroundPaint = now;
 
-        gl.uniform2f(uResLoc, canvas.width, canvas.height);
-        gl.uniform1f(uTimeLoc, elapsed);
-        gl.uniform1f(uBassLoc, smoothBass);
-        gl.uniform3f(uAccentLoc, currentAccent[0], currentAccent[1], currentAccent[2]);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
-        animationFrameId = requestAnimationFrame(render);
+        if (contextLost && !ctx2d) return;
+        if (gpuRenderer && !contextLost) {
+            gpuRenderer.renderFrame(canvas.width, canvas.height, elapsed, smoothBass, currentAccent);
+            return;
+        }
+        if (gl && program && !contextLost) {
+            gl.uniform2f(uResLoc, canvas.width, canvas.height);
+            gl.uniform1f(uTimeLoc, elapsed);
+            gl.uniform1f(uBassLoc, smoothBass);
+            gl.uniform3f(uAccentLoc, currentAccent[0], currentAccent[1], currentAccent[2]);
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+            return;
+        }
+        if (ctx2d) {
+            const targetC = fallbackCanvas2d || canvas;
+            const w = targetC.width;
+            const h = targetC.height;
+            ctx2d.clearRect(0, 0, w, h);
+            const cx = w * (0.5 + 0.14 * Math.sin(elapsed * 0.18));
+            const cy = h * (0.45 + 0.12 * Math.cos(elapsed * 0.14));
+            const r = Math.max(w, h) * (0.65 + smoothBass * 0.2);
+            const grad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, r);
+            const a = Math.min(0.65, 0.24 + smoothBass * 0.35);
+            const cr = Math.round(currentAccent[0] * 255);
+            const cg = Math.round(currentAccent[1] * 255);
+            const cb = Math.round(currentAccent[2] * 255);
+            grad.addColorStop(0, `rgba(${cr},${cg},${cb},${a.toFixed(3)})`);
+            grad.addColorStop(1, 'rgba(5,8,18,0.12)');
+            ctx2d.fillStyle = grad;
+            ctx2d.fillRect(0, 0, w, h);
+        }
     }
 
     function startLoop() {

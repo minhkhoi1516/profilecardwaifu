@@ -499,7 +499,7 @@
             totalTimeEl.textContent = initDur;
             lastTotalTimeText = initDur;
         }
-        if (seekContainer) seekContainer.setAttribute('aria-valuenow', '0');
+        setSeekAriaValue(0);
 
         // Maintain playback speed
         if (SPEED_PRESETS[currentSpeedIndex]) {
@@ -518,7 +518,11 @@
 
         updateCategoryTag();
         updateMediaSession(track);
-        updatePlaylistItems();
+        if (playlistMenu?.classList.contains('open')) {
+            updatePlaylistItems();
+        } else {
+            lastPlaylistRenderSig = '';
+        }
 
         window.dispatchEvent(new CustomEvent('minkoi:trackchange', {
             detail: { index: currentTrackIndex, track }
@@ -576,25 +580,51 @@
     let volumeThumbCtrl = null;
     const volumeDockEl = volumeCtrl ? volumeCtrl.closest('.volume-slider-dock') : null;
 
+    let cachedSeekThumbRail = null;
+    let cachedSeekThumbDot = null;
+    let lastSeekProgressStr = '';
+    let lastSeekAriaVal = '';
+
     function ensureSeekThumbDot() {
         if (!seekContainer) return null;
-        let dot = seekContainer.querySelector('.seek-thumb-dot');
+        if (cachedSeekThumbDot && cachedSeekThumbDot.isConnected) return cachedSeekThumbDot;
+        let rail = seekContainer.querySelector('.seek-thumb-rail');
+        if (!rail) {
+            rail = document.createElement('div');
+            rail.className = 'seek-thumb-rail';
+            rail.setAttribute('aria-hidden', 'true');
+            seekContainer.appendChild(rail);
+        }
+        let dot = rail.querySelector('.seek-thumb-dot') || seekContainer.querySelector('.seek-thumb-dot');
         if (!dot) {
             dot = document.createElement('div');
             dot.className = 'seek-thumb-dot';
             dot.setAttribute('aria-hidden', 'true');
-            seekContainer.appendChild(dot);
         }
+        if (dot.parentElement !== rail) rail.appendChild(dot);
+        cachedSeekThumbRail = rail;
+        cachedSeekThumbDot = dot;
         return dot;
     }
 
     function setSeekProgressUI(pos) {
         const clamped = Math.max(0, Math.min(1, pos || 0));
-        const valueStr = clamped.toFixed(5);
-        if (seekContainer) seekContainer.style.setProperty('--seek-progress', valueStr);
-        if (seekFill) seekFill.style.setProperty('--seek-progress', valueStr);
-        if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${valueStr})`;
+        const valueStr = clamped.toFixed(4);
         ensureSeekThumbDot();
+        if (valueStr !== lastSeekProgressStr) {
+            lastSeekProgressStr = valueStr;
+            if (seekContainer) seekContainer.style.setProperty('--seek-progress', valueStr);
+            if (zenSeekFill) zenSeekFill.style.transform = `scaleX(${valueStr})`;
+        }
+    }
+
+    function setSeekAriaValue(pctInt) {
+        if (!seekContainer) return;
+        const s = String(pctInt);
+        if (s !== lastSeekAriaVal) {
+            lastSeekAriaVal = s;
+            seekContainer.setAttribute('aria-valuenow', s);
+        }
     }
 
     let crossfadeTimer = 0;
@@ -871,7 +901,8 @@
         }
         updateCategoryTag();
         if (Number.isInteger(options?.favoriteOnly)) syncFavoriteRow(options.favoriteOnly);
-        else updatePlaylistItems();
+        else if (playlistMenu?.classList.contains('open')) updatePlaylistItems();
+        else lastPlaylistRenderSig = '';
     }
 
     // The strip is reconciled in place instead of being re-created.
@@ -1071,7 +1102,7 @@
         }
         setSeekProgressUI(pos);
         updateTimeDisplay(pos * audio.duration, audio.duration);
-        seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
+        setSeekAriaValue(Math.round(pos * 100));
     }
 
     audio.addEventListener('timeupdate', () => {
@@ -1081,7 +1112,7 @@
         const pct = pos * 100;
         setSeekProgressUI(pos);
         updateTimeDisplay(audio.currentTime, audio.duration);
-        if (seekContainer) seekContainer.setAttribute('aria-valuenow', Math.round(pct).toString());
+        setSeekAriaValue(Math.round(pct));
 
         // Preload next track when near end (> 85%)
         if (pct > 85 && !hasPreloadedNext) {
@@ -1351,11 +1382,69 @@
             if (progressWrap) progressWrap.classList.toggle('is-scrubbing', active);
         };
 
+        // Subtle COUI/Miuix boundary rubber-band (±6px max) driven exclusively by MinkoiSpring
+        const rubberSpring = window.MinkoiSpring
+            ? window.MinkoiSpring.createSpring({
+                initial: 0,
+                preset: window.MinkoiSpring.PRESETS.SLIDER_SETTLE,
+                precision: 0.05,
+                onUpdate: (px) => {
+                    if (Math.abs(px) < 0.08 || window.MinkoiSpring?.isAccessibilityReducedMotion?.()) {
+                        seekContainer.style.removeProperty('--seek-rubber-x');
+                    } else {
+                        seekContainer.style.setProperty('--seek-rubber-x', `${px.toFixed(2)}px`);
+                    }
+                }
+            })
+            : null;
+
+        function applyBoundaryRubber(clientX, rect) {
+            if (!rubberSpring || !rect || !rect.width) return;
+            if (window.MinkoiSpring?.isAccessibilityReducedMotion?.()) {
+                rubberSpring.snap(0);
+                return;
+            }
+            let overshoot = 0;
+            if (clientX < rect.left) overshoot = clientX - rect.left;
+            else if (clientX > rect.right) overshoot = clientX - rect.right;
+            if (overshoot === 0) {
+                if (rubberSpring.target !== 0 || Math.abs(rubberSpring.value) > 0.08) {
+                    rubberSpring.setTarget(0, window.MinkoiSpring.PRESETS.SLIDER_DRAG);
+                }
+                return;
+            }
+            const damped = window.MinkoiSpring.obtainDampingDistance(overshoot, 96) * 0.22;
+            const clampedPx = Math.max(-6, Math.min(6, damped));
+            rubberSpring.snap(clampedPx);
+        }
+
+        let pendingMoveRaf = 0;
+        let pendingMoveClientX = 0;
+
+        function flushPendingScrubMove() {
+            pendingMoveRaf = 0;
+            if (!isScrubbing) return;
+            const rect = scrubRect && scrubRect.width ? scrubRect : seekContainer.getBoundingClientRect();
+            const pos = getSeekPos(pendingMoveClientX, rect);
+            applyBoundaryRubber(pendingMoveClientX, rect);
+            updateSeekTooltip(pos, rect, true);
+            seekToPosition(pendingMoveClientX, false, pos);
+        }
+
+        function clearPendingScrubMove() {
+            if (pendingMoveRaf) {
+                cancelAnimationFrame(pendingMoveRaf);
+                pendingMoveRaf = 0;
+            }
+        }
+
         resetSeekScrubState = () => {
+            clearPendingScrubMove();
             isScrubbing = false;
             activeSeekPointerId = null;
             scrubRect = null;
             pendingScrubPos = null;
+            rubberSpring?.snap?.(0);
             setScrubClasses(false);
             hideSeekTooltip();
             seekThumbCtrl?.reset?.();
@@ -1363,27 +1452,40 @@
 
         seekContainer.addEventListener('pointerdown', (e) => {
             if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            clearPendingScrubMove();
+            window.MinkoiScheduler?.markInteraction?.(450);
             isScrubbing = true;
             activeSeekPointerId = e.pointerId;
             scrubRect = seekContainer.getBoundingClientRect();
             setScrubClasses(true);
             const pos = getSeekPos(e.clientX, scrubRect);
+            applyBoundaryRubber(e.clientX, scrubRect);
             updateSeekTooltip(pos, scrubRect, true);
             try { seekContainer.setPointerCapture(e.pointerId); } catch (_) {}
             seekToPosition(e.clientX, false, pos);
         });
 
+        let hoverRect = null;
+        seekContainer.addEventListener('pointerenter', () => {
+            hoverRect = seekContainer.getBoundingClientRect();
+        }, { passive: true });
+        seekContainer.addEventListener('pointerleave', () => {
+            hoverRect = null;
+        }, { passive: true });
+        window.addEventListener('resize', () => { hoverRect = null; }, { passive: true });
+
         seekContainer.addEventListener('pointermove', (e) => {
             if (isScrubbing) {
                 if (activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
-                const rect = scrubRect && scrubRect.width ? scrubRect : seekContainer.getBoundingClientRect();
-                const pos = getSeekPos(e.clientX, rect);
-                updateSeekTooltip(pos, rect, true);
-                seekToPosition(e.clientX, false, pos);
+                window.MinkoiScheduler?.markInteraction?.(300);
+                pendingMoveClientX = e.clientX;
+                if (!pendingMoveRaf) {
+                    pendingMoveRaf = requestAnimationFrame(flushPendingScrubMove);
+                }
                 return;
             }
             if (e.pointerType !== 'mouse' || !audio.duration) return;
-            const rect = seekContainer.getBoundingClientRect();
+            const rect = hoverRect && hoverRect.width ? hoverRect : (hoverRect = seekContainer.getBoundingClientRect());
             const pos = getSeekPos(e.clientX, rect);
             updateSeekTooltip(pos, rect, true);
         });
@@ -1391,11 +1493,13 @@
         seekContainer.addEventListener('pointerup', (e) => {
             if (!isScrubbing) return;
             if (activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
+            clearPendingScrubMove();
             const rect = scrubRect && scrubRect.width ? scrubRect : seekContainer.getBoundingClientRect();
             const pos = getSeekPos(e.clientX, rect);
             isScrubbing = false;
             activeSeekPointerId = null;
             scrubRect = null;
+            rubberSpring?.setTarget?.(0, window.MinkoiSpring?.PRESETS?.SLIDER_SETTLE);
             setScrubClasses(false);
             hideSeekTooltip();
             try { seekContainer.releasePointerCapture(e.pointerId); } catch (_) {}
@@ -1405,9 +1509,11 @@
         const cancelSeek = (e) => {
             if (!isScrubbing) return;
             if (e?.pointerId !== undefined && activeSeekPointerId !== null && e.pointerId !== activeSeekPointerId) return;
+            clearPendingScrubMove();
             isScrubbing = false;
             activeSeekPointerId = null;
             scrubRect = null;
+            rubberSpring?.setTarget?.(0, window.MinkoiSpring?.PRESETS?.SLIDER_SETTLE);
             setScrubClasses(false);
             hideSeekTooltip();
             pendingScrubPos = null;
@@ -1415,7 +1521,7 @@
                 const pos = audio.currentTime / audio.duration;
                 setSeekProgressUI(pos);
                 updateTimeDisplay(audio.currentTime, audio.duration);
-                seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
+                setSeekAriaValue(Math.round(pos * 100));
             }
         };
         seekContainer.addEventListener('pointercancel', cancelSeek);
@@ -1451,7 +1557,7 @@
                 const pos = nextTime / audio.duration;
                 setSeekProgressUI(pos);
                 updateTimeDisplay(nextTime, audio.duration);
-                seekContainer.setAttribute('aria-valuenow', Math.round(pos * 100).toString());
+                setSeekAriaValue(Math.round(pos * 100));
             }
         });
     }
@@ -1511,24 +1617,69 @@
     if (volumeCtrl) {
         const volumeDock = volumeDockEl || volumeCtrl.closest('.volume-slider-dock');
         volumeThumbCtrl = bindSliderThumb(volumeCtrl, '--volume-thumb-scale', 1, 1.18);
+        let isVolumeScrubbing = false;
+        let activeVolPointerId = null;
+
         volumeCtrl.addEventListener('input', (e) => {
             setVolume(parseInt(e.target.value, 10));
+            window.MinkoiScheduler?.markInteraction?.(isVolumeScrubbing ? 300 : 180);
         });
         volumeCtrl.addEventListener('pointerdown', (event) => {
             if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+            isVolumeScrubbing = true;
+            activeVolPointerId = event.pointerId;
+            window.MinkoiScheduler?.markInteraction?.(450);
+            // WebKit's native <input type="range"> manages internal thumb tracking; calling
+            // setPointerCapture on range inputs is safe on Chromium/Firefox, while window-level
+            // pointermove/pointerup/pointercancel/blur listeners guarantee cleanup everywhere.
             try { volumeCtrl.setPointerCapture(event.pointerId); } catch (_) {}
             volumeCtrl.classList.add('is-scrubbing');
             if (volumeDock) volumeDock.classList.add('is-scrubbing');
         });
-        const stopVolScrub = () => {
+        const onVolPointerMove = (event) => {
+            if (!isVolumeScrubbing) return;
+            if (activeVolPointerId !== null && event.pointerId !== activeVolPointerId) return;
+            if (event.pointerType === 'mouse' && event.buttons === 0) {
+                stopVolScrub(event);
+                return;
+            }
+            window.MinkoiScheduler?.markInteraction?.(300);
+        };
+        const stopVolScrub = (event) => {
+            if (event && event.type === 'lostpointercapture' && event.pointerType === 'mouse' && (event.buttons & 1) === 1) {
+                return;
+            }
+            if (event && event.pointerId !== undefined && activeVolPointerId !== null &&
+                event.pointerId !== activeVolPointerId &&
+                event.type !== 'visibilitychange' && event.type !== 'blur') {
+                return;
+            }
+            const wasScrubbing = isVolumeScrubbing || volumeCtrl.classList.contains('is-scrubbing');
+            if (!wasScrubbing) return;
+            if (activeVolPointerId !== null) {
+                try {
+                    if (volumeCtrl.hasPointerCapture?.(activeVolPointerId)) {
+                        volumeCtrl.releasePointerCapture(activeVolPointerId);
+                    }
+                } catch (_) {}
+            }
+            isVolumeScrubbing = false;
+            activeVolPointerId = null;
             volumeCtrl.classList.remove('is-scrubbing');
             if (volumeDock) volumeDock.classList.remove('is-scrubbing');
+            window.MinkoiScheduler?.releaseInteraction?.(60);
         };
+        volumeCtrl.addEventListener('pointermove', onVolPointerMove, { passive: true });
+        window.addEventListener('pointermove', onVolPointerMove, { passive: true });
         volumeCtrl.addEventListener('pointerup', stopVolScrub);
         volumeCtrl.addEventListener('pointercancel', stopVolScrub);
-        volumeCtrl.addEventListener('blur', stopVolScrub);
         volumeCtrl.addEventListener('lostpointercapture', stopVolScrub);
         window.addEventListener('pointerup', stopVolScrub, { passive: true });
+        window.addEventListener('pointercancel', stopVolScrub, { passive: true });
+        window.addEventListener('blur', () => stopVolScrub({ type: 'blur' }));
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopVolScrub({ type: 'visibilitychange' });
+        });
     }
 
     if (shuffleBtn) {
@@ -1772,6 +1923,10 @@
             }
             if (triggerBtn) triggerBtn.classList.add('is-morph-active');
             menu.classList.add('open');
+            if (menu === playlistMenu) {
+                if (!document.getElementById('playlist-items-scroll')) buildPlaylistShell();
+                updatePlaylistItems();
+            }
             positionDesktopFlyout(menu, triggerBtn);
             if (releaseFlyoutTrap) {
                 const prevFn = releaseFlyoutTrap;

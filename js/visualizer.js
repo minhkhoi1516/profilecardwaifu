@@ -720,6 +720,9 @@
         scheduleMeasure();
     }
     global.__setVisualizerDprCap = setDprCap;
+    global.MinkoiGpuManager?.registerConsumer?.('visualizer', (profile) => {
+        setDprCap(profile.dprCap);
+    });
     global.MinkoiVisualizer = Object.freeze({
         start, stop, setStyle, setControl, setDprCap, getStyle: () => style,
         getControls: () => ({ intensity, reactivity }),

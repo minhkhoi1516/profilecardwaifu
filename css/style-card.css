@@ -1464,7 +1464,6 @@ body.zen-mode .zen-ambient-lyric.has-lyric {
     -webkit-background-clip: text;
     background-clip: text;
     filter: drop-shadow(0 0 8px var(--sing-glow));
-    will-change: background-position;
 }
 
 .lyric-line.active .lyric-word.is-active-word {
